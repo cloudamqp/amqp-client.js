@@ -2,12 +2,13 @@ import AMQPBaseClient from './amqpclient-base.mjs'
 import AMQPView from './amqpview.mjs'
 import { Buffer } from 'buffer'
 import net from 'net'
+import tls from 'tls'
 
 export default class AMQPClient extends AMQPBaseClient {
   constructor(url) {
     super()
     const u = new URL(url)
-    this.tls = u.protocol == "amqps:"
+    this.tls = u.protocol === "amqps:"
     this.host = u.host || "localhost"
     this.port = u.port || this.tls ? 5671 : 5672
     this.vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
@@ -16,12 +17,22 @@ export default class AMQPClient extends AMQPBaseClient {
   }
 
   connect() {
+    this.socket = this.tls ? this.connectTLS() : this.connectPlain()
+    return new Promise((resolv, reject) => {
+      this.resolvPromise = resolv
+      this.rejectPromise = reject
+      this.socket.on('error', reject)
+    })
+  }
+
+  connectPlain() {
     let framePos = 0
     let frameSize = 0
     const frameBuffer = new Uint8Array(4096)
     const self = this
     const socket = net.connect({
-      port: 5672,
+      host: this.host,
+      port: this.port,
       onread: {
         // Reuses a 4KiB Buffer for every read from the socket.
         buffer: Buffer.alloc(4096),
@@ -45,17 +56,47 @@ export default class AMQPClient extends AMQPBaseClient {
           }
         }
       }
-    });
-    this.socket = socket
-    return new Promise((resolv, reject) => {
-      this.resolvPromise = resolv
-      this.rejectPromise = reject
-      socket.on('error', reject)
-      socket.on('connect', () => {
-        const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])
-        self.send(amqpstart)
-      })
     })
+    socket.on('connect', () => {
+      const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])
+      this.send(amqpstart)
+    })
+    return socket
+  }
+
+  connectTLS() {
+    const socket = tls.connect({
+      host: this.host,
+      port: this.port,
+      servername: this.host, // SNI
+    })
+    socket.on('secureConnect', () => {
+      const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])
+      this.send(amqpstart)
+    })
+    let framePos = 0
+    let frameSize = 0
+    const frameBuffer = new Uint8Array(4096)
+    socket.on('data', (buf) => {
+      // Find frame boundaries and only pass a single frame at a time
+      let bufPos = 0
+      while (bufPos < buf.byteLength) {
+        // read frame size of next frame
+        if (frameSize === 0)
+          frameSize = buf.readInt32BE(bufPos + 3) + 8
+
+        const leftOfFrame = frameSize - framePos
+        const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + leftOfFrame)
+        framePos += copied
+        bufPos += copied
+        if (framePos === frameSize) {
+          const view = new AMQPView(frameBuffer.buffer, 0, frameSize)
+          this.parseFrames(view)
+          frameSize = framePos = 0
+        }
+      }
+    })
+    return socket
   }
 
   send(bytes) {
