@@ -102,7 +102,7 @@ export default class AMQPClient extends AMQPBaseClient {
   send(bytes) {
     if (bytes instanceof ArrayBuffer)
       bytes = new Uint8Array(bytes)
-    return this.socket.write(bytes)
+    return this.socket.write(bytes, '', (err) => err && this.rejectPromise(err))
   }
 
   closeSocket() {
