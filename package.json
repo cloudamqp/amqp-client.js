@@ -20,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/cloudamqp/amqp-client.js/issues"
   },
-  "homepage": "https://github.com/cloudamqp/amqp-client.js#readme"
+  "homepage": "https://github.com/cloudamqp/amqp-client.js#readme",
+  "devDependencies": {
+    "eslint": "^7.20.0"
+  }
 }
