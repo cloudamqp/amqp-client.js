@@ -45,7 +45,6 @@ export default class AMQPClient {
   }
 
   parseFrames(view) {
-    const bufferView = new AMQPView(new ArrayBuffer(4096))
     // Can possibly be multiple AMQP frames in a single WS frame
     for (let i = 0; i < view.byteLength;) {
       let j = 0 // position in outgoing frame
@@ -63,7 +62,7 @@ export default class AMQPClient {
                   // ignore start frame, just reply startok
                   i += frameSize - 4
 
-                  const startOk = bufferView
+                  const startOk = new AMQPView(new ArrayBuffer(4096))
                   startOk.setUint8(j, 1); j += 1 // type: method
                   startOk.setUint16(j, 0); j += 2 // channel: 0
                   startOk.setUint32(j, 0); j += 4 // frameSize: to be updated
@@ -87,7 +86,7 @@ export default class AMQPClient {
                   this.frameMax = frameMax
                   this.heartbeat = heartbeat
 
-                  const tuneOk = bufferView
+                  const tuneOk = new AMQPView(new ArrayBuffer(20))
                   tuneOk.setUint8(j, 1); j += 1 // type: method
                   tuneOk.setUint16(j, 0); j += 2 // channel: 0
                   tuneOk.setUint32(j, 12); j += 4 // frameSize: 12
@@ -99,8 +98,8 @@ export default class AMQPClient {
                   tuneOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(tuneOk.buffer, 0, j))
 
-                  const open = bufferView
                   j = 0
+                  const open = new AMQPView(new ArrayBuffer(512))
                   open.setUint8(j, 1); j += 1 // type: method
                   open.setUint16(j, 0); j += 2 // channel: 0
                   open.setUint32(j, 0); j += 4 // frameSize: to be updated
@@ -127,7 +126,7 @@ export default class AMQPClient {
                   const methodId = view.getUint16(i); i += 2
                   console.error("connection closed by server", code, text, classId, methodId)
 
-                  const closeOk = bufferView
+                  const closeOk = new AMQPView(new ArrayBuffer(12))
                   closeOk.setUint8(j, 1); j += 1 // type: method
                   closeOk.setUint16(j, 0); j += 2 // channel: 0
                   closeOk.setUint32(j, 4); j += 4 // frameSize
@@ -160,10 +159,12 @@ export default class AMQPClient {
                   const classId = view.getUint16(i); i += 2
                   const methodId = view.getUint16(i); i += 2
 
-                  const closeOk = bufferView
+                  const closeOk = new AMQPView(new ArrayBuffer(12))
                   closeOk.setUint8(j, 1); j += 1 // type: method
                   closeOk.setUint16(j, channelId); j += 2 // channel
-                  closeOk.setUint32(j, 0); j += 4 // frameSize
+                  closeOk.setUint32(j, 4); j += 4 // frameSize
+                  closeOk.setUint16(j, 20); j += 2 // class: channel
+                  closeOk.setUint16(j, 41); j += 2 // method: closeok
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
 
@@ -253,7 +254,7 @@ export default class AMQPClient {
           break
         }
         case 8: { // heartbeat
-          const heartbeat = bufferView
+          const heartbeat = new AMQPView(new ArrayBuffer(8))
           heartbeat.setUint8(j, 1); j += 1 // type: method
           heartbeat.setUint16(j, 0); j += 2 // channel: 0
           heartbeat.setUint32(j, 0); j += 4 // frameSize
@@ -277,7 +278,6 @@ class AMQPChannel {
     this.connection = connection
     this.id = id
     this.consumers = []
-    this.bufferView = new AMQPView(new ArrayBuffer(4096))
   }
 
   close() {
@@ -297,7 +297,7 @@ class AMQPChannel {
 
   queueBind(queue, exchange, routingKey, noWait = true, args = {}) {
     let j = 0
-    const bind = this.bufferView
+    const bind = new AMQPView(new ArrayBuffer(1024))
     bind.setUint8(j, 1); j += 1 // type: method
     bind.setUint16(j, this.id); j += 2 // channel: 1
     bind.setUint32(j, 0); j += 4 // frameSize
@@ -320,7 +320,7 @@ class AMQPChannel {
 
   queueDeclare({name = "", passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "", noWait = false}) {
     let j = 0
-    const declare = this.bufferView
+    const declare = new AMQPView(new ArrayBuffer(512))
     declare.setUint8(j, 1); j += 1 // type: method
     declare.setUint16(j, 1); j += 2 // channel: 1
     declare.setUint32(j, 0); j += 4 // frameSize
@@ -350,9 +350,9 @@ class AMQPChannel {
     const tag = this.consumers.length.toString()
     this.consumers.push(callback)
 
-    const noLocal = false
-    const frame = this.bufferView
     let j = 0
+    const noLocal = false
+    const frame = new AMQPView(new ArrayBuffer(1024))
     frame.setUint8(j, 1); j += 1 // type: method
     frame.setUint16(j, this.id); j += 2 // channel: 1
     frame.setUint32(j, 0); j += 4 // frameSize
@@ -380,7 +380,7 @@ class AMQPChannel {
 
   basicAck(deliveryTag, multiple = false) {
     let j = 0
-    const frame = this.bufferView
+    const frame = new AMQPView(new ArrayBuffer(21))
     frame.setUint8(j, 1); j += 1 // type: method
     frame.setUint16(j, this.id); j += 2 // channel
     frame.setUint32(j, 13); j += 4 // frameSize
@@ -394,7 +394,7 @@ class AMQPChannel {
 
   basicNack(deliveryTag, requeue = false, multiple = false) {
     let j = 0
-    const frame = this.bufferView
+    const frame = new AMQPView(new ArrayBuffer(21))
     frame.setUint8(j, 1); j += 1 // type: method
     frame.setUint16(j, this.id); j += 2 // channel
     frame.setUint32(j, 13); j += 4 // frameSize
@@ -424,7 +424,7 @@ class AMQPChannel {
     }
 
     let j = 0
-    const buffer = this.bufferView
+    let buffer = new AMQPView(new ArrayBuffer(4096))
     buffer.setUint8(j, 1); j += 1 // type: method
     buffer.setUint16(j, this.id); j += 2 // channel
     j += 4 // frame size, update later
@@ -466,6 +466,8 @@ class AMQPChannel {
       const frameSize = Math.min(data.byteLength - bodyPos, 4096 - 8 - j) // frame overhead is 8 bytes
       const dataSlice = new Uint8Array(data.buffer, bodyPos, frameSize)
 
+      if (j === 0)
+        buffer = new AMQPView(new ArrayBuffer(frameSize + 8))
       buffer.setUint8(j, 3); j += 1 // type: body
       buffer.setUint16(j, this.id); j += 2 // channel
       buffer.setUint32(j, frameSize); j += 4 // frameSize
