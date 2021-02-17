@@ -17,6 +17,22 @@ export default class AMQPClient {
     throw "Abstract method not implemented"
   }
 
+  close({ code = 200, reason = "" } = {}) {
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(512))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, 0); j += 2 // channel: 0
+    frame.setUint32(j, 5); j += 4 // frameSize
+    frame.setUint16(j, 10); j += 2 // class: connection
+    frame.setUint16(j, 50); j += 2 // method: close
+    frame.setUint16(j, code); j += 2 // reply code
+    j += frame.setShortString(j, reason) // reply reason
+    frame.setUint16(j, 0); j += 2 // failing-class-id
+    frame.setUint16(j, 0); j += 2 // failing-method-id
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    this.send(new Uint8Array(frame.buffer, 0, j))
+  }
+
   openChannel() {
     // Store channels in an array, set position to null when channel is closed
     // Look for first null value or add one the end
