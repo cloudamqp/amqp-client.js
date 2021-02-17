@@ -22,7 +22,7 @@ export default class AMQPClient {
     const frame = new AMQPView(new ArrayBuffer(512))
     frame.setUint8(j, 1); j += 1 // type: method
     frame.setUint16(j, 0); j += 2 // channel: 0
-    frame.setUint32(j, 5); j += 4 // frameSize
+    frame.setUint32(j, 0); j += 4 // frameSize
     frame.setUint16(j, 10); j += 2 // class: connection
     frame.setUint16(j, 50); j += 2 // method: close
     frame.setUint16(j, code); j += 2 // reply code
@@ -30,6 +30,7 @@ export default class AMQPClient {
     frame.setUint16(j, 0); j += 2 // failing-class-id
     frame.setUint16(j, 0); j += 2 // failing-method-id
     frame.setUint8(j, 206); j += 1 // frame end byte
+    frame.setUint32(3, j - 8) // update frameSize
     this.send(new Uint8Array(frame.buffer, 0, j))
   }
 
