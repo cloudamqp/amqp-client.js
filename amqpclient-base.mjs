@@ -1,7 +1,7 @@
 import AMQPView from './amqpview.mjs'
 
 export default class AMQPClient {
-  constructor(url, vhost, username, password) {
+  constructor() {
     this.channels = [0]
   }
 
@@ -9,11 +9,11 @@ export default class AMQPClient {
     throw "Abstract method not implemented"
   }
 
-  send(bytes) {
+  send() {
     throw "Abstract method not implemented"
   }
 
-  close() {
+  closeSocket() {
     throw "Abstract method not implemented"
   }
 
@@ -136,7 +136,11 @@ export default class AMQPClient {
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
                   this.rejectPromise({code, text, classId, methodId})
 
-                  this.close()
+                  this.closeSocket()
+                  break
+                }
+                case 51: { // closeOk
+                  this.closeSocket()
                   break
                 }
                 default:

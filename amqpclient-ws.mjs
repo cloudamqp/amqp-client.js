@@ -39,8 +39,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
     return this.socket.send(bytes)
   }
 
-  close() {
+  closeSocket() {
     this.socket.close()
   }
-
 }

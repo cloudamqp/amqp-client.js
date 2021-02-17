@@ -105,7 +105,7 @@ export default class AMQPClient extends AMQPBaseClient {
     return this.socket.write(bytes)
   }
 
-  close() {
+  closeSocket() {
     this.socket.end()
   }
 }
