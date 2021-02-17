@@ -100,8 +100,8 @@ export default class AMQPClient {
                   const frameMax = view.getUint32(i); i += 4
                   const heartbeat = view.getUint16(i); i += 2
                   this.channelMax = channelMax
-                  this.frameMax = frameMax
-                  this.heartbeat = heartbeat
+                  this.frameMax = Math.min(4096, frameMax)
+                  this.heartbeat = Math.min(0, heartbeat)
 
                   const tuneOk = new AMQPView(new ArrayBuffer(20))
                   tuneOk.setUint8(j, 1); j += 1 // type: method
@@ -109,9 +109,9 @@ export default class AMQPClient {
                   tuneOk.setUint32(j, 12); j += 4 // frameSize: 12
                   tuneOk.setUint16(j, 10); j += 2 // class: connection
                   tuneOk.setUint16(j, 31); j += 2 // method: tuneok
-                  tuneOk.setUint16(j, channelMax); j += 2 // channel max
-                  tuneOk.setUint32(j, 4096); j += 4 // frame max
-                  tuneOk.setUint16(j, 0); j += 2 // heartbeat
+                  tuneOk.setUint16(j, this.channelMax); j += 2 // channel max
+                  tuneOk.setUint32(j, this.frameMax); j += 4 // frame max
+                  tuneOk.setUint16(j, this.heartbeat); j += 2 // heartbeat
                   tuneOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(tuneOk.buffer, 0, j))
 
