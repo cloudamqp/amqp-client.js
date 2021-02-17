@@ -55,7 +55,7 @@ export default class AMQPClient {
     return new Promise((resolv, reject) => {
       channel.resolvPromise = () => resolv(channel)
       channel.rejectPromise = (err) => {
-        this.channels[id] = null
+        delete this.channels[id]
         reject(err)
       }
     })
@@ -190,8 +190,12 @@ export default class AMQPClient {
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
 
                   const channel = this.channels[channelId]
-                  channel.rejectPromise({code, text, classId, methodId})
-                  this.channels[channelId] = null
+                  if (channel) {
+                    channel.rejectPromise({code, text, classId, methodId})
+                    delete this.channels[channelId]
+                  } else {
+                    console.warn("Channel", channelId, "already closed")
+                  }
 
                   break
                 }
@@ -226,6 +230,10 @@ export default class AMQPClient {
                   const [ exchange, exchangeLen ]= view.getShortString(i); i += exchangeLen
                   const [ routingKey, routingKeyLen ]= view.getShortString(i); i += routingKeyLen
                   const channel = this.channels[channelId]
+                  if (!channel) {
+                    console.warn("Cannot deliver to closed channel", channelId)
+                    return
+                  }
                   const message = new AMQPMessage(channel)
                   message.consumerTag = consumerTag
                   message.deliveryTag = deliveryTag
@@ -254,6 +262,10 @@ export default class AMQPClient {
           const [properties, propLen] = view.getProperties(i); i += propLen
 
           const channel = this.channels[channelId]
+          if (!channel) {
+            console.warn("Cannot deliver to closed channel", channelId)
+            break
+          }
           const delivery = channel.delivery
           delivery.bodySize = bodySize
           delivery.properties = properties
@@ -265,6 +277,10 @@ export default class AMQPClient {
         }
         case 3: { // body
           const channel = this.channels[channelId]
+          if (!channel) {
+            console.warn("Cannot deliver to closed channel", channelId)
+            break
+          }
           const delivery = channel.delivery
           const bodyPart = new Uint8Array(view.buffer, i, frameSize)
           delivery.body.set(bodyPart, delivery.bodyPos)
@@ -308,6 +324,7 @@ class AMQPChannel {
   // Message is ready to be delivered to consumer
   deliver() {
     const d = this.delivery
+    delete d.bodyPos
     const c = this.consumers[d.consumerTag]
     this.delivery = null
     if (c)
