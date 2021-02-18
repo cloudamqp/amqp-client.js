@@ -282,6 +282,16 @@ export default class AMQPClient {
               }
               break
             }
+            case 85: { // confirm
+              switch (methodId) {
+                case 11: { // selectOk
+                  const channel = this.channels[channelId]
+                  channel.resolvPromise()
+                  break
+                }
+              }
+              break
+            }
             default:
               i += frameSize - 2
               console.error("unsupported class id", classId)
@@ -675,6 +685,23 @@ class AMQPChannel {
     }
   }
 
+  confirmSelect(noWait = false) {
+    let j = 0
+    let frame = new AMQPView(new ArrayBuffer(13))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel
+    frame.setUint32(j, 5) // frame size
+    frame.setUint16(j, 85); j += 2 // class: confirm
+    frame.setUint16(j, 10); j += 2 // method: select
+    frame.setUint8(j, noWait ? 1 : 0); j += 1 // no wait
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    this.connection.send(new Uint8Array(frame.buffer, 0, j))
+    
+    return new Promise((resolv, reject) => {
+      noWait ? resolv(this) : this.resolvPromise = resolv
+      this.rejectPromise = reject
+    })
+  }
   queue(name) {
     return new Promise((resolv, reject) => {
       this.rejectPromise = reject
