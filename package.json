@@ -5,7 +5,8 @@
   "description": "AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)",
   "main": "amqpclient.mjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ava",
+    "preversion": "npm test"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   },
   "homepage": "https://github.com/cloudamqp/amqp-client.js#readme",
   "devDependencies": {
+    "ava": "^3.15.0",
     "eslint": "^7.20.0"
   }
 }
