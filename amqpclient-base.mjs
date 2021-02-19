@@ -1,6 +1,6 @@
 import AMQPView from './amqpview.mjs'
 
-export default class AMQPClient {
+export default class AMQPBaseClient {
   constructor() {
     this.channels = [0]
   }
@@ -43,12 +43,8 @@ export default class AMQPClient {
       if (id === -1) id = this.channels.length
       const channel = new AMQPChannel(this, id)
       this.channels[id] = channel
-      channel.resolvePromise = () => resolve(channel)
-      channel.rejectPromise = (err) => {
-        console.log("ERRROR", err)
-        delete this.channels[id]
-        reject(err)
-      }
+      channel.resolvePromise = resolve
+      channel.rejectPromise = reject
 
       let j = 0
       const channelOpen = new AMQPView(new ArrayBuffer(13))
@@ -143,7 +139,7 @@ export default class AMQPClient {
                   const [text, strLen] = view.getShortString(i); i += strLen
                   const classId = view.getUint16(i); i += 2
                   const methodId = view.getUint16(i); i += 2
-                  console.error("connection closed by server", code, text, classId, methodId)
+                  console.debug("connection closed by server", code, text, classId, methodId)
 
                   const closeOk = new AMQPView(new ArrayBuffer(12))
                   closeOk.setUint8(j, 1); j += 1 // type: method
@@ -153,7 +149,8 @@ export default class AMQPClient {
                   closeOk.setUint16(j, 51); j += 2 // method: closeok
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
-                  this.rejectPromise({code, text, classId, methodId})
+                  const msg = `connection closed: ${text} (${code})`
+                  this.rejectPromise(new AMQPError(msg, this))
 
                   this.closeSocket()
                   break
@@ -182,7 +179,7 @@ export default class AMQPClient {
                   const classId = view.getUint16(i); i += 2
                   const methodId = view.getUint16(i); i += 2
 
-                  console.warn("channel", channelId, "closed", code, text, classId, methodId)
+                  console.debug("channel", channelId, "closed", code, text, classId, methodId)
                   const closeOk = new AMQPView(new ArrayBuffer(12))
                   closeOk.setUint8(j, 1); j += 1 // type: method
                   closeOk.setUint16(j, channelId); j += 2 // channel
@@ -194,11 +191,11 @@ export default class AMQPClient {
 
                   const channel = this.channels[channelId]
                   if (channel) {
-                    console.log("rejecting promise", channel.rejectPromise)
-                    channel.rejectPromise({code, text, classId, methodId})
+                    const msg = `channel ${channelId} closed: ${text} (${code})`
+                    channel.rejectPromise(new AMQPError(msg, this))
                     delete this.channels[channelId]
                   } else {
-                    console.warn("Channel", channelId, "already closed")
+                    console.warn("channel", channelId, "already closed")
                   }
 
                   break
@@ -707,10 +704,12 @@ class AMQPChannel {
       this.rejectPromise = reject
     })
   }
-  queue(name) {
+
+  queue(name = "", props = {}) {
     return new Promise((resolve, reject) => {
-      this.rejectPromise = reject
-      this.queueDeclare({name}).then(({name}) => resolve(new AMQPQueue(this, name)))
+      this.queueDeclare(name, props)
+        .then(({name}) => resolve(new AMQPQueue(this, name)))
+        .catch(reject)
     })
   }
 }
@@ -786,5 +785,13 @@ class AMQPMessage {
 
   nack() {
     return this.channel.basicNack(this.deliveryTag)
+  }
+}
+
+class AMQPError extends Error {
+  constructor(message, connection) {
+    super(message)
+    this.name = "AMQPError"
+    this.connection = connection
   }
 }
