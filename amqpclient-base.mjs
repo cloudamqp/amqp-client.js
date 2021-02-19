@@ -49,7 +49,7 @@ export default class AMQPBaseClient {
       let j = 0
       const channelOpen = new AMQPView(new ArrayBuffer(13))
       channelOpen.setUint8(j, 1); j += 1 // type: method
-      channelOpen.setUint16(j, id); j += 2 // channel: 1
+      channelOpen.setUint16(j, id); j += 2 // channel id
       channelOpen.setUint32(j, 5); j += 4 // frameSize
       channelOpen.setUint16(j, 20); j += 2 // class: channel
       channelOpen.setUint16(j, 10); j += 2 // method: open
@@ -455,7 +455,7 @@ class AMQPChannel {
     let j = 0
     const declare = new AMQPView(new ArrayBuffer(4096))
     declare.setUint8(j, 1); j += 1 // type: method
-    declare.setUint16(j, 1); j += 2 // channel: 1
+    declare.setUint16(j, this.id); j += 2 // channel: 1
     declare.setUint32(j, 0); j += 4 // frameSize
     declare.setUint16(j, 50); j += 2 // class: queue
     declare.setUint16(j, 10); j += 2 // method: declare
@@ -484,7 +484,7 @@ class AMQPChannel {
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
     frame.setUint8(j, 1); j += 1 // type: method
-    frame.setUint16(j, 1); j += 2 // channel: 1
+    frame.setUint16(j, this.id); j += 2 // channel: 1
     frame.setUint32(j, 0); j += 4 // frameSize
     frame.setUint16(j, 50); j += 2 // class: queue
     frame.setUint16(j, 40); j += 2 // method: delete
@@ -509,7 +509,7 @@ class AMQPChannel {
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(19))
     frame.setUint8(j, 1); j += 1 // type: method
-    frame.setUint16(j, 1); j += 2 // channel: 1
+    frame.setUint16(j, this.id); j += 2 // channel: 1
     frame.setUint32(j, 11); j += 4 // frameSize
     frame.setUint16(j, 60); j += 2 // class: basic
     frame.setUint16(j, 10); j += 2 // method: qos
@@ -525,7 +525,6 @@ class AMQPChannel {
   }
 
   basicConsume(queue, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback) {
-
     let j = 0
     const noWait = false
     const noLocal = false
