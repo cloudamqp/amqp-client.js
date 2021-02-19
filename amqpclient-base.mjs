@@ -402,7 +402,7 @@ class AMQPChannel {
     bind.setUint32(3, j - 8) // update frameSize
     this.connection.send(new Uint8Array(bind.buffer, 0, j))
     return new Promise((resolve, reject) => {
-      noWait ? resolve(this) : this.resolvePromise = () => resolve(this)
+      this.resolvePromise = () => resolve(this)
       this.rejectPromise = reject
     })
   }
@@ -445,7 +445,7 @@ class AMQPChannel {
     purge.setUint32(3, j - 8) // update frameSize
     this.connection.send(new Uint8Array(purge.buffer, 0, j))
     return new Promise((resolve, reject) => {
-      noWait ? resolve(this) : this.resolvePromise = resolve
+      this.resolvePromise = resolve
       this.rejectPromise = reject
     })
   }
@@ -474,7 +474,7 @@ class AMQPChannel {
     this.connection.send(new Uint8Array(declare.buffer, 0, j))
 
     return new Promise((resolve, reject) => {
-      noWait ? resolve() : this.resolvePromise = resolve
+      this.resolvePromise = resolve
       this.rejectPromise = reject
     })
   }
@@ -500,7 +500,7 @@ class AMQPChannel {
     this.connection.send(new Uint8Array(frame.buffer, 0, j))
 
     return new Promise((resolve, reject) => {
-      noWait ? resolve() : this.resolvePromise = resolve
+      this.resolvePromise = resolve
       this.rejectPromise = reject
     })
   }
@@ -575,7 +575,7 @@ class AMQPChannel {
 
     return new Promise((resolve, reject) => {
       delete this.consumers[tag]
-      noWait ? resolve() : this.resolvePromise = () => resolve(this)
+      this.resolvePromise = () => resolve(this)
       this.rejectPromise = reject
     })
   }
@@ -711,7 +711,7 @@ class AMQPChannel {
     this.connection.send(new Uint8Array(frame.buffer, 0, j))
     
     return new Promise((resolve, reject) => {
-      noWait ? resolve(this) : this.resolvePromise = resolve
+      this.resolvePromise = resolve
       this.rejectPromise = reject
     })
   }
