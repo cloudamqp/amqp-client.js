@@ -377,7 +377,8 @@ class AMQPChannel {
       console.error("Consumer", d.consumerTag, "on channel", this.id, "doesn't exists")
   }
 
-  queueBind(queue, exchange, routingKey, noWait = false, args = {}) {
+  queueBind(queue, exchange, routingKey, args = {}) {
+    const noWait = false
     let j = 0
     const bind = new AMQPView(new ArrayBuffer(4096))
     bind.setUint8(j, 1); j += 1 // type: method
@@ -422,7 +423,8 @@ class AMQPChannel {
     })
   }
 
-  queuePurge(queue, noWait = true) {
+  queuePurge(queue) {
+    const noWait = true
     let j = 0
     const purge = new AMQPView(new ArrayBuffer(512))
     purge.setUint8(j, 1); j += 1 // type: method
@@ -442,7 +444,8 @@ class AMQPChannel {
     })
   }
 
-  queueDeclare({name = "", passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "", noWait = false}) {
+  queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "", args = {}} = {}) {
+    const noWait = false
     let j = 0
     const declare = new AMQPView(new ArrayBuffer(4096))
     declare.setUint8(j, 1); j += 1 // type: method
@@ -459,7 +462,7 @@ class AMQPChannel {
     if (autoDelete) bits = bits | (1 << 3)
     if (noWait)     bits = bits | (1 << 4)
     declare.setUint8(j, bits); j += 1
-    j += declare.setTable(j, {}) // arguments
+    j += declare.setTable(j, args) // arguments
     declare.setUint8(j, 206); j += 1 // frame end byte
     declare.setUint32(3, j - 8) // update frameSize
     this.connection.send(new Uint8Array(declare.buffer, 0, j))
@@ -470,7 +473,8 @@ class AMQPChannel {
     })
   }
 
-  queueDelete({ name = "", ifUnused = false, ifEmpty = false, noWait = false }) {
+  queueDelete(name = "", { ifUnused = false, ifEmpty = false } = {}) {
+    const noWait = false
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -514,7 +518,8 @@ class AMQPChannel {
     })
   }
 
-  basicConsume(queue, { noAck = true, exclusive = false, noWait = true, args = {} }, callback) {
+  basicConsume(queue, {noAck = true, exclusive = false, args = {}} = {}, callback) {
+    const noWait = false
     const tag = this.consumers.length.toString()
     this.consumers.push(callback)
 
@@ -549,7 +554,8 @@ class AMQPChannel {
     })
   }
 
-  basicCancel(tag, noWait = false) {
+  basicCancel(tag) {
+    const noWait = false
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -687,7 +693,8 @@ class AMQPChannel {
     return Promise.resolve(this)
   }
 
-  confirmSelect(noWait = false) {
+  confirmSelect() {
+    const noWait = false
     let j = 0
     let frame = new AMQPView(new ArrayBuffer(13))
     frame.setUint8(j, 1); j += 1 // type: method
