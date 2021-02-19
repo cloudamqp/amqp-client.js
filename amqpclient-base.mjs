@@ -591,8 +591,10 @@ class AMQPChannel {
     this.connection.send(new Uint8Array(frame.buffer, 0, j))
 
     return new Promise((resolve, reject) => {
-      delete this.consumers[tag]
-      this.resolvePromise = () => resolve(this)
+      this.resolvePromise = (consumerTag) => {
+        delete this.consumers[consumerTag]
+        resolve(this)
+      }
       this.rejectPromise = reject
     })
   }
