@@ -170,7 +170,7 @@ export default class AMQPBaseClient {
                 case 11: { // openok
                   i += 4 // reserved1 (long string)
                   const channel = this.channels[channelId]
-                  channel.resolvePromise(channelId)
+                  channel.resolvePromise(channel)
                   break
                 }
                 case 40: { // close
