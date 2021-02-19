@@ -251,10 +251,16 @@ export default class AMQPBaseClient {
                   channel.resolvePromise()
                   break
                 }
+                case 21: { // consumeOk
+                  const [ consumerTag, len ] = view.getShortString(i); i += len
+                  const channel = this.channels[channelId]
+                  channel.resolvePromise(consumerTag)
+                  break
+                }
                 case 31: { // cancelOk
                   const [consumerTag, len] = view.getShortString(i); i += len
                   const channel = this.channels[channelId]
-                  channel.resolvePromise({ consumerTag })
+                  channel.resolvePromise(consumerTag)
                   break
                 }
                 case 60: { // deliver
@@ -358,7 +364,7 @@ class AMQPChannel {
   constructor(connection, id) {
     this.connection = connection
     this.id = id
-    this.consumers = []
+    this.consumers = {}
   }
 
   close() {
@@ -518,12 +524,10 @@ class AMQPChannel {
     })
   }
 
-  basicConsume(queue, {noAck = true, exclusive = false, args = {}} = {}, callback) {
-    const noWait = false
-    const tag = this.consumers.length.toString()
-    this.consumers.push(callback)
+  basicConsume(queue, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback) {
 
     let j = 0
+    const noWait = false
     const noLocal = false
     const frame = new AMQPView(new ArrayBuffer(4096))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -546,11 +550,11 @@ class AMQPChannel {
     this.connection.send(new Uint8Array(frame.buffer, 0, j))
 
     return new Promise((resolve, reject) => {
-      noWait ? resolve() : this.resolvePromise = resolve
-      this.rejectPromise = (err) => {
-        delete this.consumers[tag]
-        reject(err)
+      this.resolvePromise = (consumerTag) => {
+        this.consumers[consumerTag] = callback
+        resolve(consumerTag)
       }
+      this.rejectPromise = reject
     })
   }
 
@@ -571,7 +575,7 @@ class AMQPChannel {
 
     return new Promise((resolve, reject) => {
       delete this.consumers[tag]
-      noWait ? resolve() : this.resolvePromise = resolve
+      noWait ? resolve() : this.resolvePromise = () => resolve(this)
       this.rejectPromise = reject
     })
   }
@@ -754,14 +758,14 @@ class AMQPQueue {
   subscribe({noAck = true, exclusive = false} = {}, callback) {
     return new Promise((resolve, reject) => {
       this.channel.basicConsume(this.name, {noAck, exclusive}, callback)
-        .then(() => resolve(this))
+        .then((consumerTag) => resolve(new AMQPConsumer(this.channel, consumerTag)))
         .catch(reject)
     })
   }
 
-  unsubscribe(consumerId) {
+  unsubscribe(consumerTag) {
     return new Promise((resolve, reject) => {
-      this.channel.basicCancel(consumerId)
+      this.channel.basicCancel(consumerTag)
         .then(() => resolve(this))
         .catch(reject)
     })
@@ -792,6 +796,17 @@ class AMQPMessage {
 
   nack() {
     return this.channel.basicNack(this.deliveryTag)
+  }
+}
+
+class AMQPConsumer {
+  constructor(channel, tag) {
+    this.channel = channel
+    this.tag = tag
+  }
+
+  cancel() {
+    return this.channel.basicCancel(this.tag)
   }
 }
 
