@@ -161,7 +161,7 @@ export default class AMQPBaseClient {
                 }
                 default:
                   i += frameSize - 4
-                  console.error("unsupported method id", methodId)
+                  console.error("unsupported class/method id", classId, methodId)
               }
               break
             }
@@ -202,7 +202,7 @@ export default class AMQPBaseClient {
                 }
                 default:
                   i += frameSize - 4 // skip rest of frame
-                  console.error("unsupported method id", methodId)
+                  console.error("unsupported class/method id", classId, methodId)
               }
               break
             }
@@ -240,7 +240,7 @@ export default class AMQPBaseClient {
                 }
                 default:
                   i += frameSize - 4
-                  console.error("unsupported method id", methodId)
+                  console.error("unsupported class/method id", classId, methodId)
               }
               break
             }
@@ -279,7 +279,7 @@ export default class AMQPBaseClient {
                 }
                 default:
                   i += frameSize - 4
-                  console.error("unsupported method id", methodId)
+                  console.error("unsupported class/method id", classId, methodId)
               }
               break
             }
