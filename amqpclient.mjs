@@ -18,8 +18,8 @@ export default class AMQPClient extends AMQPBaseClient {
 
   connect() {
     this.socket = this.tls ? this.connectTLS() : this.connectPlain()
-    return new Promise((resolv, reject) => {
-      this.resolvPromise = resolv
+    return new Promise((resolve, reject) => {
+      this.resolvePromise = resolve
       this.rejectPromise = reject
       this.socket.on('error', reject)
     })
