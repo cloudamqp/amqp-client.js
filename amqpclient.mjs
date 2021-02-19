@@ -6,14 +6,14 @@ import tls from 'tls'
 
 export default class AMQPClient extends AMQPBaseClient {
   constructor(url) {
-    super()
     const u = new URL(url)
+    const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
+    const username = u.username || "guest"
+    const password = u.password || "guest"
+    super(vhost, username, password)
     this.tls = u.protocol === "amqps:"
     this.host = u.host || "localhost"
     this.port = u.port || this.tls ? 5671 : 5672
-    this.vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
-    this.username = u.username || "guest"
-    this.password = u.password || "guest"
   }
 
   connect() {

@@ -1,7 +1,10 @@
 import AMQPView from './amqpview.mjs'
 
 export default class AMQPBaseClient {
-  constructor() {
+  constructor(vhost, username, password) {
+    this.vhost = vhost
+    this.username = username
+    this.password = password
     this.channels = [0]
   }
 
@@ -83,9 +86,24 @@ export default class AMQPBaseClient {
                   startOk.setUint32(j, 0); j += 4 // frameSize: to be updated
                   startOk.setUint16(j, 10); j += 2 // class: connection
                   startOk.setUint16(j, 11); j += 2 // method: startok
-                  startOk.setUint32(j, 0); j += 4 // client properties
+                  const clientProps = {
+                    connection_name: "",
+                    product: "amqp-client.js",
+                    platform: "nodejs/javascript",
+                    version: "1.0.1",
+                    capabilities: {
+                      publisher_confirms: true,
+                      exchange_exchange_bindings: true,
+                      "basic.nack": true,
+                      per_consumer_qos: true,
+                      authentication_failure_close: true,
+                      consumer_cancel_notify: true,
+                      "connection.blocked": false,
+                    }
+                  }
+                  j += startOk.setTable(j, clientProps) // client properties
                   j += startOk.setShortString(j, "PLAIN") // mechanism
-                  const response = "\u0000guest\u0000guest"
+                  const response = `\u0000${this.username}\u0000${this.password}`
                   j += startOk.setLongString(j, response) // response
                   j += startOk.setShortString(j, "") // locale
                   startOk.setUint8(j, 206); j += 1 // frame end byte
@@ -120,7 +138,7 @@ export default class AMQPBaseClient {
                   open.setUint32(j, 0); j += 4 // frameSize: to be updated
                   open.setUint16(j, 10); j += 2 // class: connection
                   open.setUint16(j, 40); j += 2 // method: open
-                  j += open.setShortString(j, "/") // vhost
+                  j += open.setShortString(j, this.vhost) // vhost
                   open.setUint8(j, 0); j += 1 // reserved1
                   open.setUint8(j, 0); j += 1 // reserved2
                   open.setUint8(j, 206); j += 1 // frame end byte
