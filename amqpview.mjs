@@ -194,9 +194,8 @@ export default class AMQPView extends DataView {
   }
 
   setTable(byteOffset, table, littleEndian) {
-    let i = byteOffset
-    this.setUint32(byteOffset, 0, littleEndian)
-    i += 4
+    // skip the first 4 bytes which are for the size
+    let i = byteOffset + 4
     for (let [key, value] of Object.entries(table)) {
       i += this.setShortString(i, key, littleEndian)
       i += this.setField(i, value, littleEndian)
@@ -245,7 +244,7 @@ export default class AMQPView extends DataView {
     switch (typeof field) {
       case "string":
         this.setUint8(i, 'S'.charCodeAt(), littleEndian); i += 1
-        i += this.setLongString(field, littleEndian)
+        i += this.setLongString(i, field, littleEndian)
         break
       case "boolean":
         this.setUint8(i, 't'.charCodeAt(), littleEndian); i += 1
