@@ -1,5 +1,5 @@
 import test from 'ava';
-import AMQPClient from './amqpclient.mjs';
+import AMQPClient from '../src/amqp-socket-client.mjs';
 
 test('can open a connection and a channel', t => {
   const amqp = new AMQPClient("amqp://")
