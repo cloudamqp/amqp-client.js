@@ -10,7 +10,8 @@ export default class AMQPClient extends AMQPBaseClient {
     const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
     const username = u.username || "guest"
     const password = u.password || "guest"
-    super(vhost, username, password)
+    const name = u.searchParams.get("name")
+    super(vhost, username, password, name)
     this.tls = u.protocol === "amqps:"
     this.host = u.host || "localhost"
     this.port = u.port || this.tls ? 5671 : 5672

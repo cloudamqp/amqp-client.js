@@ -1,11 +1,13 @@
 import AMQPView from './amqpview.mjs'
 
 export default class AMQPBaseClient {
-  constructor(vhost, username, password) {
+  constructor(vhost, username, password, name) {
     this.vhost = vhost
     this.username = username
     this.password = password
+    this.name = name // connection name
     this.channels = [0]
+    this.version = "1.0.1"
   }
 
   connect() {
@@ -86,19 +88,23 @@ export default class AMQPBaseClient {
                   startOk.setUint32(j, 0); j += 4 // frameSize: to be updated
                   startOk.setUint16(j, 10); j += 2 // class: connection
                   startOk.setUint16(j, 11); j += 2 // method: startok
+                  let platform = "javascript"
+                  if (typeof process !== 'undefined') platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
+                  if (typeof window !== 'undefined')  platform = window.navigator.userAgent
                   const clientProps = {
-                    connection_name: "",
+                    connection_name: this.name || '',
                     product: "amqp-client.js",
-                    platform: "nodejs/javascript",
-                    version: "1.0.1",
+                    information: "https://github.com/cloudamqp/amqp-client.js",
+                    version: this.version,
+                    platform: platform,
                     capabilities: {
-                      publisher_confirms: true,
-                      exchange_exchange_bindings: true,
+                      "authentication_failure_close": true,
                       "basic.nack": true,
-                      per_consumer_qos: true,
-                      authentication_failure_close: true,
-                      consumer_cancel_notify: true,
                       "connection.blocked": false,
+                      "consumer_cancel_notify": true,
+                      "exchange_exchange_bindings": true,
+                      "per_consumer_qos": true,
+                      "publisher_confirms": true,
                     }
                   }
                   j += startOk.setTable(j, clientProps) // client properties

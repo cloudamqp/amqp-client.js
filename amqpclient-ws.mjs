@@ -2,8 +2,8 @@ import AMQPBaseClient from './amqpclient-base.mjs'
 import AMQPView from './amqpview.mjs'
 
 export default class AMQPWebSocketClient extends AMQPBaseClient {
-  constructor(url, vhost, username, password) {
-    super(vhost, username, password)
+  constructor(url, vhost, username, password, name) {
+    super(vhost, username, password, name)
     this.url = url
   }
 
