@@ -1,4 +1,4 @@
-import AMQPBaseClient from './lib/amqpclient-base.mjs'
+import AMQPBaseClient from './lib/amqp-base-client.mjs'
 import AMQPError from './lib/amqp-error.mjs'
 import AMQPView from './lib/amqp-view.mjs'
 import { Buffer } from 'buffer'
