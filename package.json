@@ -6,8 +6,10 @@
   "main": "src/amqp-socket-client.mjs",
   "scripts": {
     "test": "ava",
+    "prebuild": "sed -i'' \"s/CLIENT_VERSION = .*/CLIENT_VERSION = '$npm_package_version'/\" src/amqp-base-client.mjs",
+    "build": "rollup -c",
     "preversion": "npm test",
-    "build": "rollup -c"
+    "version": "npm run build && git add -A dist"
   },
   "repository": {
     "type": "git",

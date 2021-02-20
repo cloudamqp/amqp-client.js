@@ -779,6 +779,8 @@ class AMQPMessage {
   }
 }
 
+const CLIENT_VERSION = '1.0.1';
+
 class AMQPBaseClient {
   constructor(vhost, username, password, name) {
     this.vhost = vhost;
@@ -876,7 +878,7 @@ class AMQPBaseClient {
                     connection_name: this.name || '',
                     product: "amqp-client.js",
                     information: "https://github.com/cloudamqp/amqp-client.js",
-                    version: "1.0.1",
+                    version: CLIENT_VERSION,
                     platform: platform,
                     capabilities: {
                       "authentication_failure_close": true,
