@@ -1,5 +1,6 @@
-import AMQPBaseClient from './amqpclient-base.mjs'
-import AMQPView from './amqpview.mjs'
+import AMQPBaseClient from './lib/amqpclient-base.mjs'
+import AMQPError from './lib/amqp-error.mjs'
+import AMQPView from './lib/amqp-view.mjs'
 import { Buffer } from 'buffer'
 import net from 'net'
 import tls from 'tls'
@@ -18,11 +19,15 @@ export default class AMQPClient extends AMQPBaseClient {
   }
 
   connect() {
-    this.socket = this.tls ? this.connectTLS() : this.connectPlain()
+    const socket = this.tls ? this.connectTLS() : this.connectPlain()
+    Object.defineProperty(this, 'socket', {
+      value: socket,
+      enumerable: false // hide it from console.log etc.
+    })
     return new Promise((resolve, reject) => {
       this.resolvePromise = resolve
       this.rejectPromise = reject
-      this.socket.on('error', reject)
+      this.socket.on('error', (err) => reject(new AMQPError(err, this)))
     })
   }
 
