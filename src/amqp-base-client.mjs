@@ -6,7 +6,7 @@ import AMQPView from './amqp-view.mjs'
 const CLIENT_VERSION = '1.0.1'
 
 export default class AMQPBaseClient {
-  constructor(vhost, username, password, name) {
+  constructor(vhost, username, password, name, platform) {
     this.vhost = vhost
     this.username = username
     Object.defineProperty(this, 'password', {
@@ -14,6 +14,7 @@ export default class AMQPBaseClient {
       enumerable: false // hide it from console.log etc.
     })
     this.name = name // connection name
+    this.platform = platform
     this.channels = [0]
   }
 
@@ -95,15 +96,12 @@ export default class AMQPBaseClient {
                   startOk.setUint32(j, 0); j += 4 // frameSize: to be updated
                   startOk.setUint16(j, 10); j += 2 // class: connection
                   startOk.setUint16(j, 11); j += 2 // method: startok
-                  let platform = "javascript"
-                  if (typeof process !== 'undefined') platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
-                  if (typeof window !== 'undefined')  platform = window.navigator.userAgent
                   const clientProps = {
                     connection_name: this.name || '',
                     product: "amqp-client.js",
                     information: "https://github.com/cloudamqp/amqp-client.js",
                     version: CLIENT_VERSION,
-                    platform: platform,
+                    platform: this.platform,
                     capabilities: {
                       "authentication_failure_close": true,
                       "basic.nack": true,

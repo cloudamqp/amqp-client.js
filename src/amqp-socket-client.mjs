@@ -4,6 +4,7 @@ import AMQPView from './amqp-view.mjs'
 import { Buffer } from 'buffer'
 import net from 'net'
 import tls from 'tls'
+import process from 'process'
 
 export default class AMQPClient extends AMQPBaseClient {
   constructor(url) {
@@ -12,7 +13,8 @@ export default class AMQPClient extends AMQPBaseClient {
     const username = u.username || "guest"
     const password = u.password || "guest"
     const name = u.searchParams.get("name")
-    super(vhost, username, password, name)
+    const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
+    super(vhost, username, password, name, platform)
     this.tls = u.protocol === "amqps:"
     this.host = u.host || "localhost"
     this.port = u.port || this.tls ? 5671 : 5672
