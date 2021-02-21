@@ -220,13 +220,25 @@ export default class AMQPBaseClient {
 
                   const channel = this.channels[channelId]
                   if (channel) {
+                    channel.setClosed()
+                    delete this.channels[channelId]
                     const msg = `channel ${channelId} closed: ${text} (${code})`
                     channel.rejectPromise(new AMQPError(msg, this))
-                    delete this.channels[channelId]
                   } else {
                     console.warn("channel", channelId, "already closed")
                   }
 
+                  break
+                }
+                case 41: { // closeOk
+                  const channel = this.channels[channelId]
+                  if (channel) {
+                    channel.setClosed()
+                    delete this.channels[channelId]
+                    channel.resolvePromise()
+                  } else {
+                    this.rejectPromise(`channel ${channelId} already closed`)
+                  }
                   break
                 }
                 default:

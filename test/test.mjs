@@ -42,3 +42,12 @@ test('can cancel a consumer', t => {
     .then((consumer) => consumer.cancel())
     .then((channel) => t.deepEqual(channel.consumers, {}))
 })
+
+test('can close a channel', async t => {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await ch.close()
+  const error = await t.throwsAsync(async () => ch.close())
+  t.is(error.message, 'Channel already closed');
+})

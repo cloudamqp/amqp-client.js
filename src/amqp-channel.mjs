@@ -1,3 +1,4 @@
+import AMQPError from './amqp-error.mjs'
 import AMQPQueue from './amqp-queue.mjs'
 import AMQPView from './amqp-view.mjs'
 
@@ -6,10 +7,38 @@ export default class AMQPChannel {
     this.connection = connection
     this.id = id
     this.consumers = {}
+    this.closed = false
   }
 
-  close() {
-    throw "Not yet implemented"
+  setClosed() {
+    this.closed = true
+  }
+
+  rejectClosed() {
+    return Promise.reject(new AMQPError("Channel already closed", this.connection))
+  }
+
+  close({ code = 200, reason = "" } = {}) {
+    if (this.closed) return this.rejectClosed()
+    this.closed = true
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(512))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel
+    frame.setUint32(j, 0); j += 4 // frameSize
+    frame.setUint16(j, 20); j += 2 // class: channel
+    frame.setUint16(j, 40); j += 2 // method: close
+    frame.setUint16(j, code); j += 2 // reply code
+    j += frame.setShortString(j, reason) // reply reason
+    frame.setUint16(j, 0); j += 2 // failing-class-id
+    frame.setUint16(j, 0); j += 2 // failing-method-id
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    frame.setUint32(3, j - 8) // update frameSize
+    this.connection.send(new Uint8Array(frame.buffer, 0, j))
+    return new Promise((resolve, reject) => {
+      this.resolvePromise = resolve
+      this.rejectPromise = reject
+    })
   }
 
   // Message is ready to be delivered to consumer
@@ -25,6 +54,7 @@ export default class AMQPChannel {
   }
 
   queueBind(queue, exchange, routingKey, args = {}) {
+    if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
     const bind = new AMQPView(new ArrayBuffer(4096))
@@ -49,6 +79,7 @@ export default class AMQPChannel {
   }
 
   queueUnbind(queue, exchange, routingKey, args = {}) {
+    if (this.closed) return this.rejectClosed()
     let j = 0
     const unbind = new AMQPView(new ArrayBuffer(4096))
     unbind.setUint8(j, 1); j += 1 // type: method
@@ -71,6 +102,7 @@ export default class AMQPChannel {
   }
 
   queuePurge(queue) {
+    if (this.closed) return this.rejectClosed()
     const noWait = true
     let j = 0
     const purge = new AMQPView(new ArrayBuffer(512))
@@ -92,6 +124,7 @@ export default class AMQPChannel {
   }
 
   queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "", args = {}} = {}) {
+    if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
     const declare = new AMQPView(new ArrayBuffer(4096))
@@ -121,6 +154,7 @@ export default class AMQPChannel {
   }
 
   queueDelete(name = "", { ifUnused = false, ifEmpty = false } = {}) {
+    if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
@@ -147,6 +181,7 @@ export default class AMQPChannel {
   }
 
   basicQos(prefetchCount, prefetchSize = 0, global = false) {
+    if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(19))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -166,6 +201,7 @@ export default class AMQPChannel {
   }
 
   basicConsume(queue, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback) {
+    if (this.closed) return this.rejectClosed()
     let j = 0
     const noWait = false
     const noLocal = false
@@ -199,6 +235,7 @@ export default class AMQPChannel {
   }
 
   basicCancel(tag) {
+    if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
@@ -223,6 +260,7 @@ export default class AMQPChannel {
   }
 
   basicAck(deliveryTag, multiple = false) {
+    if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(21))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -237,6 +275,7 @@ export default class AMQPChannel {
   }
 
   basicReject(deliveryTag, requeue = false) {
+    if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(21))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -251,6 +290,7 @@ export default class AMQPChannel {
   }
 
   basicNack(deliveryTag, requeue = false, multiple = false) {
+    if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(21))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -268,6 +308,7 @@ export default class AMQPChannel {
   }
 
   basicPublish(exchange, routingkey, data, properties) {
+    if (this.closed) return this.rejectClosed()
     if (data instanceof Uint8Array) {
       // noop
     } else if (data instanceof ArrayBuffer) {
@@ -340,6 +381,7 @@ export default class AMQPChannel {
   }
 
   confirmSelect() {
+    if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
     let frame = new AMQPView(new ArrayBuffer(13))
