@@ -33,7 +33,7 @@ export default class AMQPQueue {
   subscribe({noAck = true, exclusive = false} = {}, callback) {
     return new Promise((resolve, reject) => {
       this.channel.basicConsume(this.name, {noAck, exclusive}, callback)
-        .then((consumerTag) => resolve(new AMQPConsumer(this.channel, consumerTag)))
+        .then(resolve)
         .catch(reject)
     })
   }

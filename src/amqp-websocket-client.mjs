@@ -33,7 +33,14 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
   }
 
   send(bytes) {
-    return this.socket.send(bytes)
+    return new Promise((resolve, reject) => {
+      try {
+        this.socket.send(bytes)
+        resolve()
+      } catch (err) {
+        reject(err)
+      }
+    })
   }
 
   closeSocket() {

@@ -15,7 +15,8 @@ export default class AMQPBaseClient {
     })
     this.name = name // connection name
     this.platform = platform
-    this.channels = [0]
+    this.channels = [new AMQPChannel(this, 0)]
+    this.closed = false
   }
 
   connect() {
@@ -30,7 +31,13 @@ export default class AMQPBaseClient {
     throw "Abstract method not implemented"
   }
 
+  rejectClosed() {
+    return Promise.reject(new AMQPError("Connection closed", this))
+  }
+
   close({ code = 200, reason = "" } = {}) {
+    if (this.closed) return this.rejectClosed()
+    this.closed = true
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -44,10 +51,14 @@ export default class AMQPBaseClient {
     frame.setUint16(j, 0); j += 2 // failing-method-id
     frame.setUint8(j, 206); j += 1 // frame end byte
     frame.setUint32(3, j - 8) // update frameSize
-    this.send(new Uint8Array(frame.buffer, 0, j))
+    return new Promise((resolve, reject) => {
+      this.send(new Uint8Array(frame.buffer, 0, j)).catch(reject)
+      this.resolvePromise = resolve
+    })
   }
 
   channel(id) {
+    if (this.closed) return this.rejectClosed()
     return new Promise((resolve, reject) => {
       // Store channels in an array, set position to null when channel is closed
       // Look for first null value or add one the end
@@ -68,7 +79,7 @@ export default class AMQPBaseClient {
       channelOpen.setUint16(j, 10); j += 2 // method: open
       channelOpen.setUint8(j, 0); j += 1 // reserved1
       channelOpen.setUint8(j, 206); j += 1 // frame end byte
-      this.send(channelOpen.buffer)
+      this.send(channelOpen.buffer).catch(reject)
     })
   }
 
@@ -179,12 +190,18 @@ export default class AMQPBaseClient {
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
                   const msg = `connection closed: ${text} (${code})`
-                  this.rejectPromise(new AMQPError(msg, this))
+                  const err = new AMQPError(msg, this)
+                  this.channels.forEach((ch) => ch.setClosed(err))
+                  this.channels = []
+                  this.rejectPromise(err)
 
                   this.closeSocket()
                   break
                 }
                 case 51: { // closeOk
+                  this.channels.forEach((ch) => ch.setClosed())
+                  this.channels = []
+                  this.resolvePromise()
                   this.closeSocket()
                   break
                 }
@@ -220,10 +237,11 @@ export default class AMQPBaseClient {
 
                   const channel = this.channels[channelId]
                   if (channel) {
-                    channel.setClosed()
-                    delete this.channels[channelId]
                     const msg = `channel ${channelId} closed: ${text} (${code})`
-                    channel.rejectPromise(new AMQPError(msg, this))
+                    const err = new AMQPError(msg, this)
+                    channel.setClosed(err)
+                    delete this.channels[channelId]
+                    channel.rejectPromise(err)
                   } else {
                     console.warn("channel", channelId, "already closed")
                   }
@@ -370,6 +388,7 @@ export default class AMQPBaseClient {
           const channel = this.channels[channelId]
           if (!channel) {
             console.warn("Cannot deliver to closed channel", channelId)
+            i += frameSize
             break
           }
           const delivery = channel.delivery
