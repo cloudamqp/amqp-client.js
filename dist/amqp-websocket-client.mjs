@@ -860,7 +860,7 @@ class AMQPMessage {
   }
 }
 
-const VERSION = '1.0.3';
+const VERSION = '1.0.4';
 
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {

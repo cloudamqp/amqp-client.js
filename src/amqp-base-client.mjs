@@ -3,7 +3,7 @@ import AMQPError from './amqp-error.mjs'
 import AMQPMessage from './amqp-message.mjs'
 import AMQPView from './amqp-view.mjs'
 
-const VERSION = '1.0.3'
+const VERSION = '1.0.4'
 
 export default class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {

@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@cloudamqp/amqp-client",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)",
   "main": "src/amqp-socket-client.mjs",
   "scripts": {
@@ -12,7 +12,10 @@
     "preversion": "npm test",
     "version": "npm run build && git add -A dist"
   },
-  "files": ["src/", "dist/"],
+  "files": [
+    "src/",
+    "dist/"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cloudamqp/amqp-client.js.git"
