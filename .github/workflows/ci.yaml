@@ -21,5 +21,7 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+    - name: Install RabbitMQ
+      run: sudo apt-get install -qq rabbitmq-server
     - run: npm install
     - run: npm test
