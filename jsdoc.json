@@ -1,0 +1,10 @@
+{
+  "source": {
+    "include": ["README.md", "package.json", "./src/"],
+    "includePattern": ".+\\.(js(doc|x)?|mjs)$"
+  },
+  "opts": {
+    "destination": "./docs/"
+  },
+  "plugins": ["plugins/markdown"]
+}

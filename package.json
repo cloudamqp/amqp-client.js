@@ -5,6 +5,7 @@
   "description": "AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)",
   "main": "src/amqp-socket-client.mjs",
   "scripts": {
+    "docs": "jsdoc -c jsdoc.json",
     "test": "ava",
     "prebuild": "sed -i'' \"s/CLIENT_VERSION = .*/CLIENT_VERSION = '$npm_package_version'/\" src/amqp-base-client.mjs",
     "build": "rollup -c",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "ava": "^3.15.0",
     "eslint": "^7.20.0",
+    "jsdoc": "^3.6.6",
     "rollup": "^2.39.0"
   }
 }

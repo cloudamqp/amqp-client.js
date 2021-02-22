@@ -51,3 +51,12 @@ test('can close a channel', async t => {
   const error = await t.throwsAsync(async () => ch.close())
   t.is(error.message, 'Channel already closed');
 })
+
+test('connection error raises everywhere', async t => {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await conn.close()
+  const error = await t.throwsAsync(async () => ch.close())
+  t.is(error.message, 'Channel already closed');
+})
