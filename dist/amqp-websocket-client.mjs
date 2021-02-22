@@ -17,10 +17,11 @@ class AMQPConsumer {
     this.closed = true;
     this.closedError = err;
     clearTimeout(this.timeoutId);
-    if (err)
+    if (err) {
       if (this.rejectWait) this.rejectWait(err);
-    else
+    } else {
       if (this.resolveWait) this.resolveWait();
+    }
   }
 
   cancel() {
@@ -860,7 +861,7 @@ class AMQPMessage {
   }
 }
 
-const VERSION = '1.0.4';
+const VERSION = '1.0.5';
 
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
