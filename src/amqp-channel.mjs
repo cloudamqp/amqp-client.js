@@ -12,7 +12,6 @@ export default class AMQPChannel {
   }
 
   setClosed(err) {
-    console.log("setting channel", this.id, "closed", err)
     if (!this.closed) {
       this.closed = true
       // Close all consumers
