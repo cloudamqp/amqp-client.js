@@ -11,10 +11,11 @@ export default class AMQPConsumer {
     this.closed = true
     this.closedError = err
     clearTimeout(this.timeoutId)
-    if (err)
+    if (err) {
       if (this.rejectWait) this.rejectWait(err)
-    else
+    } else {
       if (this.resolveWait) this.resolveWait()
+    }
   }
 
   cancel() {
