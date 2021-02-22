@@ -5,11 +5,11 @@ export default class AMQPConsumer {
     this.channel = channel
     this.tag = tag
     this.onMessage = onMessage
-    this.closed = false
   }
 
   setClosed(err) {
-    this.closed = err
+    this.closed = true
+    this.closedError = err
     clearTimeout(this.timeoutId)
     if (err)
       if (this.rejectWait) this.rejectWait(err)
@@ -26,8 +26,8 @@ export default class AMQPConsumer {
     * resolves if the consumer/channel/connection is closed by the client
     * rejects if the server closed or there was a network error */
   wait(timeout) {
-    if (this.closed === true) return Promise.resolve()
-    if (this.closed) return Promise.reject(this.closed)
+    if (this.closedError) return Promise.reject(this.closedError)
+    if (this.closed) return Promise.resolve()
     return new Promise((resolve, reject) => {
       this.resolveWait = resolve
       this.rejectWait = reject
