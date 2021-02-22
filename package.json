@@ -12,6 +12,7 @@
     "preversion": "npm test",
     "version": "npm run build && git add -A dist"
   },
+  "files": ["src/", "dist/"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cloudamqp/amqp-client.js.git"
