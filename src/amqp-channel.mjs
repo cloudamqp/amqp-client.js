@@ -1,6 +1,7 @@
 import AMQPError from './amqp-error.mjs'
 import AMQPQueue from './amqp-queue.mjs'
 import AMQPView from './amqp-view.mjs'
+import AMQPConsumer from './amqp-consumer.mjs'
 
 export default class AMQPChannel {
   constructor(connection, id) {
@@ -10,12 +11,20 @@ export default class AMQPChannel {
     this.closed = false
   }
 
-  setClosed() {
-    this.closed = true
+  setClosed(err) {
+    console.log("setting channel", this.id, "closed", err)
+    if (!this.closed) {
+      // Close all channels
+      Object.values(this.consumers).forEach((cons) => cons.setClosed(err))
+      this.consumers = [] // Empty consumers
+      if (this.rejectPromise) this.rejectPromise(err) // Reject if waiting for a RPC command
+    } else {
+      this.closed = true
+    }
   }
 
   rejectClosed() {
-    return Promise.reject(new AMQPError("Channel already closed", this.connection))
+    return Promise.reject(new AMQPError("Channel is closed", this.connection))
   }
 
   close({ code = 200, reason = "" } = {}) {
@@ -44,11 +53,11 @@ export default class AMQPChannel {
   // Message is ready to be delivered to consumer
   deliver() {
     const d = this.delivery
-    delete d.bodyPos
-    const c = this.consumers[d.consumerTag]
     this.delivery = null
-    if (c)
-      c(d)
+    delete d.bodyPos
+    const consumer = this.consumers[d.consumerTag]
+    if (consumer)
+      consumer.onMessage(d)
     else
       console.error("Consumer", d.consumerTag, "on channel", this.id, "doesn't exists")
   }
@@ -227,8 +236,9 @@ export default class AMQPChannel {
 
     return new Promise((resolve, reject) => {
       this.resolvePromise = (consumerTag) => {
-        this.consumers[consumerTag] = callback
-        resolve(consumerTag)
+        const consumer = new AMQPConsumer(this, consumerTag, callback)
+        this.consumers[consumerTag] = consumer
+        resolve(consumer)
       }
       this.rejectPromise = reject
     })
@@ -252,6 +262,8 @@ export default class AMQPChannel {
 
     return new Promise((resolve, reject) => {
       this.resolvePromise = (consumerTag) => {
+        const consumer = this.consumers[consumerTag]
+        consumer.setClosed()
         delete this.consumers[consumerTag]
         resolve(this)
       }
