@@ -196,7 +196,7 @@ export default class AMQPChannel {
     frame.setUint32(j, 11); j += 4 // frameSize
     frame.setUint16(j, 60); j += 2 // class: basic
     frame.setUint16(j, 10); j += 2 // method: qos
-    frame.setUint31(j, prefetchSize); j += 4 // prefetch size
+    frame.setUint32(j, prefetchSize); j += 4 // prefetch size
     frame.setUint16(j, prefetchCount); j += 2 // prefetch count
     frame.setUint8(j, global ? 1 : 0); j += 1 // glocal
     frame.setUint8(j, 206); j += 1 // frame end byte
