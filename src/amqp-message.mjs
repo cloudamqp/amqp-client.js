@@ -8,11 +8,15 @@ export default class AMQPMessage {
     return decoder.decode(this.body)
   }
 
-  ack() {
-    return this.channel.basicAck(this.deliveryTag)
+  ack(multiple = false) {
+    return this.channel.basicAck(this.deliveryTag, multiple)
   }
 
-  nack() {
-    return this.channel.basicNack(this.deliveryTag)
+  reject(requeue = false) {
+    return this.channel.basicReject(this.deliveryTag, requeue)
+  }
+
+  nack(requeue = false, multiple = false) {
+    return this.channel.basicNack(this.deliveryTag, requeue, multiple)
   }
 }
