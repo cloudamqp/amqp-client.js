@@ -108,7 +108,7 @@ export default class AMQPBaseClient {
                   startOk.setUint16(j, 10); j += 2 // class: connection
                   startOk.setUint16(j, 11); j += 2 // method: startok
                   const clientProps = {
-                    connection_name: this.name || '',
+                    connection_name: this.name,
                     product: "amqp-client.js",
                     information: "https://github.com/cloudamqp/amqp-client.js",
                     version: VERSION,
@@ -123,6 +123,7 @@ export default class AMQPBaseClient {
                       "publisher_confirms": true,
                     }
                   }
+                  if (!this.name) delete clientProps["connection_name"]
                   j += startOk.setTable(j, clientProps) // client properties
                   j += startOk.setShortString(j, "PLAIN") // mechanism
                   const response = `\u0000${this.username}\u0000${this.password}`
