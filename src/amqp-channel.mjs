@@ -420,4 +420,8 @@ export default class AMQPChannel {
         .catch(reject)
     })
   }
+
+  prefetch(prefetchCount) {
+    return this.basicQos(prefetchCount)
+  }
 }
