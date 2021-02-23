@@ -9,25 +9,16 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
 
   connect() {
     const socket = new WebSocket(this.url)
-    socket.binaryType = "arraybuffer"
     this.socket = socket
+    socket.binaryType = "arraybuffer"
+    socket.onmessage = (event) => this.parseFrames(new AMQPView(event.data))
     return new Promise((resolve, reject) => {
-      this.resolvePromise = resolve
-      this.rejectPromise = reject
+      this.connectPromise = [resolve, reject]
       socket.onclose = reject
       socket.onerror = reject
       socket.onopen = () => {
         const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])
         socket.send(amqpstart)
-      }
-      socket.onmessage = (event) => {
-        if (event.data instanceof ArrayBuffer) {
-          const view = new AMQPView(event.data)
-          this.parseFrames(view)
-        } else {
-          socket.close()
-          reject("invalid data on socket")
-        }
       }
     })
   }

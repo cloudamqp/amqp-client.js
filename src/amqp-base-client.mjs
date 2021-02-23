@@ -52,34 +52,35 @@ export default class AMQPBaseClient {
     frame.setUint8(j, 206); j += 1 // frame end byte
     frame.setUint32(3, j - 8) // update frameSize
     return new Promise((resolve, reject) => {
-      this.send(new Uint8Array(frame.buffer, 0, j)).catch(reject)
-      this.resolvePromise = resolve
+      this.send(new Uint8Array(frame.buffer, 0, j))
+        .then(() => this.closePromise = [resolve, reject])
+        .catch(reject)
     })
   }
 
   channel(id) {
     if (this.closed) return this.rejectClosed()
-    return new Promise((resolve, reject) => {
-      // Store channels in an array, set position to null when channel is closed
-      // Look for first null value or add one the end
-      if (!id)
-        id = this.channels.findIndex((ch) => ch === undefined)
-      if (id === -1) id = this.channels.length
-      const channel = new AMQPChannel(this, id)
-      this.channels[id] = channel
-      channel.resolvePromise = resolve
-      channel.rejectPromise = reject
+    // Store channels in an array, set position to null when channel is closed
+    // Look for first null value or add one the end
+    if (!id)
+      id = this.channels.findIndex((ch) => ch === undefined)
+    if (id === -1) id = this.channels.length
+    const channel = new AMQPChannel(this, id)
+    this.channels[id] = channel
 
-      let j = 0
-      const channelOpen = new AMQPView(new ArrayBuffer(13))
-      channelOpen.setUint8(j, 1); j += 1 // type: method
-      channelOpen.setUint16(j, id); j += 2 // channel id
-      channelOpen.setUint32(j, 5); j += 4 // frameSize
-      channelOpen.setUint16(j, 20); j += 2 // class: channel
-      channelOpen.setUint16(j, 10); j += 2 // method: open
-      channelOpen.setUint8(j, 0); j += 1 // reserved1
-      channelOpen.setUint8(j, 206); j += 1 // frame end byte
-      this.send(channelOpen.buffer).catch(reject)
+    let j = 0
+    const channelOpen = new AMQPView(new ArrayBuffer(13))
+    channelOpen.setUint8(j, 1); j += 1 // type: method
+    channelOpen.setUint16(j, id); j += 2 // channel id
+    channelOpen.setUint32(j, 5); j += 4 // frameSize
+    channelOpen.setUint16(j, 20); j += 2 // class: channel
+    channelOpen.setUint16(j, 10); j += 2 // method: open
+    channelOpen.setUint8(j, 0); j += 1 // reserved1
+    channelOpen.setUint8(j, 206); j += 1 // frame end byte
+    return new Promise((resolve, reject) => {
+      this.send(channelOpen.buffer)
+        .then(() => channel.promises.push([resolve, reject]))
+        .catch(reject)
     })
   }
 
@@ -172,7 +173,9 @@ export default class AMQPBaseClient {
                 }
                 case 41: { // openok
                   i += 1 // reserved1
-                  this.resolvePromise(this)
+                  const [resolve, ] = this.connectPromise
+                  delete this.connectPromise
+                  resolve(this)
                   break
                 }
                 case 50: { // close
@@ -194,7 +197,11 @@ export default class AMQPBaseClient {
                   const err = new AMQPError(msg, this)
                   this.channels.forEach((ch) => ch.setClosed(err))
                   this.channels = []
-                  this.rejectPromise(err)
+
+                  // if closed while connecting
+                  const [, reject] = this.connectPromise
+                  if (reject) reject(err)
+                  delete this.connectPromise
 
                   this.closeSocket()
                   break
@@ -202,7 +209,9 @@ export default class AMQPBaseClient {
                 case 51: { // closeOk
                   this.channels.forEach((ch) => ch.setClosed())
                   this.channels = []
-                  this.resolvePromise()
+                  const [resolve, ] = this.closePromise
+                  resolve()
+                  delete this.closePromise
                   this.closeSocket()
                   break
                 }
@@ -242,7 +251,6 @@ export default class AMQPBaseClient {
                     const err = new AMQPError(msg, this)
                     channel.setClosed(err)
                     delete this.channels[channelId]
-                    channel.rejectPromise(err)
                   } else {
                     console.warn("channel", channelId, "already closed")
                   }

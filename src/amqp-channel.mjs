@@ -5,10 +5,33 @@ import AMQPConsumer from './amqp-consumer.mjs'
 
 export default class AMQPChannel {
   constructor(connection, id) {
+    this.promises = []
     this.connection = connection
     this.id = id
     this.consumers = {}
     this.closed = false
+  }
+
+  resolvePromise(value) {
+    if (this.promises.length === 0) return false
+    const [resolve, ] = this.promises.shift()
+    resolve(value)
+    return true
+  }
+
+  rejectPromise(err) {
+    if (this.promises.length === 0) return false
+    const [, reject] = this.promises.shift()
+    reject(err)
+    return true
+  }
+
+  sendRpc(frame, frameSize) {
+    return new Promise((resolve, reject) => {
+      this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
+        .then(() => this.promises.push([resolve, reject]))
+        .catch(reject)
+    })
   }
 
   setClosed(err) {
@@ -17,7 +40,8 @@ export default class AMQPChannel {
       // Close all consumers
       Object.values(this.consumers).forEach((consumer) => consumer.setClosed(err))
       this.consumers = [] // Empty consumers
-      if (this.rejectPromise) this.rejectPromise(err) // Reject if waiting for a RPC command
+      // Empty and reject all RPC promises
+      while(this.rejectPromise(err)) { 1 }
     }
   }
 
@@ -41,11 +65,7 @@ export default class AMQPChannel {
     frame.setUint16(j, 0); j += 2 // failing-method-id
     frame.setUint8(j, 206); j += 1 // frame end byte
     frame.setUint32(3, j - 8) // update frameSize
-    return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(frame.buffer, 0, j)).catch(reject)
-      this.resolvePromise = resolve
-      this.rejectPromise = reject
-    })
+    return this.sendRpc(frame, j)
   }
 
   // Message is ready to be delivered to consumer
@@ -78,11 +98,7 @@ export default class AMQPChannel {
     j += bind.setTable(j, args)
     bind.setUint8(j, 206); j += 1 // frame end byte
     bind.setUint32(3, j - 8) // update frameSize
-    return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(bind.buffer, 0, j)).catch(reject)
-      this.resolvePromise = () => resolve(this)
-      this.rejectPromise = reject
-    })
+    return this.sendRpc(bind, j)
   }
 
   queueUnbind(queue, exchange, routingKey, args = {}) {
@@ -101,11 +117,7 @@ export default class AMQPChannel {
     j += unbind.setTable(j, args)
     unbind.setUint8(j, 206); j += 1 // frame end byte
     unbind.setUint32(3, j - 8) // update frameSize
-    return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(unbind.buffer, 0, j)).catch(reject)
-      this.resolvePromise = resolve
-      this.rejectPromise = reject
-    })
+    return this.sendRpc(unbind, j)
   }
 
   queuePurge(queue) {
@@ -123,11 +135,7 @@ export default class AMQPChannel {
     purge.setUint8(j, noWait ? 1 : 0); j += 1 // noWait
     purge.setUint8(j, 206); j += 1 // frame end byte
     purge.setUint32(3, j - 8) // update frameSize
-    return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(purge.buffer, 0, j)).catch(reject)
-      this.resolvePromise = resolve
-      this.rejectPromise = reject
-    })
+    return this.sendRpc(purge, j)
   }
 
   queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "", args = {}} = {}) {
@@ -152,12 +160,7 @@ export default class AMQPChannel {
     j += declare.setTable(j, args) // arguments
     declare.setUint8(j, 206); j += 1 // frame end byte
     declare.setUint32(3, j - 8) // update frameSize
-
-    return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(declare.buffer, 0, j)).catch(reject)
-      this.resolvePromise = resolve
-      this.rejectPromise = reject
-    })
+    return this.sendRpc(declare, j)
   }
 
   queueDelete(name = "", { ifUnused = false, ifEmpty = false } = {}) {
@@ -179,12 +182,7 @@ export default class AMQPChannel {
     frame.setUint8(j, bits); j += 1
     frame.setUint8(j, 206); j += 1 // frame end byte
     frame.setUint32(3, j - 8) // update frameSize
-
-    return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(frame.buffer, 0, j)).catch(reject)
-      this.resolvePromise = resolve
-      this.rejectPromise = reject
-    })
+    return this.sendRpc(frame, j)
   }
 
   basicQos(prefetchCount, prefetchSize = 0, global = false) {
@@ -200,11 +198,7 @@ export default class AMQPChannel {
     frame.setUint16(j, prefetchCount); j += 2 // prefetch count
     frame.setUint8(j, global ? 1 : 0); j += 1 // glocal
     frame.setUint8(j, 206); j += 1 // frame end byte
-    return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(frame.buffer, 0, j)).catch(reject)
-      this.resolvePromise = resolve
-      this.rejectPromise = reject
-    })
+    return this.sendRpc(frame, j)
   }
 
   basicConsume(queue, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback) {
@@ -232,13 +226,11 @@ export default class AMQPChannel {
     frame.setUint32(3, j - 8) // update frameSize
 
     return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(frame.buffer, 0, j)).catch(reject)
-      this.resolvePromise = (consumerTag) => {
+      this.sendRpc(frame, j).then((consumerTag) =>  {
         const consumer = new AMQPConsumer(this, consumerTag, callback)
         this.consumers[consumerTag] = consumer
         resolve(consumer)
-      }
-      this.rejectPromise = reject
+      }).catch(reject)
     })
   }
 
@@ -258,14 +250,12 @@ export default class AMQPChannel {
     frame.setUint32(3, j - 8) // update frameSize
 
     return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(frame.buffer, 0, j)).catch(reject)
-      this.resolvePromise = (consumerTag) => {
+      this.sendRpc(frame, j).then((consumerTag) => {
         const consumer = this.consumers[consumerTag]
         consumer.setClosed()
         delete this.consumers[consumerTag]
         resolve(this)
-      }
-      this.rejectPromise = reject
+      }).catch(reject)
     })
   }
 
@@ -406,11 +396,7 @@ export default class AMQPChannel {
     frame.setUint16(j, 10); j += 2 // method: select
     frame.setUint8(j, noWait ? 1 : 0); j += 1 // no wait
     frame.setUint8(j, 206); j += 1 // frame end byte
-    return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(frame.buffer, 0, j)).catch(reject)
-      this.resolvePromise = resolve
-      this.rejectPromise = reject
-    })
+    return this.sendRpc(frame, j)
   }
 
   queue(name = "", props = {}) {
