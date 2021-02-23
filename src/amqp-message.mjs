@@ -3,9 +3,15 @@ export default class AMQPMessage {
     this.channel = channel
   }
 
-  bodyString() {
+  bodyToString() {
     const decoder = new TextDecoder()
     return decoder.decode(this.body)
+  }
+
+  /** Alias for bodyToString()
+  */
+  bodyString() {
+    return this.bodyToString()
   }
 
   ack(multiple = false) {
