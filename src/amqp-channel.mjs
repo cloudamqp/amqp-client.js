@@ -319,7 +319,6 @@ export default class AMQPChannel {
 
   basicPublish(exchange, routingkey, data, properties) {
     if (this.closed) return this.rejectClosed()
-    const sends = []
     if (data instanceof Uint8Array) {
       // noop
     } else if (data instanceof ArrayBuffer) {
@@ -333,6 +332,7 @@ export default class AMQPChannel {
       data = encoder.encode(json)
     }
 
+    const promises = []
     let j = 0
     let buffer = new AMQPView(new ArrayBuffer(4096))
     buffer.setUint8(j, 1); j += 1 // type: method
@@ -362,14 +362,14 @@ export default class AMQPChannel {
     // Send current frames if there's no body to send
     if (data.byteLength === 0) {
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))
-      sends.push(p)
+      promises.push(p)
       return
     }
 
     // Send current frames if a body frame can't fit in the rest of the frame buffer
     if (j >= 4096 - 8) {
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))
-      sends.push(p)
+      promises.push(p)
       j = 0
     }
 
@@ -387,11 +387,11 @@ export default class AMQPChannel {
       bodyView.set(dataSlice); j += frameSize // body content
       buffer.setUint8(j, 206); j += 1 // frame end byte
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))
-      sends.push(p)
+      promises.push(p)
       bodyPos += frameSize
       j = 0
     }
-    return Promise.all(sends)
+    return Promise.all(promises)
   }
 
   confirmSelect() {
