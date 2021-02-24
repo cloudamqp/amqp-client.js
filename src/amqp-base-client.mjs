@@ -2,7 +2,8 @@ import AMQPChannel from './amqp-channel.mjs'
 import AMQPError from './amqp-error.mjs'
 import AMQPMessage from './amqp-message.mjs'
 import AMQPView from './amqp-view.mjs'
-import { version } from '../package.json';
+
+const VERSION = '1.0.5'
 
 export default class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
@@ -111,7 +112,7 @@ export default class AMQPBaseClient {
                     connection_name: this.name,
                     product: "amqp-client.js",
                     information: "https://github.com/cloudamqp/amqp-client.js",
-                    version: version,
+                    version: VERSION,
                     platform: this.platform,
                     capabilities: {
                       "authentication_failure_close": true,
