@@ -334,7 +334,7 @@ export default class AMQPBaseClient {
                 case 60: { // deliver
                   const [ consumerTag, consumerTagLen ] = view.getShortString(i); i += consumerTagLen
                   const deliveryTag = view.getUint64(i); i += 8
-                  const redeliviered = view.getUint8(i) === 1; i += 1
+                  const redelivered = view.getUint8(i) === 1; i += 1
                   const [ exchange, exchangeLen ]= view.getShortString(i); i += exchangeLen
                   const [ routingKey, routingKeyLen ]= view.getShortString(i); i += routingKeyLen
                   const channel = this.channels[channelId]
@@ -347,7 +347,7 @@ export default class AMQPBaseClient {
                   message.deliveryTag = deliveryTag
                   message.exchange = exchange
                   message.routingKey = routingKey
-                  message.redeliviered = redeliviered
+                  message.redelivered = redelivered
                   channel.delivery = message
                   break
                 }
