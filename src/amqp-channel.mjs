@@ -69,15 +69,15 @@ export default class AMQPChannel {
   }
 
   // Message is ready to be delivered to consumer
-  deliver() {
-    const d = this.delivery
-    this.delivery = null
-    delete d.bodyPos
-    const consumer = this.consumers[d.consumerTag]
-    if (consumer)
-      consumer.onMessage(d)
-    else
-      console.error("Consumer", d.consumerTag, "on channel", this.id, "doesn't exists")
+  deliver(msg) {
+    queueMicrotask(() => { // Enqueue microtask to avoid race condition with ConsumeOk
+      const consumer = this.consumers[msg.consumerTag]
+      if (consumer) {
+        consumer.onMessage(msg)
+      } else {
+        console.error("Consumer", msg.consumerTag, "on channel", this.id, "doesn't exists")
+      }
+    })
   }
 
   queueBind(queue, exchange, routingKey, args = {}) {
