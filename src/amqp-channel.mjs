@@ -70,6 +70,7 @@ export default class AMQPChannel {
 
   // Message is ready to be delivered to consumer
   deliver(msg) {
+    this.delivery = null
     queueMicrotask(() => { // Enqueue microtask to avoid race condition with ConsumeOk
       const consumer = this.consumers[msg.consumerTag]
       if (consumer) {

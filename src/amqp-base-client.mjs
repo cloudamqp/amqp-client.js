@@ -390,7 +390,7 @@ export default class AMQPBaseClient {
           delivery.body = new Uint8Array(bodySize)
           delivery.bodyPos = 0 // if body is split over multiple frames
           if (bodySize === 0)
-            channel.deliver()
+            channel.deliver(delivery)
           break
         }
         case 3: { // body
@@ -406,7 +406,7 @@ export default class AMQPBaseClient {
           delivery.bodyPos += frameSize
           i += frameSize
           if (delivery.bodyPos === delivery.bodySize)
-            channel.deliver()
+            channel.deliver(delivery)
           break
         }
         case 8: { // heartbeat
