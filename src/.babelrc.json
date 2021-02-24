@@ -3,7 +3,7 @@
     ["@babel/preset-env", {
       "bugfixes": true,
       "debug": true,
-      "targets": "edge 79, chrome 71, firefox 69",
+      "targets": "defaults, not ie 11, not ie_mob 11",
       "corejs": { "version": "3.8" },
       "useBuiltIns": "usage"
     }]
