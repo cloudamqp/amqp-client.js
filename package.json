@@ -7,7 +7,6 @@
   "scripts": {
     "docs": "jsdoc -c jsdoc.json",
     "test": "ava",
-    "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.mjs && git add src/amqp-base-client.mjs",
     "build": "rollup -c",
     "preversion": "npm test",
     "version": "npm run build && git add -A dist"
@@ -31,7 +30,14 @@
   },
   "homepage": "https://github.com/cloudamqp/amqp-client.js#readme",
   "devDependencies": {
+    "@babel/core": "^7.13.1",
+    "@babel/preset-env": "^7.13.5",
+    "@rollup/plugin-babel": "^5.3.0",
+    "@rollup/plugin-commonjs": "^17.1.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^11.2.0",
     "ava": "^3.15.0",
+    "core-js": "^3.9.0",
     "eslint": "^7.20.0",
     "jsdoc": "^3.6.6",
     "rollup": "^2.39.0"
