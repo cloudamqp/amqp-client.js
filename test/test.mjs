@@ -47,7 +47,7 @@ test('can close a channel', async t => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await ch.close()
-  const error = await t.throwsAsync(async () => ch.close())
+  const error = await t.throwsAsync(ch.close())
   t.is(error.message, 'Channel is closed');
 })
 
@@ -83,7 +83,7 @@ test('consumer stops wait on channel error', async t => {
   const consumer = await q.subscribe({}, () => { })
   // acking invalid delivery tag should close channel
   setTimeout(() => ch.basicAck(99999), 1)
-  await t.throwsAsync(async () => await consumer.wait())
+  await t.throwsAsync(consumer.wait())
 })
 
 test('connection error raises on publish', async t => {
@@ -92,9 +92,8 @@ test('connection error raises on publish', async t => {
   const ch = await conn.channel()
   const q = await ch.queue()
   await conn.close()
-  await t.throwsAsync(async () => await q.publish("foobar"))
+  await t.throwsAsync(q.publish("foobar"))
 })
-
 
 test('wait for publish confirms', async t => {
   const amqp = new AMQPClient("amqp://localhost")
@@ -121,5 +120,27 @@ test('wait for publish confirms', async t => {
     ch.basicPublish("amq.fanout", "rk", "body")
   ])
   t.deepEqual(tags, [3,4])
-  await conn.close()
+})
+
+test('can handle rejects', async t => {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+
+  const returned = new Promise((resolve) => ch.onReturn = resolve)
+  await ch.basicPublish("", "not-a-queue", "body", {}, true)
+  const msg = await returned
+  t.is(msg.replyCode, 312)
+  t.is(msg.routingKey, "not-a-queue")
+})
+
+test('can handle nacks on confirm channel', async t => {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+
+  const q = await ch.queue("", { args: {"x-overflow": "reject-publish", "x-max-length": 0} })
+  await ch.confirmSelect()
+  const error = await t.throwsAsync(q.publish("body"))
+  t.is(error.message, "Message rejected")
 })

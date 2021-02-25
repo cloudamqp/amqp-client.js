@@ -56,11 +56,21 @@ export default class AMQPChannel {
     if (idx !== -1) {
       const confirmed = multiple ?
         this.unconfirmedPublishes.splice(0, idx + 1) :
-        this.unconfirmedPublishes.splice(idx, 0)
-      confirmed.forEach(([tag, resolve, reject]) => nack ? reject(tag) : resolve(tag))
+        this.unconfirmedPublishes.splice(idx, 1)
+      confirmed.forEach(([tag, resolve, reject]) => {
+        if (nack)
+          reject(new Error("Message rejected"))
+        else
+          resolve(tag)
+      })
     } else {
-      console.warn("Cant find unconfirmed deliveryTag", deliveryTag, multiple)
+      console.warn("Cant find unconfirmed deliveryTag", deliveryTag, "multiple:", multiple, "nack:", nack)
     }
+  }
+
+  onReturn(message) {
+    console.error("Message returned from server", message)
+    this.returned = null
   }
 
   close({ code = 200, reason = "" } = {}) {
@@ -322,7 +332,7 @@ export default class AMQPChannel {
     return this.connection.send(new Uint8Array(frame.buffer, 0, 21))
   }
 
-  basicPublish(exchange, routingkey, data, properties) {
+  basicPublish(exchange, routingkey, data, properties, mandatory, immediate) {
     if (this.closed) return this.rejectClosed()
     if (data instanceof Uint8Array) {
       // noop
@@ -348,7 +358,10 @@ export default class AMQPChannel {
     buffer.setUint16(j, 0); j += 2 // reserved1
     j += buffer.setShortString(j, exchange) // exchange
     j += buffer.setShortString(j, routingkey) // routing key
-    buffer.setUint8(j, 0); j += 1 // mandatory/immediate
+    let bits = 0
+    if (mandatory) bits = bits | (1 << 0)
+    if (immediate) bits = bits | (1 << 1)
+    buffer.setUint8(j, bits); j += 1 // mandatory/immediate
     buffer.setUint8(j, 206); j += 1 // frame end byte
     buffer.setUint32(3, j - 8) // update frameSize
 
