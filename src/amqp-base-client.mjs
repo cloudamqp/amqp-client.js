@@ -348,7 +348,7 @@ export default class AMQPBaseClient {
                   const channel = this.channels[channelId]
                   if (!channel) {
                     console.warn("Cannot deliver to closed channel", channelId)
-                    return
+                    break
                   }
                   const message = new AMQPMessage(channel)
                   message.consumerTag = consumerTag
@@ -357,6 +357,28 @@ export default class AMQPBaseClient {
                   message.routingKey = routingKey
                   message.redelivered = redelivered
                   channel.delivery = message
+                  break
+                }
+                case 80: { // confirm ack
+                  const deliveryTag = view.getUint64(i); i += 8
+                  const multiple = view.getUint8(i) === 1; i += 1
+                  const channel = this.channels[channelId]
+                  if (!channel) {
+                    console.warn("Got publish confirm ack for closed channel", channelId)
+                    break
+                  }
+                  channel.publishConfirmed(deliveryTag, multiple, false)
+                  break
+                }
+                case 120: { // confirm nack
+                  const deliveryTag = view.getUint64(i); i += 8
+                  const multiple = view.getUint8(i) === 1; i += 1
+                  const channel = this.channels[channelId]
+                  if (!channel) {
+                    console.warn("Got publish confirm nack for closed channel", channelId)
+                    break
+                  }
+                  channel.publishConfirmed(deliveryTag, multiple, true)
                   break
                 }
                 default:
@@ -369,6 +391,7 @@ export default class AMQPBaseClient {
               switch (methodId) {
                 case 11: { // selectOk
                   const channel = this.channels[channelId]
+                  channel.confirmId = 0
                   channel.resolvePromise()
                   break
                 }

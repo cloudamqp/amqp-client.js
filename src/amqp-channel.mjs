@@ -5,10 +5,11 @@ import AMQPConsumer from './amqp-consumer.mjs'
 
 export default class AMQPChannel {
   constructor(connection, id) {
-    this.promises = []
     this.connection = connection
     this.id = id
     this.consumers = {}
+    this.promises = []
+    this.unconfirmedPublishes = []
     this.closed = false
   }
 
@@ -47,6 +48,19 @@ export default class AMQPChannel {
 
   rejectClosed() {
     return Promise.reject(new AMQPError("Channel is closed", this.connection))
+  }
+
+  publishConfirmed(deliveryTag, multiple, nack) {
+    // is queueMicrotask() needed here?
+    const idx = this.unconfirmedPublishes.findIndex(([tag,]) => tag === deliveryTag)
+    if (idx !== -1) {
+      const confirmed = multiple ?
+        this.unconfirmedPublishes.splice(0, idx + 1) :
+        this.unconfirmedPublishes.splice(idx, 0)
+      confirmed.forEach(([tag, resolve, reject]) => nack ? reject(tag) : resolve(tag))
+    } else {
+      console.warn("Cant find unconfirmed deliveryTag", deliveryTag, multiple)
+    }
   }
 
   close({ code = 200, reason = "" } = {}) {
@@ -382,7 +396,21 @@ export default class AMQPChannel {
       bodyPos += frameSize
       j = 0
     }
-    return Promise.all(promises)
+    // if publish confirm is enabled, put a promise on a queue if the sends were ok
+    // the promise on the queue will be fullfilled by the read loop when an ack/nack
+    // comes from the server
+    if (this.confirmId !== undefined) {
+      return new Promise((resolve, reject) =>
+        Promise.all(promises)
+          .then(() => this.unconfirmedPublishes.push([++this.confirmId, resolve, reject]))
+          .catch(reject)
+      )
+    } else {
+      return new Promise((resolve, reject) =>
+        Promise.all(promises)
+          .then(() => resolve(0))
+          .catch(reject))
+    }
   }
 
   confirmSelect() {
@@ -392,12 +420,12 @@ export default class AMQPChannel {
     let frame = new AMQPView(new ArrayBuffer(13))
     frame.setUint8(j, 1); j += 1 // type: method
     frame.setUint16(j, this.id); j += 2 // channel
-    frame.setUint32(j, 5) // frame size
+    frame.setUint32(j, 5); j += 4 // frame size
     frame.setUint16(j, 85); j += 2 // class: confirm
     frame.setUint16(j, 10); j += 2 // method: select
     frame.setUint8(j, noWait ? 1 : 0); j += 1 // no wait
     frame.setUint8(j, 206); j += 1 // frame end byte
-    return this.sendRpc(frame, j)
+    return this.sendRpc(frame, j) // parseFrames in base will set channel.confirmId = 0
   }
 
   queue(name = "", props = {}) {

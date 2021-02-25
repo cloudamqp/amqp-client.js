@@ -1,5 +1,3 @@
-import AMQPConsumer from './amqp-consumer.mjs'
-
 export default class AMQPQueue {
   constructor(channel, name) {
     this.channel = channel
@@ -54,4 +52,3 @@ export default class AMQPQueue {
     })
   }
 }
-

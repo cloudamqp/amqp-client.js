@@ -94,3 +94,32 @@ test('connection error raises on publish', async t => {
   await conn.close()
   await t.throwsAsync(async () => await q.publish("foobar"))
 })
+
+
+test('wait for publish confirms', async t => {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  let tag
+
+  // publishes without confirm should return 0
+  tag = await ch.basicPublish("amq.fanout", "rk", "body")
+  t.is(tag, 0)
+  tag = await ch.basicPublish("amq.fanout", "rk", "body")
+  t.is(tag, 0)
+
+  // publishes with confirm should return the delivery tag id
+  await ch.confirmSelect()
+  tag = await ch.basicPublish("amq.fanout", "rk", "body")
+  t.is(tag, 1)
+  tag = await ch.basicPublish("amq.fanout", "rk", "body")
+  t.is(tag, 2)
+
+  // can wait for multiple tags
+  const tags = await Promise.all([
+    ch.basicPublish("amq.fanout", "rk", "body"),
+    ch.basicPublish("amq.fanout", "rk", "body")
+  ])
+  t.deepEqual(tags, [3,4])
+  await conn.close()
+})
