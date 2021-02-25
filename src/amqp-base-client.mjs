@@ -35,6 +35,14 @@ export default class AMQPBaseClient {
     return Promise.reject(new AMQPError("Connection closed", this))
   }
 
+  rejectConnect(err) {
+    const [, reject] = this.connectPromise
+    delete this.connectPromise
+    reject(err)
+    this.closed = true
+    this.closeSocket()
+  }
+
   close({ code = 200, reason = "" } = {}) {
     if (this.closed) return this.rejectClosed()
     this.closed = true
@@ -132,7 +140,7 @@ export default class AMQPBaseClient {
                   j += startOk.setShortString(j, "") // locale
                   startOk.setUint8(j, 206); j += 1 // frame end byte
                   startOk.setUint32(3, j - 8) // update frameSize
-                  this.send(new Uint8Array(startOk.buffer, 0, j))
+                  this.send(new Uint8Array(startOk.buffer, 0, j)).catch(this.rejectConnect)
                   break
                 }
                 case 30: { // tune
@@ -153,7 +161,7 @@ export default class AMQPBaseClient {
                   tuneOk.setUint32(j, this.frameMax); j += 4 // frame max
                   tuneOk.setUint16(j, this.heartbeat); j += 2 // heartbeat
                   tuneOk.setUint8(j, 206); j += 1 // frame end byte
-                  this.send(new Uint8Array(tuneOk.buffer, 0, j))
+                  this.send(new Uint8Array(tuneOk.buffer, 0, j)).catch(this.rejectConnect)
 
                   j = 0
                   const open = new AMQPView(new ArrayBuffer(512))
@@ -167,7 +175,7 @@ export default class AMQPBaseClient {
                   open.setUint8(j, 0); j += 1 // reserved2
                   open.setUint8(j, 206); j += 1 // frame end byte
                   open.setUint32(3, j - 8) // update frameSize
-                  this.send(new Uint8Array(open.buffer, 0, j))
+                  this.send(new Uint8Array(open.buffer, 0, j)).catch(this.rejectConnect)
 
                   break
                 }
@@ -185,6 +193,15 @@ export default class AMQPBaseClient {
                   const methodId = view.getUint16(i); i += 2
                   console.debug("connection closed by server", code, text, classId, methodId)
 
+                  this.closed = true
+                  const msg = `connection closed: ${text} (${code})`
+                  const err = new AMQPError(msg, this)
+                  this.channels.forEach((ch) => ch.setClosed(err))
+                  this.channels = []
+                  if (this.connectPromise) {
+                    this.rejectConnect(err)
+                  }
+
                   const closeOk = new AMQPView(new ArrayBuffer(12))
                   closeOk.setUint8(j, 1); j += 1 // type: method
                   closeOk.setUint16(j, 0); j += 2 // channel: 0
@@ -193,25 +210,16 @@ export default class AMQPBaseClient {
                   closeOk.setUint16(j, 51); j += 2 // method: closeok
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
-                  const msg = `connection closed: ${text} (${code})`
-                  const err = new AMQPError(msg, this)
-                  this.channels.forEach((ch) => ch.setClosed(err))
-                  this.channels = []
-
-                  // if closed while connecting
-                  const [, reject] = this.connectPromise
-                  if (reject) reject(err)
-                  delete this.connectPromise
-
-                  this.closeSocket()
+                    .then(() => this.closeSocket())
+                    .catch(err => console.warn("Error while sending Connection#CloseOk", err))
                   break
                 }
                 case 51: { // closeOk
                   this.channels.forEach((ch) => ch.setClosed())
                   this.channels = []
                   const [resolve, ] = this.closePromise
-                  resolve()
                   delete this.closePromise
+                  resolve()
                   this.closeSocket()
                   break
                 }
@@ -234,16 +242,7 @@ export default class AMQPBaseClient {
                   const [text, strLen] = view.getShortString(i); i += strLen
                   const classId = view.getUint16(i); i += 2
                   const methodId = view.getUint16(i); i += 2
-
                   console.debug("channel", channelId, "closed", code, text, classId, methodId)
-                  const closeOk = new AMQPView(new ArrayBuffer(12))
-                  closeOk.setUint8(j, 1); j += 1 // type: method
-                  closeOk.setUint16(j, channelId); j += 2 // channel
-                  closeOk.setUint32(j, 4); j += 4 // frameSize
-                  closeOk.setUint16(j, 20); j += 2 // class: channel
-                  closeOk.setUint16(j, 41); j += 2 // method: closeok
-                  closeOk.setUint8(j, 206); j += 1 // frame end byte
-                  this.send(new Uint8Array(closeOk.buffer, 0, j))
 
                   const channel = this.channels[channelId]
                   if (channel) {
@@ -255,6 +254,15 @@ export default class AMQPBaseClient {
                     console.warn("channel", channelId, "already closed")
                   }
 
+                  const closeOk = new AMQPView(new ArrayBuffer(12))
+                  closeOk.setUint8(j, 1); j += 1 // type: method
+                  closeOk.setUint16(j, channelId); j += 2 // channel
+                  closeOk.setUint32(j, 4); j += 4 // frameSize
+                  closeOk.setUint16(j, 20); j += 2 // class: channel
+                  closeOk.setUint16(j, 41); j += 2 // method: closeok
+                  closeOk.setUint8(j, 206); j += 1 // frame end byte
+                  this.send(new Uint8Array(closeOk.buffer, 0, j))
+                    .catch(err => console.error("Error while sending Channel#closeOk", err))
                   break
                 }
                 case 41: { // closeOk
@@ -416,6 +424,7 @@ export default class AMQPBaseClient {
           heartbeat.setUint32(j, 0); j += 4 // frameSize
           heartbeat.setUint8(j, 206); j += 1 // frame end byte
           this.send(new Uint8Array(heartbeat.buffer, 0, j))
+            .catch(err => console.warn("Error while sending heartbeat", err))
           break
         }
         default:
