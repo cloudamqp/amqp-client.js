@@ -59,6 +59,10 @@ class AMQPQueue {
         .catch(reject);
     })
   }
+
+  get({ noAck = true}) {
+    return this.channel.basicGet(this.name, { noAck })
+  }
 }
 
 class AMQPView extends DataView {
@@ -395,6 +399,12 @@ class AMQPView extends DataView {
     view.set(data);
     return data.bytelength + 4
   }
+
+  setFrameEnd(j) {
+    this.setUint32(3, j - 7); // update frameSize
+    this.setUint8(j, 206); // frame end byte
+    return 1
+  }
 }
 
 class AMQPConsumer {
@@ -472,11 +482,11 @@ class AMQPChannel {
   setClosed(err) {
     if (!this.closed) {
       this.closed = true;
-      // Close all consumers
       Object.values(this.consumers).forEach((consumer) => consumer.setClosed(err));
-      this.consumers = []; // Empty consumers
+      this.consumers = [];
       // Empty and reject all RPC promises
       while(this.rejectPromise(err)) { }
+      this.unconfirmedPublishes.forEach(([, , reject]) => reject(err));
     }
   }
 
@@ -502,9 +512,21 @@ class AMQPChannel {
     }
   }
 
+  onMessageReady(message) {
+    if (this.delivery) {
+      this.delivery = null;
+      this.deliver(message);
+    } else if (this.getMessage) {
+      this.getMessage = null;
+      this.resolvePromise(message);
+    } else {
+      this.returned = null;
+      this.onReturn(message);
+    }
+  }
+
   onReturn(message) {
     console.error("Message returned from server", message);
-    this.returned = null;
   }
 
   close({ code = 200, reason = "" } = {}) {
@@ -528,7 +550,6 @@ class AMQPChannel {
 
   // Message is ready to be delivered to consumer
   deliver(msg) {
-    this.delivery = null;
     queueMicrotask(() => { // Enqueue microtask to avoid race condition with ConsumeOk
       const consumer = this.consumers[msg.consumerTag];
       if (consumer) {
@@ -537,6 +558,20 @@ class AMQPChannel {
         console.error("Consumer", msg.consumerTag, "on channel", this.id, "doesn't exists");
       }
     });
+  }
+
+  flow(active = true) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0;
+    const frame = new AMQPView(new ArrayBuffer(4096));
+    frame.setUint8(j, 1); j += 1; // type: method
+    frame.setUint16(j, this.id); j += 2; // channel: 1
+    frame.setUint32(j, 5); j += 4; // frameSize
+    frame.setUint16(j, 20); j += 2; // class: channel
+    frame.setUint16(j, 20); j += 2; // method: flow
+    frame.setUint8(j, active ? 1 : 0); j += 1; // active flow
+    frame.setUint8(j, 206); j += 1; // frame end byte
+    return this.sendRpc(frame, j)
   }
 
   queueBind(queue, exchange, routingKey, args = {}) {
@@ -595,7 +630,7 @@ class AMQPChannel {
     return this.sendRpc(purge, j)
   }
 
-  queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "", args = {}} = {}) {
+  queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {}, args = {}) {
     if (this.closed) return this.rejectClosed()
     let j = 0;
     const declare = new AMQPView(new ArrayBuffer(4096));
@@ -651,6 +686,23 @@ class AMQPChannel {
     frame.setUint16(j, prefetchCount); j += 2; // prefetch count
     frame.setUint8(j, global ? 1 : 0); j += 1; // glocal
     frame.setUint8(j, 206); j += 1; // frame end byte
+    return this.sendRpc(frame, j)
+  }
+
+  basicGet(queue, { noAck = true } = {}) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0;
+    const frame = new AMQPView(new ArrayBuffer(512));
+    frame.setUint8(j, 1); j += 1; // type: method
+    frame.setUint16(j, this.id); j += 2; // channel: 1
+    frame.setUint32(j, 11); j += 4; // frameSize
+    frame.setUint16(j, 60); j += 2; // class: basic
+    frame.setUint16(j, 70); j += 2; // method: get
+    frame.setUint16(j, 0); j += 2; // reserved1
+    j += frame.setShortString(j, queue); // queue
+    frame.setUint8(j, noAck ? 1 : 0); j += 1; // noAck
+    frame.setUint8(j, 206); j += 1; // frame end byte
+    frame.setUint32(3, j - 8); // update frameSize
     return this.sendRpc(frame, j)
   }
 
@@ -755,8 +807,25 @@ class AMQPChannel {
     return this.connection.send(new Uint8Array(frame.buffer, 0, 21))
   }
 
+  basicRecover(requeue = false) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0;
+    const frame = new AMQPView(new ArrayBuffer(13));
+    frame.setUint8(j, 1); j += 1; // type: method
+    frame.setUint16(j, this.id); j += 2; // channel
+    frame.setUint32(j, 5); j += 4; // frameSize
+    frame.setUint16(j, 60); j += 2; // class: basic
+    frame.setUint16(j, 110); j += 2; // method: recover
+    frame.setUint8(j, requeue ? 1 : 0); j += 1;
+    frame.setUint8(j, 206); j += 1; // frame end byte
+    return this.sendRpc(frame, j)
+  }
+
   basicPublish(exchange, routingkey, data, properties, mandatory, immediate) {
     if (this.closed) return this.rejectClosed()
+    if (this.connection.blocked)
+      return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))
+
     if (data instanceof Uint8Array) ; else if (data instanceof ArrayBuffer) {
       data = new Uint8Array(data);
     } else if (typeof data === "string") {
@@ -802,11 +871,8 @@ class AMQPChannel {
     if (data.byteLength === 0) {
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j));
       promises.push(p);
-      return
-    }
-
-    // Send current frames if a body frame can't fit in the rest of the frame buffer
-    if (j >= 4096 - 8) {
+    } else if (j >= 4096 - 8) {
+      // Send current frames if a body frame can't fit in the rest of the frame buffer
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j));
       promises.push(p);
       j = 0;
@@ -850,20 +916,126 @@ class AMQPChannel {
   confirmSelect() {
     if (this.closed) return this.rejectClosed()
     let j = 0;
-    let frame = new AMQPView(new ArrayBuffer(13));
+    const frame = new AMQPView(new ArrayBuffer(13));
     frame.setUint8(j, 1); j += 1; // type: method
     frame.setUint16(j, this.id); j += 2; // channel
     frame.setUint32(j, 5); j += 4; // frame size
     frame.setUint16(j, 85); j += 2; // class: confirm
     frame.setUint16(j, 10); j += 2; // method: select
-    frame.setUint8(j, 0); j += 1; // no wait
+    frame.setUint8(j, 0); j += 1; // noWait
     frame.setUint8(j, 206); j += 1; // frame end byte
     return this.sendRpc(frame, j) // parseFrames in base will set channel.confirmId = 0
   }
 
-  queue(name = "", props = {}) {
+  exchangeDeclare(name, type, { passive = false, durable = true, autoDelete = false, internal = false } = {}, args = {}) {
+    let j = 0;
+    const frame = new AMQPView(new ArrayBuffer(4096));
+    frame.setUint8(j, 1); j += 1; // type: method
+    frame.setUint16(j, this.id); j += 2; // channel
+    frame.setUint32(j, 0); j += 4; // frame size
+    frame.setUint16(j, 40); j += 2; // class: exchange
+    frame.setUint16(j, 10); j += 2; // method: declare
+    frame.setUint16(j, 0); j += 2; // reserved1
+    j += frame.setShortString(j, name);
+    j += frame.setShortString(j, type);
+    let bits = 0;
+    if (passive)    bits = bits | (1 << 0);
+    if (durable)    bits = bits | (1 << 1);
+    if (autoDelete) bits = bits | (1 << 2);
+    if (internal)   bits = bits | (1 << 3);
+    frame.setUint8(j, bits); j += 1;
+    j += frame.setTable(j, args);
+    frame.setUint8(j, 206); j += 1; // frame end byte
+    frame.setUint32(3, j - 8); // update frameSize
+    return this.sendRpc(frame, j)
+  }
+
+  exchangeDelete(name, { ifUnused = false } = {}) {
+    let j = 0;
+    const frame = new AMQPView(new ArrayBuffer(512));
+    frame.setUint8(j, 1); j += 1; // type: method
+    frame.setUint16(j, this.id); j += 2; // channel
+    frame.setUint32(j, 0); j += 4; // frame size
+    frame.setUint16(j, 40); j += 2; // class: exchange
+    frame.setUint16(j, 20); j += 2; // method: declare
+    frame.setUint16(j, 0); j += 2; // reserved1
+    j += frame.setShortString(j, name);
+    let bits = 0;
+    if (ifUnused) bits = bits | (1 << 0);
+    frame.setUint8(j, bits); j += 1;
+    frame.setUint8(j, 206); j += 1; // frame end byte
+    frame.setUint32(3, j - 8); // update frameSize
+    return this.sendRpc(frame, j)
+  }
+
+  exchangeBind(destination, source, routingKey = "", args = {}) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0;
+    const bind = new AMQPView(new ArrayBuffer(4096));
+    bind.setUint8(j, 1); j += 1; // type: method
+    bind.setUint16(j, this.id); j += 2; // channel: 1
+    bind.setUint32(j, 0); j += 4; // frameSize
+    bind.setUint16(j, 40); j += 2; // class: exchange
+    bind.setUint16(j, 30); j += 2; // method: bind
+    bind.setUint16(j, 0); j += 2; // reserved1
+    j += bind.setShortString(j, destination);
+    j += bind.setShortString(j, source);
+    j += bind.setShortString(j, routingKey);
+    bind.setUint8(j, 0); j += 1; // noWait
+    j += bind.setTable(j, args);
+    bind.setUint8(j, 206); j += 1; // frame end byte
+    bind.setUint32(3, j - 8); // update frameSize
+    return this.sendRpc(bind, j)
+  }
+
+  exchangeUnbind(destination, source, routingKey = "", args = {}) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0;
+    const unbind = new AMQPView(new ArrayBuffer(4096));
+    unbind.setUint8(j, 1); j += 1; // type: method
+    unbind.setUint16(j, this.id); j += 2; // channel: 1
+    unbind.setUint32(j, 0); j += 4; // frameSize
+    unbind.setUint16(j, 40); j += 2; // class: exchange
+    unbind.setUint16(j, 40); j += 2; // method: unbind
+    unbind.setUint16(j, 0); j += 2; // reserved1
+    j += unbind.setShortString(j, destination);
+    j += unbind.setShortString(j, source);
+    j += unbind.setShortString(j, routingKey);
+    unbind.setUint8(j, 0); j += 1; // noWait
+    j += unbind.setTable(j, args);
+    unbind.setUint8(j, 206); j += 1; // frame end byte
+    unbind.setUint32(3, j - 8); // update frameSize
+    return this.sendRpc(unbind, j)
+  }
+
+  txSelect() {
+    return this.txMethod(10)
+  }
+
+  txCommit() {
+    return this.txMethod(20)
+  }
+
+  txRollback() {
+    return this.txMethod(30)
+  }
+
+  txMethod(methodId) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0;
+    const frame = new AMQPView(new ArrayBuffer(12));
+    frame.setUint8(j, 1); j += 1; // type: method
+    frame.setUint16(j, this.id); j += 2; // channel: 1
+    frame.setUint32(j, 4); j += 4; // frameSize
+    frame.setUint16(j, 90); j += 2; // class: Tx
+    frame.setUint16(j, methodId); j += 2;
+    frame.setUint8(j, 206); j += 1; // frame end byte
+    return this.sendRpc(frame, j)
+  }
+
+  queue(name = "", props = {}, args = {}) {
     return new Promise((resolve, reject) => {
-      this.queueDeclare(name, props)
+      this.queueDeclare(name, props, args)
         .then(({name}) => resolve(new AMQPQueue(this, name)))
         .catch(reject);
     })
@@ -903,7 +1075,7 @@ class AMQPMessage {
   }
 }
 
-const VERSION = '1.0.7';
+const VERSION = '1.1.0';
 
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
@@ -1123,6 +1295,15 @@ class AMQPBaseClient {
                   this.closeSocket();
                   break
                 }
+                case 60: { // blocked
+                  const [reason, len] = view.getShortString(i); i += len;
+                  this.blocked = reason;
+                  break
+                }
+                case 61: { // unblocked
+                  this.blocked = null;
+                  break
+                }
                 default:
                   i += frameSize - 4;
                   console.error("unsupported class/method id", classId, methodId);
@@ -1135,6 +1316,12 @@ class AMQPBaseClient {
                   i += 4; // reserved1 (long string)
                   const channel = this.channels[channelId];
                   channel.resolvePromise(channel);
+                  break
+                }
+                case 21: { // flowOk
+                  const active = view.getUint8(i) !== 0; i += 1;
+                  const channel = this.channels[channelId];
+                  channel.resolvePromise(active);
                   break
                 }
                 case 40: { // close
@@ -1174,6 +1361,34 @@ class AMQPBaseClient {
                   } else {
                     this.rejectPromise(`channel ${channelId} already closed`);
                   }
+                  break
+                }
+                default:
+                  i += frameSize - 4; // skip rest of frame
+                  console.error("unsupported class/method id", classId, methodId);
+              }
+              break
+            }
+            case 40: { // exchange
+              switch (methodId) {
+                case 11: { // declareOk
+                  const channel = this.channels[channelId];
+                  channel.resolvePromise();
+                  break
+                }
+                case 21: { // deleteOk
+                  const channel = this.channels[channelId];
+                  channel.resolvePromise();
+                  break
+                }
+                case 31: { // bindOk
+                  const channel = this.channels[channelId];
+                  channel.resolvePromise();
+                  break
+                }
+                case 51: { // unbindOk
+                  const channel = this.channels[channelId];
+                  channel.resolvePromise();
                   break
                 }
                 default:
@@ -1277,6 +1492,32 @@ class AMQPBaseClient {
                   channel.delivery = message;
                   break
                 }
+                case 71: { // getOk
+                  const deliveryTag = view.getUint64(i); i += 8;
+                  const redelivered = view.getUint8(i) === 1; i += 1;
+                  const [exchange, exchangeLen]= view.getShortString(i); i += exchangeLen;
+                  const [routingKey, routingKeyLen]= view.getShortString(i); i += routingKeyLen;
+                  const messageCount = view.getUint32(i); i += 4;
+                  const channel = this.channels[channelId];
+                  if (!channel) {
+                    console.warn("Cannot deliver to closed channel", channelId);
+                    break
+                  }
+                  const message = new AMQPMessage(channel);
+                  message.deliveryTag = deliveryTag;
+                  message.redelivered = redelivered;
+                  message.exchange = exchange;
+                  message.routingKey = routingKey;
+                  message.messageCount = messageCount;
+                  channel.getMessage = message;
+                  break
+                }
+                case 72: { // getEmpty
+                  const [ , len]= view.getShortString(i); i += len; // reserved1
+                  const channel = this.channels[channelId];
+                  channel.resolvePromise(null);
+                  break
+                }
                 case 80: { // confirm ack
                   const deliveryTag = view.getUint64(i); i += 8;
                   const multiple = view.getUint8(i) === 1; i += 1;
@@ -1286,6 +1527,11 @@ class AMQPBaseClient {
                     break
                   }
                   channel.publishConfirmed(deliveryTag, multiple, false);
+                  break
+                }
+                case 111: { // recoverOk
+                  const channel = this.channels[channelId];
+                  channel.resolvePromise();
                   break
                 }
                 case 120: { // confirm nack
@@ -1313,6 +1559,24 @@ class AMQPBaseClient {
                   channel.resolvePromise();
                   break
                 }
+                default:
+                  i += frameSize - 4;
+                  console.error("unsupported class/method id", classId, methodId);
+              }
+              break
+            }
+            case 90: { // tx / transaction
+              switch (methodId) {
+                case 11: // selectOk
+                case 21: // commitOk
+                case 31: { // rollbackOk
+                  const channel = this.channels[channelId];
+                  channel.resolvePromise();
+                  break
+                }
+                default:
+                  i += frameSize - 4;
+                  console.error("unsupported class/method id", classId, methodId);
               }
               break
             }
@@ -1333,13 +1597,13 @@ class AMQPBaseClient {
             console.warn("Cannot deliver to closed channel", channelId);
             break
           }
-          const message = channel.delivery || channel.returned;
+          const message = channel.delivery || channel.getMessage || channel.returned;
           message.bodySize = bodySize;
           message.properties = properties;
           message.body = new Uint8Array(bodySize);
           message.bodyPos = 0; // if body is split over multiple frames
           if (bodySize === 0)
-            channel.delivery ? channel.deliver(message) : channel.onReturn(message);
+            channel.onMessageReady(message);
           break
         }
         case 3: { // body
@@ -1349,13 +1613,13 @@ class AMQPBaseClient {
             i += frameSize;
             break
           }
-          const message = channel.delivery || channel.returned;
+          const message = channel.delivery || channel.getMessage || channel.returned;
           const bodyPart = new Uint8Array(view.buffer, i, frameSize);
           message.body.set(bodyPart, message.bodyPos);
           message.bodyPos += frameSize;
           i += frameSize;
           if (message.bodyPos === message.bodySize)
-            channel.delivery ? channel.deliver(message) : channel.onReturn(message);
+            channel.onMessageReady(message);
           break
         }
         case 8: { // heartbeat
