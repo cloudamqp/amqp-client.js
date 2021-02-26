@@ -374,6 +374,20 @@ export default class AMQPChannel {
     return this.connection.send(new Uint8Array(frame.buffer, 0, 21))
   }
 
+  basicRecover(requeue = false) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(13))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel
+    frame.setUint32(j, 5); j += 4 // frameSize
+    frame.setUint16(j, 60); j += 2 // class: basic
+    frame.setUint16(j, 110); j += 2 // method: recover
+    frame.setUint8(j, requeue ? 1 : 0); j += 1
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    return this.sendRpc(frame, j)
+  }
+
   basicPublish(exchange, routingkey, data, properties, mandatory, immediate) {
     if (this.closed) return this.rejectClosed()
     if (this.connection.blocked)

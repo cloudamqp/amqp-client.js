@@ -457,6 +457,11 @@ export default class AMQPBaseClient {
                   channel.publishConfirmed(deliveryTag, multiple, false)
                   break
                 }
+                case 111: { // recoverOk
+                  const channel = this.channels[channelId]
+                  channel.resolvePromise()
+                  break
+                }
                 case 120: { // confirm nack
                   const deliveryTag = view.getUint64(i); i += 8
                   const multiple = view.getUint8(i) === 1; i += 1
