@@ -51,4 +51,8 @@ export default class AMQPQueue {
         .catch(reject)
     })
   }
+
+  get({ noAck = true}) {
+    return this.channel.basicGet(this.name, { noAck })
+  }
 }

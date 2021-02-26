@@ -161,6 +161,28 @@ test('can declare an exchange', async t => {
   t.regex(err.message, /NOT_FOUND/)
 })
 
+test('exchange to exchange bind/unbind', async t => {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const name1 = "test1" + Math.random()
+  const name2 = "test2" + Math.random()
+  await ch.exchangeDeclare(name1, "fanout", { autoDelete: false })
+  await ch.exchangeDeclare(name2, "fanout", { autoDelete: true })
+  await ch.exchangeBind(name2, name1)
+  const q = await ch.queue()
+  await q.bind(name2)
+  await ch.confirmSelect()
+  await ch.basicPublish(name1)
+  const msg1 = await ch.basicGet(q.name)
+  t.is(msg1.exchange, name1)
+  await ch.exchangeUnbind(name2, name1)
+  await ch.basicPublish(name1)
+  const msg2 = await ch.basicGet(q.name)
+  t.is(msg2, null)
+  await ch.exchangeDelete(name1, "fanout")
+})
+
 test('can change flow state of channel', async t => {
   const amqp = new AMQPClient("amqp://localhost")
   const conn = await amqp.connect()
@@ -171,7 +193,7 @@ test('can change flow state of channel', async t => {
   t.is(flow, true)
 })
 
-test.only('basic get', async t => {
+test('basic get', async t => {
   const amqp = new AMQPClient("amqp://localhost")
   const conn = await amqp.connect()
   const ch = await conn.channel()

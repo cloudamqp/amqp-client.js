@@ -528,6 +528,46 @@ export default class AMQPChannel {
     return this.sendRpc(frame, j)
   }
 
+  exchangeBind(destination, source, routingKey = "", args = {}) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0
+    const bind = new AMQPView(new ArrayBuffer(4096))
+    bind.setUint8(j, 1); j += 1 // type: method
+    bind.setUint16(j, this.id); j += 2 // channel: 1
+    bind.setUint32(j, 0); j += 4 // frameSize
+    bind.setUint16(j, 40); j += 2 // class: exchange
+    bind.setUint16(j, 30); j += 2 // method: bind
+    bind.setUint16(j, 0); j += 2 // reserved1
+    j += bind.setShortString(j, destination)
+    j += bind.setShortString(j, source)
+    j += bind.setShortString(j, routingKey)
+    bind.setUint8(j, 0); j += 1 // noWait
+    j += bind.setTable(j, args)
+    bind.setUint8(j, 206); j += 1 // frame end byte
+    bind.setUint32(3, j - 8) // update frameSize
+    return this.sendRpc(bind, j)
+  }
+
+  exchangeUnbind(destination, source, routingKey = "", args = {}) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0
+    const unbind = new AMQPView(new ArrayBuffer(4096))
+    unbind.setUint8(j, 1); j += 1 // type: method
+    unbind.setUint16(j, this.id); j += 2 // channel: 1
+    unbind.setUint32(j, 0); j += 4 // frameSize
+    unbind.setUint16(j, 40); j += 2 // class: exchange
+    unbind.setUint16(j, 40); j += 2 // method: unbind
+    unbind.setUint16(j, 0); j += 2 // reserved1
+    j += unbind.setShortString(j, destination)
+    j += unbind.setShortString(j, source)
+    j += unbind.setShortString(j, routingKey)
+    unbind.setUint8(j, 0); j += 1 // noWait
+    j += unbind.setTable(j, args)
+    unbind.setUint8(j, 206); j += 1 // frame end byte
+    unbind.setUint32(3, j - 8) // update frameSize
+    return this.sendRpc(unbind, j)
+  }
+
   queue(name = "", props = {}, args = {}) {
     return new Promise((resolve, reject) => {
       this.queueDeclare(name, props, args)
