@@ -163,7 +163,7 @@ export default class AMQPChannel {
     return this.sendRpc(purge, j)
   }
 
-  queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "", args = {}} = {}) {
+  queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {}, args = {}) {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
@@ -430,7 +430,7 @@ export default class AMQPChannel {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
-    let frame = new AMQPView(new ArrayBuffer(13))
+    const frame = new AMQPView(new ArrayBuffer(13))
     frame.setUint8(j, 1); j += 1 // type: method
     frame.setUint16(j, this.id); j += 2 // channel
     frame.setUint32(j, 5); j += 4 // frame size
