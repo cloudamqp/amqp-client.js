@@ -470,7 +470,6 @@ export default class AMQPChannel {
 
   confirmSelect() {
     if (this.closed) return this.rejectClosed()
-    const noWait = false
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(13))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -478,7 +477,7 @@ export default class AMQPChannel {
     frame.setUint32(j, 5); j += 4 // frame size
     frame.setUint16(j, 85); j += 2 // class: confirm
     frame.setUint16(j, 10); j += 2 // method: select
-    frame.setUint8(j, noWait ? 1 : 0); j += 1 // no wait
+    frame.setUint8(j, 0); j += 1 // noWait
     frame.setUint8(j, 206); j += 1 // frame end byte
     return this.sendRpc(frame, j) // parseFrames in base will set channel.confirmId = 0
   }
@@ -486,7 +485,7 @@ export default class AMQPChannel {
   exchangeDeclare(name, type, { passive = false, durable = true, autoDelete = false, internal = false } = {}, args = {}) {
     const noWait = false
     let j = 0
-    const frame = new AMQPView(new ArrayBuffer(1024))
+    const frame = new AMQPView(new ArrayBuffer(4096))
     frame.setUint8(j, 1); j += 1 // type: method
     frame.setUint16(j, this.id); j += 2 // channel
     frame.setUint32(j, 0); j += 4 // frame size
