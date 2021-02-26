@@ -160,3 +160,13 @@ test('can declare an exchange', async t => {
   err = await t.throwsAsync(ch.basicPublish(name, "rk", "body"))
   t.regex(err.message, /NOT_FOUND/)
 })
+
+test('can change flow state of channel', async t => {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  let flow = await ch.flow(false)
+  t.is(flow, false)
+  flow = await ch.flow(true)
+  t.is(flow, true)
+})

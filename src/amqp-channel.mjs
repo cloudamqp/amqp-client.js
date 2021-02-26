@@ -105,6 +105,20 @@ export default class AMQPChannel {
     })
   }
 
+  flow(active = true) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(4096))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel: 1
+    frame.setUint32(j, 5); j += 4 // frameSize
+    frame.setUint16(j, 20); j += 2 // class: channel
+    frame.setUint16(j, 20); j += 2 // method: flow
+    frame.setUint8(j, active ? 1 : 0); j += 1 // active flow
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    return this.sendRpc(frame, j)
+  }
+
   queueBind(queue, exchange, routingKey, args = {}) {
     if (this.closed) return this.rejectClosed()
     const noWait = false

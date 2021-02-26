@@ -237,6 +237,12 @@ export default class AMQPBaseClient {
                   channel.resolvePromise(channel)
                   break
                 }
+                case 21: { // flowOk
+                  const active = view.getUint8(i) !== 0; i += 1
+                  const channel = this.channels[channelId]
+                  channel.resolvePromise(active)
+                  break
+                }
                 case 40: { // close
                   const code = view.getUint16(i); i += 2
                   const [text, strLen] = view.getShortString(i); i += strLen
