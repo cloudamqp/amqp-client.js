@@ -426,11 +426,8 @@ export default class AMQPChannel {
     if (data.byteLength === 0) {
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))
       promises.push(p)
-      return
-    }
-
-    // Send current frames if a body frame can't fit in the rest of the frame buffer
-    if (j >= 4096 - 8) {
+    } else if (j >= 4096 - 8) {
+      // Send current frames if a body frame can't fit in the rest of the frame buffer
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))
       promises.push(p)
       j = 0
