@@ -411,6 +411,32 @@ export default class AMQPBaseClient {
                   channel.delivery = message
                   break
                 }
+                case 71: { // getOk
+                  const deliveryTag = view.getUint64(i); i += 8
+                  const redelivered = view.getUint8(i) === 1; i += 1
+                  const [exchange, exchangeLen]= view.getShortString(i); i += exchangeLen
+                  const [routingKey, routingKeyLen]= view.getShortString(i); i += routingKeyLen
+                  const messageCount = view.getUint32(i); i += 4
+                  const channel = this.channels[channelId]
+                  if (!channel) {
+                    console.warn("Cannot deliver to closed channel", channelId)
+                    break
+                  }
+                  const message = new AMQPMessage(channel)
+                  message.deliveryTag = deliveryTag
+                  message.redelivered = redelivered
+                  message.exchange = exchange
+                  message.routingKey = routingKey
+                  message.messageCount = messageCount
+                  channel.getMessage = message
+                  break
+                }
+                case 72: { // getEmpty
+                  const [ , len]= view.getShortString(i); i += len // reserved1
+                  const channel = this.channels[channelId]
+                  channel.resolvePromise(null)
+                  break
+                }
                 case 80: { // confirm ack
                   const deliveryTag = view.getUint64(i); i += 8
                   const multiple = view.getUint8(i) === 1; i += 1
@@ -467,13 +493,13 @@ export default class AMQPBaseClient {
             console.warn("Cannot deliver to closed channel", channelId)
             break
           }
-          const message = channel.delivery || channel.returned
+          const message = channel.delivery || channel.getMessage || channel.returned
           message.bodySize = bodySize
           message.properties = properties
           message.body = new Uint8Array(bodySize)
           message.bodyPos = 0 // if body is split over multiple frames
           if (bodySize === 0)
-            channel.delivery ? channel.deliver(message) : channel.onReturn(message)
+            channel.onMessageReady(message)
           break
         }
         case 3: { // body
@@ -483,13 +509,13 @@ export default class AMQPBaseClient {
             i += frameSize
             break
           }
-          const message = channel.delivery || channel.returned
+          const message = channel.delivery || channel.getMessage || channel.returned
           const bodyPart = new Uint8Array(view.buffer, i, frameSize)
           message.body.set(bodyPart, message.bodyPos)
           message.bodyPos += frameSize
           i += frameSize
           if (message.bodyPos === message.bodySize)
-            channel.delivery ? channel.deliver(message) : channel.onReturn(message)
+            channel.onMessageReady(message)
           break
         }
         case 8: { // heartbeat

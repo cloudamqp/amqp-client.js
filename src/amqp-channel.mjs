@@ -68,9 +68,21 @@ export default class AMQPChannel {
     }
   }
 
+  onMessageReady(message) {
+    if (this.delivery) {
+      this.delivery = null
+      this.deliver(message)
+    } else if (this.getMessage) {
+      this.getMessage = null
+      this.resolvePromise(message)
+    } else {
+      this.returned = null
+      this.onReturn(message)
+    }
+  }
+
   onReturn(message) {
     console.error("Message returned from server", message)
-    this.returned = null
   }
 
   close({ code = 200, reason = "" } = {}) {
@@ -94,7 +106,6 @@ export default class AMQPChannel {
 
   // Message is ready to be delivered to consumer
   deliver(msg) {
-    this.delivery = null
     queueMicrotask(() => { // Enqueue microtask to avoid race condition with ConsumeOk
       const consumer = this.consumers[msg.consumerTag]
       if (consumer) {
@@ -237,6 +248,23 @@ export default class AMQPChannel {
     frame.setUint16(j, prefetchCount); j += 2 // prefetch count
     frame.setUint8(j, global ? 1 : 0); j += 1 // glocal
     frame.setUint8(j, 206); j += 1 // frame end byte
+    return this.sendRpc(frame, j)
+  }
+
+  basicGet(queue, { noAck = true } = {}) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(512))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel: 1
+    frame.setUint32(j, 11); j += 4 // frameSize
+    frame.setUint16(j, 60); j += 2 // class: basic
+    frame.setUint16(j, 70); j += 2 // method: get
+    frame.setUint16(j, 0); j += 2 // reserved1
+    j += frame.setShortString(j, queue) // queue
+    frame.setUint8(j, noAck ? 1 : 0); j += 1 // noAck
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    frame.setUint32(3, j - 8) // update frameSize
     return this.sendRpc(frame, j)
   }
 
