@@ -282,6 +282,34 @@ export default class AMQPBaseClient {
               }
               break
             }
+            case 40: { // exchange
+              switch (methodId) {
+                case 11: { // declareOk
+                  const channel = this.channels[channelId]
+                  channel.resolvePromise()
+                  break
+                }
+                case 21: { // deleteOk
+                  const channel = this.channels[channelId]
+                  channel.resolvePromise()
+                  break
+                }
+                case 31: { // bindOk
+                  const channel = this.channels[channelId]
+                  channel.resolvePromise()
+                  break
+                }
+                case 51: { // unbindOk
+                  const channel = this.channels[channelId]
+                  channel.resolvePromise()
+                  break
+                }
+                default:
+                  i += frameSize - 4 // skip rest of frame
+                  console.error("unsupported class/method id", classId, methodId)
+              }
+              break
+            }
             case 50: { // queue
               switch (methodId) {
                 case 11: { // declareOk

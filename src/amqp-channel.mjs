@@ -441,9 +441,54 @@ export default class AMQPChannel {
     return this.sendRpc(frame, j) // parseFrames in base will set channel.confirmId = 0
   }
 
-  queue(name = "", props = {}) {
+  exchangeDeclare(name, type, { passive = false, durable = true, autoDelete = false, internal = false } = {}, args = {}) {
+    const noWait = false
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(1024))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel
+    frame.setUint32(j, 0); j += 4 // frame size
+    frame.setUint16(j, 40); j += 2 // class: exchange
+    frame.setUint16(j, 10); j += 2 // method: declare
+    frame.setUint16(j, 0); j += 2 // reserved1
+    j += frame.setShortString(j, name)
+    j += frame.setShortString(j, type)
+    let bits = 0
+    if (passive)    bits = bits | (1 << 0)
+    if (durable)    bits = bits | (1 << 1)
+    if (autoDelete) bits = bits | (1 << 2)
+    if (internal)   bits = bits | (1 << 3)
+    if (noWait)     bits = bits | (1 << 4)
+    frame.setUint8(j, bits); j += 1
+    j += frame.setTable(j, args)
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    frame.setUint32(3, j - 8) // update frameSize
+    return this.sendRpc(frame, j)
+  }
+
+  exchangeDelete(name, { ifUnused = false } = {}) {
+    const noWait = false
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(512))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel
+    frame.setUint32(j, 0); j += 4 // frame size
+    frame.setUint16(j, 40); j += 2 // class: exchange
+    frame.setUint16(j, 20); j += 2 // method: declare
+    frame.setUint16(j, 0); j += 2 // reserved1
+    j += frame.setShortString(j, name)
+    let bits = 0
+    if (ifUnused) bits = bits | (1 << 0)
+    if (noWait)   bits = bits | (1 << 1)
+    frame.setUint8(j, bits); j += 1
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    frame.setUint32(3, j - 8) // update frameSize
+    return this.sendRpc(frame, j)
+  }
+
+  queue(name = "", props = {}, args = {}) {
     return new Promise((resolve, reject) => {
-      this.queueDeclare(name, props)
+      this.queueDeclare(name, props, args)
         .then(({name}) => resolve(new AMQPQueue(this, name)))
         .catch(reject)
     })
