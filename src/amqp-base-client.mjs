@@ -487,6 +487,24 @@ export default class AMQPBaseClient {
                   channel.resolvePromise()
                   break
                 }
+                default:
+                  i += frameSize - 4
+                  console.error("unsupported class/method id", classId, methodId)
+              }
+              break
+            }
+            case 90: { // tx / transaction
+              switch (methodId) {
+                case 11: // selectOk
+                case 21: // commitOk
+                case 31: { // rollbackOk
+                  const channel = this.channels[channelId]
+                  channel.resolvePromise()
+                  break
+                }
+                default:
+                  i += frameSize - 4
+                  console.error("unsupported class/method id", classId, methodId)
               }
               break
             }

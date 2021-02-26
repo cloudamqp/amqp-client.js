@@ -205,3 +205,14 @@ test('basic get', async t => {
   msg = await ch.basicGet(q.name)
   t.is(msg.bodyToString(), "foobar")
 })
+
+/*
+test('transactions', async t => {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await ch.txSelect()
+  await ch.txCommit()
+  await ch.txRollback()
+})
+*/

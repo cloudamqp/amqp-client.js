@@ -581,6 +581,31 @@ export default class AMQPChannel {
     return this.sendRpc(unbind, j)
   }
 
+  txSelect() {
+    return this.txMethod(10)
+  }
+
+  txCommit() {
+    return this.txMethod(20)
+  }
+
+  txRollback() {
+    return this.txMethod(30)
+  }
+
+  txMethod(methodId) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(12))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel: 1
+    frame.setUint32(j, 4); j += 4 // frameSize
+    frame.setUint16(j, 90); j += 2 // class: Tx
+    frame.setUint16(j, methodId); j += 2
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    return this.sendRpc(frame, j)
+  }
+
   queue(name = "", props = {}, args = {}) {
     return new Promise((resolve, reject) => {
       this.queueDeclare(name, props, args)
