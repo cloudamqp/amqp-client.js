@@ -223,6 +223,15 @@ export default class AMQPBaseClient {
                   this.closeSocket()
                   break
                 }
+                case 60: { // blocked
+                  const [reason, len] = view.getShortString(i); i += len
+                  this.blocked = reason
+                  break
+                }
+                case 61: { // unblocked
+                  this.blocked = null
+                  break
+                }
                 default:
                   i += frameSize - 4
                   console.error("unsupported class/method id", classId, methodId)

@@ -376,6 +376,9 @@ export default class AMQPChannel {
 
   basicPublish(exchange, routingkey, data, properties, mandatory, immediate) {
     if (this.closed) return this.rejectClosed()
+    if (this.connection.blocked)
+      return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))
+
     if (data instanceof Uint8Array) {
       // noop
     } else if (data instanceof ArrayBuffer) {
