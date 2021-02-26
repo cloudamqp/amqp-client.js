@@ -38,11 +38,11 @@ export default class AMQPChannel {
   setClosed(err) {
     if (!this.closed) {
       this.closed = true
-      // Close all consumers
       Object.values(this.consumers).forEach((consumer) => consumer.setClosed(err))
-      this.consumers = [] // Empty consumers
+      this.consumers = []
       // Empty and reject all RPC promises
       while(this.rejectPromise(err)) { 1 }
+      this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
     }
   }
 
