@@ -19,15 +19,11 @@ async function run() {
     const conn = await amqp.connect()
     const ch = await conn.channel()
     const q = await ch.queue()
-    let i = 0
     const consumer = await q.subscribe({noAck: true}, async (msg) => {
       console.log(msg.bodyString())
-      if (i++ < 3)
-        setTimeout(() => q.publish(`hello world ${i}`), 1000)
-      else
-        await consumer.cancel()
+      await consumer.cancel()
     })
-    await q.publish("first!")
+    await q.publish("Hello World")
     await consumer.wait() // will block until consumer is cancled or throw an error if server closed channel/connection
     await conn.close()
   } catch (e) {
