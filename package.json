@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@cloudamqp/amqp-client",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)",
   "main": "src/amqp-socket-client.mjs",
   "scripts": {

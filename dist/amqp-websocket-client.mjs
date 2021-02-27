@@ -1075,7 +1075,7 @@ class AMQPMessage {
   }
 }
 
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
@@ -1108,9 +1108,11 @@ class AMQPBaseClient {
   }
 
   rejectConnect(err) {
-    const [, reject] = this.connectPromise;
-    delete this.connectPromise;
-    reject(err);
+    if (this.connectPromise) {
+      const [, reject] = this.connectPromise;
+      delete this.connectPromise;
+      reject(err);
+    }
     this.closed = true;
     this.closeSocket();
   }
@@ -1158,7 +1160,7 @@ class AMQPBaseClient {
     channelOpen.setUint8(j, 0); j += 1; // reserved1
     channelOpen.setUint8(j, 206); j += 1; // frame end byte
     return new Promise((resolve, reject) => {
-      this.send(channelOpen.buffer)
+      this.send(new Uint8Array(channelOpen.buffer, 0, 13))
         .then(() => channel.promises.push([resolve, reject]))
         .catch(reject);
     })
@@ -1265,14 +1267,10 @@ class AMQPBaseClient {
                   const methodId = view.getUint16(i); i += 2;
                   console.debug("connection closed by server", code, text, classId, methodId);
 
-                  this.closed = true;
                   const msg = `connection closed: ${text} (${code})`;
                   const err = new AMQPError(msg, this);
                   this.channels.forEach((ch) => ch.setClosed(err));
                   this.channels = [];
-                  if (this.connectPromise) {
-                    this.rejectConnect(err);
-                  }
 
                   const closeOk = new AMQPView(new ArrayBuffer(12));
                   closeOk.setUint8(j, 1); j += 1; // type: method
@@ -1282,8 +1280,8 @@ class AMQPBaseClient {
                   closeOk.setUint16(j, 51); j += 2; // method: closeok
                   closeOk.setUint8(j, 206); j += 1; // frame end byte
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
-                    .then(() => this.closeSocket())
                     .catch(err => console.warn("Error while sending Connection#CloseOk", err));
+                  this.rejectConnect(err);
                   break
                 }
                 case 51: { // closeOk
