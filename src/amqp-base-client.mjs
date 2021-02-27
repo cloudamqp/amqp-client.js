@@ -88,7 +88,7 @@ export default class AMQPBaseClient {
     channelOpen.setUint8(j, 0); j += 1 // reserved1
     channelOpen.setUint8(j, 206); j += 1 // frame end byte
     return new Promise((resolve, reject) => {
-      this.send(channelOpen.buffer)
+      this.send(new Uint8Array(channelOpen.buffer, 0, 13))
         .then(() => channel.promises.push([resolve, reject]))
         .catch(reject)
     })
