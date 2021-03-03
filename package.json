@@ -35,6 +35,7 @@
     "esdoc": "^1.1.0",
     "esdoc-standard-plugin": "^1.0.0",
     "eslint": "^7.20.0",
-    "rollup": "^2.39.1"
+    "rollup": "^2.39.1",
+    "rollup-plugin-cleanup": "^3.2.1"
   }
 }
