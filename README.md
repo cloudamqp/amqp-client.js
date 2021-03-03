@@ -1,6 +1,12 @@
 # amqp-client.js
 
-AMQP 0-9-1 client both for Node.js and browsers (using WebSocket). [API documentation](https://cloudamqp.github.io/amqp-client.js/)
+AMQP 0-9-1 client both for Node.js and browsers (using WebSocket). [API documentation](https://cloudamqp.github.io/amqp-client.js/).
+
+This library Promise based and hence works very well with async/await. It's secure by default, for instance, publishes aren't fulfilled until either the data has been send on the wire (so that back propagation is respected), or if the channel has Publish Confirms enabled, it isn't fulfilled until the server has acknowledged that the message has been enqueued.
+
+The library was developed so make it easy for developers who already are familiar with AMQP to write browser apps that communicates directly with an AMQP server over WebSocket.
+
+The library is developed and supported by [CloudAMQP](https://www.cloudamqp.com), the largest hosted RabbitMQ provider in the world.
 
 ## Install
 
