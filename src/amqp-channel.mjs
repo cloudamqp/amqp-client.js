@@ -714,6 +714,13 @@ export default class AMQPChannel {
     return this.sendRpc(frame, j)
   }
 
+  /**
+   * Delete an exchange
+   * @param {string} name - name of the exchange
+   * @param {object} param
+   * @param {bool} param.ifUnused - only delete if the exchange doesn't have any bindings
+   * @return {Promise<, AMQPError>} Fulfilled when the exchange is deleted or if it's already deleted
+   */
   exchangeDelete(name, { ifUnused = false } = {}) {
     const noWait = false
     let j = 0
@@ -734,6 +741,14 @@ export default class AMQPChannel {
     return this.sendRpc(frame, j)
   }
 
+  /**
+   * Exchange to exchange binding.
+   * @param {string} destination - name of the destination exchange
+   * @param {string} exchange - name of the source exchange
+   * @param {string} routingKey - key to bind with
+   * @param {object} args - optional arguments, e.g. for header exchanges
+   * @return {Promise<, AMQPError>} fulfilled when confirmed by the server
+   */
   exchangeBind(destination, source, routingKey = "", args = {}) {
     if (this.closed) return this.rejectClosed()
     let j = 0
@@ -754,6 +769,14 @@ export default class AMQPChannel {
     return this.sendRpc(bind, j)
   }
 
+  /**
+   * Delete an exchange-to-exchange binding
+   * @param {string} queue - name of the queue
+   * @param {string} exchange - name of the exchange
+   * @param {string} routingKey - key that was bound
+   * @param {object} args - arguments, e.g. for header exchanges
+   * @return {Promise} fulfilled when confirmed by the server
+   */
   exchangeUnbind(destination, source, routingKey = "", args = {}) {
     if (this.closed) return this.rejectClosed()
     let j = 0
@@ -774,14 +797,24 @@ export default class AMQPChannel {
     return this.sendRpc(unbind, j)
   }
 
+  /**
+   * Set this channel in Transaction mode.
+   * Rember to commit the transaction, overwise the server will eventually run out of memory.
+   */
   txSelect() {
     return this.txMethod(10)
   }
 
+  /**
+   * Commit a transaction
+   */
   txCommit() {
     return this.txMethod(20)
   }
 
+  /**
+   * Rollback a transaction
+   */
   txRollback() {
     return this.txMethod(30)
   }
@@ -799,6 +832,10 @@ export default class AMQPChannel {
     return this.sendRpc(frame, j)
   }
 
+  /**
+   * Declare a queue and return a AMQPQueue object.
+   * @return {Promise<AMQPQueue, AMQPError>} Convient wrapper around a Queue object
+   */
   queue(name = "", props = {}, args = {}) {
     return new Promise((resolve, reject) => {
       this.queueDeclare(name, props, args)
@@ -807,6 +844,9 @@ export default class AMQPChannel {
     })
   }
 
+  /**
+   * Alias for basicQos
+   */
   prefetch(prefetchCount) {
     return this.basicQos(prefetchCount)
   }

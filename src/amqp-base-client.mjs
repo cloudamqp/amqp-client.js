@@ -56,6 +56,9 @@ export default class AMQPBaseClient {
 
   /**
    * Gracefully close the AMQP connection
+   * @param {object} params
+   * @param {number} params.code - Close code
+   * @param {string} params.reason - Reason for closing the connection
    */
   close({ code = 200, reason = "" } = {}) {
     if (this.closed) return this.rejectClosed()
@@ -114,7 +117,8 @@ export default class AMQPBaseClient {
 
   /**
    * Parse and act on frames in an AMQPView
-   * param {AMQPView} view over a ArrayBuffer
+   * @param {AMQPView} view over a ArrayBuffer
+   * @ignore
    */
   parseFrames(view) {
     // Can possibly be multiple AMQP frames in a single WS frame
