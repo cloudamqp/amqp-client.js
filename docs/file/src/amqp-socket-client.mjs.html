@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../">
+  <title data-ice="title">src/amqp-socket-client.mjs | @cloudamqp/amqp-client</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  <script src="script/manual.js"></script>
+<meta name="description" content="AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)"><meta property="twitter:card" content="summary"><meta property="twitter:title" content="@cloudamqp/amqp-client"><meta property="twitter:description" content="AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)"></head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+<a style="position:relative; top:3px;" href="https://github.com/cloudamqp/amqp-client.js"><img width="20px" src="./image/github.png"></a></header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-base-client.mjs~AMQPBaseClient.html">AMQPBaseClient</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html">AMQPChannel</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-consumer.mjs~AMQPConsumer.html">AMQPConsumer</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-message.mjs~AMQPMessage.html">AMQPMessage</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-queue.mjs~AMQPQueue.html">AMQPQueue</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-socket-client.mjs~AMQPClient.html">AMQPClient</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-view.mjs~AMQPView.html">AMQPView</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-websocket-client.mjs~AMQPWebSocketClient.html">AMQPWebSocketClient</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">src/amqp-socket-client.mjs</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">import AMQPBaseClient from &apos;./amqp-base-client.mjs&apos;
+import AMQPError from &apos;./amqp-error.mjs&apos;
+import AMQPView from &apos;./amqp-view.mjs&apos;
+import { Buffer } from &apos;buffer&apos;
+import net from &apos;net&apos;
+import tls from &apos;tls&apos;
+import process from &apos;process&apos;
+
+export default class AMQPClient extends AMQPBaseClient {
+  constructor(url) {
+    const u = new URL(url)
+    const vhost = decodeURIComponent(u.pathname.slice(1)) || &quot;/&quot;
+    const username = u.username || &quot;guest&quot;
+    const password = u.password || &quot;guest&quot;
+    const name = u.searchParams.get(&quot;name&quot;)
+    const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
+    super(vhost, username, password, name, platform)
+    this.tls = u.protocol === &quot;amqps:&quot;
+    this.host = u.host || &quot;localhost&quot;
+    this.port = u.port || this.tls ? 5671 : 5672
+  }
+
+  connect() {
+    const socket = this.tls ? this.connectTLS() : this.connectPlain()
+    Object.defineProperty(this, &apos;socket&apos;, {
+      value: socket,
+      enumerable: false // hide it from console.log etc.
+    })
+    return new Promise((resolve, reject) =&gt; {
+      this.socket.on(&apos;error&apos;, (err) =&gt; reject(new AMQPError(err, this)))
+      this.connectPromise = [resolve, reject]
+    })
+  }
+
+  connectPlain() {
+    let framePos = 0
+    let frameSize = 0
+    const frameBuffer = new Uint8Array(4096)
+    const self = this
+    const socket = net.connect({
+      host: this.host,
+      port: this.port,
+      onread: {
+        // Reuses a 4KiB Buffer for every read from the socket.
+        buffer: Buffer.alloc(4096),
+        callback: function(nread, buf) {
+          // Find frame boundaries and only pass a single frame at a time
+          let bufPos = 0
+          while (bufPos &lt; nread) {
+            // read frame size of next frame
+            if (frameSize === 0)
+              frameSize = buf.readInt32BE(bufPos + 3) + 8
+
+            const leftOfFrame = frameSize - framePos
+            const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + leftOfFrame)
+            framePos += copied
+            bufPos += copied
+            if (framePos === frameSize) {
+              const view = new AMQPView(frameBuffer.buffer, 0, frameSize)
+              self.parseFrames(view)
+              frameSize = framePos = 0
+            }
+          }
+        }
+      }
+    })
+    socket.on(&apos;connect&apos;, () =&gt; {
+      const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])
+      this.send(amqpstart)
+    })
+    return socket
+  }
+
+  connectTLS() {
+    const socket = tls.connect({
+      host: this.host,
+      port: this.port,
+      servername: this.host, // SNI
+    })
+    socket.on(&apos;secureConnect&apos;, () =&gt; {
+      const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])
+      this.send(amqpstart)
+    })
+    let framePos = 0
+    let frameSize = 0
+    const frameBuffer = new Uint8Array(4096)
+    socket.on(&apos;data&apos;, (buf) =&gt; {
+      // Find frame boundaries and only pass a single frame at a time
+      let bufPos = 0
+      while (bufPos &lt; buf.byteLength) {
+        // read frame size of next frame
+        if (frameSize === 0)
+          frameSize = buf.readInt32BE(bufPos + 3) + 8
+
+        const leftOfFrame = frameSize - framePos
+        const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + leftOfFrame)
+        framePos += copied
+        bufPos += copied
+        if (framePos === frameSize) {
+          const view = new AMQPView(frameBuffer.buffer, 0, frameSize)
+          this.parseFrames(view)
+          frameSize = framePos = 0
+        }
+      }
+    })
+    return socket
+  }
+
+  send(bytes) {
+    return new Promise((resolve, reject) =&gt; {
+      this.socket.write(bytes, &apos;&apos;, (err) =&gt; err ? reject(err) : resolve())
+    })
+  }
+
+  closeSocket() {
+    this.socket.end()
+  }
+}
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.1.0)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+</body>
+</html>

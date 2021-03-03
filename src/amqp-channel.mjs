@@ -3,7 +3,15 @@ import AMQPQueue from './amqp-queue.mjs'
 import AMQPView from './amqp-view.mjs'
 import AMQPConsumer from './amqp-consumer.mjs'
 
+/**
+ * Represents an AMQP Channel
+ * Almost all actions in AMQP are performed on a Channel
+ */
 export default class AMQPChannel {
+  /**
+   * @param {AMQPBaseClient} the connection this channel belongs to
+   * @param {number} id of the channel
+   */
   constructor(connection, id) {
     this.connection = connection
     this.id = id
@@ -13,6 +21,10 @@ export default class AMQPChannel {
     this.closed = false
   }
 
+  /**
+   * Resolves the next RPC promise
+   * @return {Bool} true if a promise was resolved, otherwise false
+   */
   resolvePromise(value) {
     if (this.promises.length === 0) return false
     const [resolve, ] = this.promises.shift()
@@ -20,6 +32,10 @@ export default class AMQPChannel {
     return true
   }
 
+  /**
+   * Rejects the next RPC promise
+   * @return {Bool} true if a promise was rejected, otherwise false
+   */
   rejectPromise(err) {
     if (this.promises.length === 0) return false
     const [, reject] = this.promises.shift()
@@ -27,6 +43,12 @@ export default class AMQPChannel {
     return true
   }
 
+  /**
+   * Send a RPC request, will resolve a RPC promise when RPC response arrives
+   * @private
+   * @params {AMQPView} frame with data
+   * @params {number} how long the frame actually is
+   */
   sendRpc(frame, frameSize) {
     return new Promise((resolve, reject) => {
       this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
@@ -35,6 +57,14 @@ export default class AMQPChannel {
     })
   }
 
+  /**
+   * Marks the channel as closed
+   * All outstanding RPC requests will be rejected
+   * All outstanding publish confirms will be rejected
+   * All consumers will be marked as closed
+   * @param {Error} err - why the channel was closed
+   * @protected
+   */
   setClosed(err) {
     if (!this.closed) {
       this.closed = true
@@ -46,10 +76,21 @@ export default class AMQPChannel {
     }
   }
 
+  /**
+   * @return {Promise<AMQPError>} Rejected promise with an error
+   * @private
+   */
   rejectClosed() {
     return Promise.reject(new AMQPError("Channel is closed", this.connection))
   }
 
+  /**
+   * Called from AMQPBaseClient when a publish is confirmed by the server
+   * Will full fill one or more (if multiple) Unconfirmed Publishes
+   * @param {number} deliveryTag
+   * @param {bool} multiple - true if all unconfirmed publishes up to this deliveryTag should be resolved or just this one
+   * @param {bool} nack - true if negative confirm, hence reject the unconfirmed publish(es)
+   */
   publishConfirmed(deliveryTag, multiple, nack) {
     // is queueMicrotask() needed here?
     const idx = this.unconfirmedPublishes.findIndex(([tag,]) => tag === deliveryTag)
@@ -68,6 +109,9 @@ export default class AMQPChannel {
     }
   }
 
+  /**
+   * Called from AMQPBaseClient when a message is ready
+   */
   onMessageReady(message) {
     if (this.delivery) {
       this.delivery = null
@@ -81,10 +125,17 @@ export default class AMQPChannel {
     }
   }
 
+  /**
+   * Default handler for Returned messages
+   * @param {AMQPMessage} message
+   */
   onReturn(message) {
     console.error("Message returned from server", message)
   }
 
+  /**
+   * Close the channel gracefully
+   */
   close({ code = 200, reason = "" } = {}) {
     if (this.closed) return this.rejectClosed()
     this.closed = true
@@ -104,18 +155,32 @@ export default class AMQPChannel {
     return this.sendRpc(frame, j)
   }
 
-  // Message is ready to be delivered to consumer
-  deliver(msg) {
-    queueMicrotask(() => { // Enqueue microtask to avoid race condition with ConsumeOk
-      const consumer = this.consumers[msg.consumerTag]
+  /**
+   * Deliver a message to a consumer
+   * @param {AMQPMessage} message
+   * @return {Promise} Fulfilled when the message is processed
+   */
+  deliver(message) {
+    return new Promise((resolve, reject) => {
+      const consumer = this.consumers[message.consumerTag]
       if (consumer) {
-        consumer.onMessage(msg)
+        try {
+          consumer.onMessage(message)
+          resolve()
+        } catch (err) {
+          reject(err)
+        }
       } else {
-        console.error("Consumer", msg.consumerTag, "on channel", this.id, "doesn't exists")
+        reject(new AMQPError(`Consumer ${message.consumerTag} on channel ${this.id} doesn't exists`, this.connection))
       }
     })
   }
 
+  /**
+   * Enable or disable flow. Disabling flow will stop the server from delivering messages to consumers.
+   * Not supported in RabbitMQ
+   * @param {bool} active
+   */
   flow(active = true) {
     if (this.closed) return this.rejectClosed()
     let j = 0
@@ -130,6 +195,14 @@ export default class AMQPChannel {
     return this.sendRpc(frame, j)
   }
 
+  /**
+   * Bind a queue to an exchange
+   * @param {string} queue - name of the queue
+   * @param {string} exchange - name of the exchange
+   * @param {string} routingKey - key to bind with
+   * @param {object} args - optional arguments, e.g. for header exchanges
+   * @return {Promise} fulfilled when confirmed by the server
+   */
   queueBind(queue, exchange, routingKey, args = {}) {
     if (this.closed) return this.rejectClosed()
     const noWait = false

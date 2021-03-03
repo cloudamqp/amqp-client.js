@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../">
+  <title data-ice="title">src/amqp-view.mjs | @cloudamqp/amqp-client</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  <script src="script/manual.js"></script>
+<meta name="description" content="AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)"><meta property="twitter:card" content="summary"><meta property="twitter:title" content="@cloudamqp/amqp-client"><meta property="twitter:description" content="AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)"></head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./">Home</a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+<a style="position:relative; top:3px;" href="https://github.com/cloudamqp/amqp-client.js"><img width="20px" src="./image/github.png"></a></header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-base-client.mjs~AMQPBaseClient.html">AMQPBaseClient</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html">AMQPChannel</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-consumer.mjs~AMQPConsumer.html">AMQPConsumer</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-message.mjs~AMQPMessage.html">AMQPMessage</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-queue.mjs~AMQPQueue.html">AMQPQueue</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-socket-client.mjs~AMQPClient.html">AMQPClient</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-view.mjs~AMQPView.html">AMQPView</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/src/amqp-websocket-client.mjs~AMQPWebSocketClient.html">AMQPWebSocketClient</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">src/amqp-view.mjs</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">export default class AMQPView extends DataView {
+  getUint64(byteOffset, littleEndian) {
+    // split 64-bit number into two 32-bit (4-byte) parts
+    const left =  this.getUint32(byteOffset, littleEndian)
+    const right = this.getUint32(byteOffset + 4, littleEndian)
+
+    // combine the two 32-bit values
+    const combined = littleEndian ? left + 2**32 * right : 2**32 * left + right
+
+    if (!Number.isSafeInteger(combined))
+      console.warn(combined, &apos;exceeds MAX_SAFE_INTEGER. Precision may be lost&apos;)
+
+    return combined
+  }
+
+  setUint64(byteOffset, value, littleEndian) {
+    this.setBigUint64(byteOffset, BigInt(value), littleEndian)
+  }
+
+  getInt64(byteOffset, value, littleEndian) {
+    return Number(this.getBigInt64(byteOffset, littleEndian))
+  }
+
+  setInt64(byteOffset, value, littleEndian) {
+    this.setBigInt64(byteOffset, BigInt(value), littleEndian)
+  }
+
+  getShortString(byteOffset, littleEndian) {
+    const len = this.getUint8(byteOffset, littleEndian)
+    byteOffset += 1
+    const view = new Uint8Array(this.buffer, byteOffset, len)
+    const decoder = new TextDecoder()
+    return [decoder.decode(view), len + 1]
+  }
+
+  setShortString(byteOffset, string, littleEndian) {
+    const encoder = new TextEncoder()
+    const utf8 = encoder.encode(string)
+    this.setUint8(byteOffset, utf8.byteLength, littleEndian)
+    byteOffset += 1
+    const view = new Uint8Array(this.buffer, byteOffset)
+    view.set(utf8)
+    return utf8.byteLength + 1
+  }
+
+  getLongString(byteOffset, littleEndian) {
+    const len = this.getUint32(byteOffset, littleEndian)
+    byteOffset += 4
+    const view = new Uint8Array(this.buffer, byteOffset, len)
+    const decoder = new TextDecoder()
+    return [decoder.decode(view), len + 4]
+  }
+
+  setLongString(byteOffset, string, littleEndian) {
+    const encoder = new TextEncoder()
+    const utf8 = encoder.encode(string)
+    this.setUint32(byteOffset, utf8.byteLength, littleEndian)
+    byteOffset += 4
+    const view = new Uint8Array(this.buffer, byteOffset)
+    view.set(utf8)
+    return utf8.byteLength + 4
+  }
+
+  getProperties(byteOffset, littleEndian) {
+    let j = byteOffset
+    const flags = this.getUint16(j, littleEndian); j += 2
+    const props = {}
+    if ((flags &amp; 0x8000) &gt; 0) {
+      const [contentType, len] = this.getShortString(j, littleEndian); j += len
+      props.contentType = contentType
+    }
+    if ((flags &amp; 0x4000) &gt; 0) {
+      const [contentEncoding, len] = this.getShortString(j, littleEndian); j += len
+      props.contentEncoding = contentEncoding
+    }
+    if ((flags &amp; 0x2000) &gt; 0) {
+      const [headers, len] = this.getTable(j, littleEndian); j += len
+      props.headers = headers
+    }
+    if ((flags &amp; 0x1000) &gt; 0) {
+      props.deliveryMode = this.getUint8(j, littleEndian); j += 1
+    }
+    if ((flags &amp; 0x0800) &gt; 0) {
+      props.priority = this.getUint8(j, littleEndian); j += 1
+    }
+    if ((flags &amp; 0x0400) &gt; 0) {
+      const [correlationId, len] = this.getShortString(j, littleEndian); j += len
+      props.correlationId = correlationId
+    }
+    if ((flags &amp; 0x0200) &gt; 0) {
+      const [replyTo, len] = this.getShortString(j, littleEndian); j += len
+      props.replyTo = replyTo
+    }
+    if ((flags &amp; 0x0100) &gt; 0) {
+      const [expiration, len] = this.getShortString(j, littleEndian); j += len
+      props.expiration = expiration
+    }
+    if ((flags &amp; 0x0080) &gt; 0) {
+      const [messageId, len] = this.getShortString(j, littleEndian); j += len
+      props.messageId = messageId
+    }
+    if ((flags &amp; 0x0040) &gt; 0) {
+      props.timestamp = new Date(this.getInt64(j, littleEndian) * 1000); j += 8
+    }
+    if ((flags &amp; 0x0020) &gt; 0) {
+      const [type, len] = this.getShortString(j, littleEndian); j += len
+      props.type = type
+    }
+    if ((flags &amp; 0x0010) &gt; 0) {
+      const [userId, len] = this.getShortString(j, littleEndian); j += len
+      props.userId = userId
+    }
+    if ((flags &amp; 0x0008) &gt; 0) {
+      const [appId, len] = this.getShortString(j, littleEndian); j += len
+      props.appId = appId
+    }
+    const len = j - byteOffset
+    return [props, len]
+  }
+
+  setProperties(byteOffset, properties, littleEndian) {
+    let j = byteOffset
+    let flags = 0
+    if (!(properties)) properties = {}
+    if (properties.contentType)     flags = flags | 0x8000
+    if (properties.contentEncoding) flags = flags | 0x4000
+    if (properties.headers)         flags = flags | 0x2000
+    if (properties.deliveryMode)    flags = flags | 0x1000
+    if (properties.priority)        flags = flags | 0x0800
+    if (properties.correlationId)   flags = flags | 0x0400
+    if (properties.replyTo)         flags = flags | 0x0200
+    if (properties.expiration)      flags = flags | 0x0100
+    if (properties.messageId)       flags = flags | 0x0080
+    if (properties.timestamp)       flags = flags | 0x0040
+    if (properties.type)            flags = flags | 0x0020
+    if (properties.userId)          flags = flags | 0x0010
+    if (properties.appId)           flags = flags | 0x0008
+    this.setUint16(j, flags, littleEndian)
+    j += 2
+    if (properties.contentType) {
+      j += this.setShortString(j, properties.contentType)
+    }
+    if (properties.contentEncoding) {
+      j += this.setShortString(j, properties.contentEncoding)
+    }
+    if (properties.headers) {
+      j += this.setTable(j, properties.headers)
+    }
+    if (properties.deliveryMode) {
+      this.setUint8(j, properties.deliveryMode); j += 1
+    }
+    if (properties.priority) {
+      this.setUint8(j, properties.priority); j += 1
+    }
+    if (properties.correlationId) {
+      j += this.setShortString(j, properties.correlationId)
+    }
+    if (properties.replyTo) {
+      j += this.setShortString(j, properties.replyTo)
+    }
+    if (properties.expiration) {
+      j += this.setShortString(j, properties.expiration)
+    }
+    if (properties.messageId) {
+      j += this.setShortString(j, properties.messageId)
+    }
+    if (properties.timestamp) { // Date
+      const unixEpoch = Math.floor(Number(properties.timestamp) / 1000)
+      this.setInt64(j, unixEpoch, littleEndian); j += 8
+    }
+    if (properties.type) {
+      j += this.setShortString(j, properties.type)
+    }
+    if (properties.userId) {
+      j += this.setShortString(j, properties.userId)
+    }
+    if (properties.appId) {
+      j += this.setShortString(j, properties.appId)
+    }
+    const len = j - byteOffset
+    return len
+  }
+
+  getTable(byteOffset, littleEndian) {
+    const table = {}
+    let i = byteOffset
+    const len = this.getUint32(byteOffset, littleEndian); i += 4
+    for (; i &lt; byteOffset + 4 + len;) {
+      const [k, strLen] = this.getShortString(i, littleEndian); i += strLen
+      const [v, vLen] = this.getField(i, littleEndian); i += vLen
+      table[k] = v
+    }
+    return [table, len + 4]
+  }
+
+  setTable(byteOffset, table, littleEndian) {
+    // skip the first 4 bytes which are for the size
+    let i = byteOffset + 4
+    for (let [key, value] of Object.entries(table)) {
+      i += this.setShortString(i, key, littleEndian)
+      i += this.setField(i, value, littleEndian)
+    }
+    this.setUint32(byteOffset, i - byteOffset - 4, littleEndian) // update prefix length
+    return i - byteOffset
+  }
+
+  getField(byteOffset, littleEndian) {
+    let i = byteOffset
+    const k = this.getUint8(i, littleEndian); i += 1
+    const type = String.fromCharCode(k)
+    let v
+    let len
+    switch (type) {
+      case &apos;t&apos;: v = this.getUint8(i, littleEndian) === 1; i += 1; break
+      case &apos;b&apos;: v = this.getInt8(i, littleEndian); i += 1; break
+      case &apos;B&apos;: v = this.getUint8(i, littleEndian); i += 1; break
+      case &apos;s&apos;: v = this.getInt16(i, littleEndian); i += 2; break
+      case &apos;u&apos;: v = this.getUint16(i, littleEndian); i += 2; break
+      case &apos;I&apos;: v = this.getInt32(i, littleEndian); i += 4; break
+      case &apos;i&apos;: v = this.getUint32(i, littleEndian); i += 4; break
+      case &apos;l&apos;: v = this.getInt64(i, littleEndian); i += 8; break
+      case &apos;f&apos;: v = this.getFloat32(i, littleEndian); i += 4; break
+      case &apos;d&apos;: v = this.getFloat64(i, littleEndian); i += 8; break
+      case &apos;S&apos;: [v, len] = this.getLongString(i, littleEndian); i += len; break
+      case &apos;F&apos;: [v, len] = this.getTable(i, littleEndian); i += len; break
+      case &apos;A&apos;: [v, len] = this.getArray(i, littleEndian); i += len; break
+      case &apos;x&apos;: [v, len] = this.getByteArray(i); i += len; break
+      case &apos;T&apos;: v = new Date(this.getInt64(i, littleEndian) * 1000); i += 8; break
+      case &apos;V&apos;: v = null; break
+      case &apos;D&apos;: {
+        const scale = this.getUint8(i, littleEndian); i += 1
+        const value = this.getUint32(i, littleEndian); i += 4
+        v = value / 10**scale
+        break
+      }
+      default:
+        throw `Field type &apos;${k}&apos; not supported`
+    }
+    return [v, i - byteOffset]
+  }
+
+  setField(byteOffset, field, littleEndian) {
+    let i = byteOffset
+    switch (typeof field) {
+      case &quot;string&quot;:
+        this.setUint8(i, &apos;S&apos;.charCodeAt(), littleEndian); i += 1
+        i += this.setLongString(i, field, littleEndian)
+        break
+      case &quot;boolean&quot;:
+        this.setUint8(i, &apos;t&apos;.charCodeAt(), littleEndian); i += 1
+        this.setUint8(i, field ? 1 : 0, littleEndian); i += 1
+        break
+      case &quot;bigint&quot;:
+        this.setUint8(i, &apos;l&apos;.charCodeAt(), littleEndian); i += 1
+        this.setBigInt64(i, field, littleEndian); i += 8
+        break
+      case &quot;number&quot;:
+        if (Number.isInteger(field)) {
+          if (-(2**32) &lt; field &lt; 2**32) {
+            this.setUint8(i, &apos;I&apos;.charCodeAt(), littleEndian); i += 1
+            this.setInt32(i, field, littleEndian); i += 4
+          } else {
+            this.setUint8(i, &apos;l&apos;.charCodeAt(), littleEndian); i += 1
+            this.setInt64(i, field, littleEndian); i += 8
+          }
+        } else { // float
+          if (-(2**32) &lt; field &lt; 2**32) {
+            this.setUint8(i, &apos;f&apos;.charCodeAt(), littleEndian); i += 1
+            this.setFloat32(i, field, littleEndian); i += 4
+          } else {
+            this.setUint8(i, &apos;d&apos;.charCodeAt(), littleEndian); i += 1
+            this.setFloat64(i, field, littleEndian); i += 8
+          }
+        }
+        break
+      case undefined:
+      case null:
+        this.setUint8(i, &apos;V&apos;.charCodeAt(), littleEndian); i += 1
+        break
+      case &quot;object&quot;:
+        if (Array.isArray(field)) {
+          this.setUint8(i, &apos;A&apos;.charCodeAt(), littleEndian); i += 1
+          i += this.setArray(i, field, littleEndian)
+        } else if (field instanceof ArrayBuffer || field instanceof Uint8Array) {
+          this.setUint8(i, &apos;x&apos;.charCodeAt(), littleEndian); i += 1
+          i += this.setByteArray(i, field)
+        } else if (field instanceof Date) {
+          this.setUint8(i, &apos;T&apos;.charCodeAt(), littleEndian); i += 1
+          const unixEpoch = Math.floor(Number(field) / 1000)
+          this.setInt64(i, unixEpoch, littleEndian); i += 8
+        } else { // hopefully it&apos;s a hash like object
+          this.setUint8(i, &apos;F&apos;.charCodeAt(), littleEndian); i += 1
+          i += this.setTable(i, field, littleEndian)
+        }
+        break
+      default:
+        throw `Unsupported field type &apos;${field}&apos;`
+    }
+    return i - byteOffset
+  }
+
+  getArray(byteOffset, littleEndian) {
+    const len = this.getUint32(byteOffset, littleEndian); byteOffset += 4
+    const endOffset = byteOffset + len
+    const v = []
+    for (; byteOffset &lt; endOffset;) {
+      const [field, fieldLen] = this.getField(byteOffset, littleEndian); byteOffset += fieldLen
+      v.push(field)
+    }
+    return [v, len + 4]
+  }
+
+  setArray(byteOffset, array, littleEndian) {
+    const start = byteOffset
+    byteOffset += 4 // bytelength
+    array.forEach((e) =&gt; {
+      byteOffset += this.setField(e)
+    })
+    this.setUint32(start, byteOffset - start - 4, littleEndian) // update length
+    return byteOffset - start
+  }
+
+  getByteArray(byteOffset) {
+    const len = this.getUint32(byteOffset)
+    const v = new Uint8Array(this.buffer, byteOffset + 4, len)
+    return [v, len + 4]
+  }
+
+  setByteArray(byteOffset, data) {
+    const len = this.setUint32(byteOffset, data.byteLength)
+    const view = new Uint8Array(this.buffer, byteOffset + 4, len)
+    view.set(data)
+    return data.bytelength + 4
+  }
+
+  setFrameEnd(j) {
+    this.setUint32(3, j - 7) // update frameSize
+    this.setUint8(j, 206) // frame end byte
+    return 1
+  }
+}
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.1.0)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+</body>
+</html>

@@ -5,6 +5,10 @@ import AMQPView from './amqp-view.mjs'
 
 const VERSION = '1.1.1'
 
+/**
+ * Base class for AMQPClients.
+ * Implements everything except how to connect, send data and close the socket
+ */
 export default class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
     this.vhost = vhost
@@ -19,22 +23,27 @@ export default class AMQPBaseClient {
     this.closed = false
   }
 
+  /** @private */
   connect() {
     throw "Abstract method not implemented"
   }
 
+  /** @private */
   send() {
     throw "Abstract method not implemented"
   }
 
+  /** @private */
   closeSocket() {
     throw "Abstract method not implemented"
   }
 
+  /** @private */
   rejectClosed() {
     return Promise.reject(new AMQPError("Connection closed", this))
   }
 
+  /** @private */
   rejectConnect(err) {
     if (this.connectPromise) {
       const [, reject] = this.connectPromise
@@ -45,6 +54,9 @@ export default class AMQPBaseClient {
     this.closeSocket()
   }
 
+  /**
+   * Gracefully close the AMQP connection
+   */
   close({ code = 200, reason = "" } = {}) {
     if (this.closed) return this.rejectClosed()
     this.closed = true
@@ -68,8 +80,14 @@ export default class AMQPBaseClient {
     })
   }
 
+  /**
+   * Open a channel
+   * Optionally an existing or non existing channel id can be specified
+   * return {Promise<AMQPChannel>} channel
+   */
   channel(id) {
     if (this.closed) return this.rejectClosed()
+    if (id > 0 && this.channels[id]) return this.channels[id]
     // Store channels in an array, set position to null when channel is closed
     // Look for first null value or add one the end
     if (!id)
@@ -94,6 +112,10 @@ export default class AMQPBaseClient {
     })
   }
 
+  /**
+   * Parse and act on frames in an AMQPView
+   * param {AMQPView} view over a ArrayBuffer
+   */
   parseFrames(view) {
     // Can possibly be multiple AMQP frames in a single WS frame
     for (let i = 0; i < view.byteLength;) {

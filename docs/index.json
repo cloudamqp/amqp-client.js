@@ -1,0 +1,4421 @@
+[
+  {
+    "__docId__": 1,
+    "kind": "external",
+    "name": "Infinity",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Infinity",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Infinity",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 2,
+    "kind": "external",
+    "name": "NaN",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/NaN",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~NaN",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 3,
+    "kind": "external",
+    "name": "undefined",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/undefined",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~undefined",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 4,
+    "kind": "external",
+    "name": "null",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/null",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~null",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 5,
+    "kind": "external",
+    "name": "Object",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Object",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 6,
+    "kind": "external",
+    "name": "object",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~object",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 7,
+    "kind": "external",
+    "name": "Function",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Function",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 8,
+    "kind": "external",
+    "name": "function",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~function",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 9,
+    "kind": "external",
+    "name": "Boolean",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Boolean",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 10,
+    "kind": "external",
+    "name": "boolean",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~boolean",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 11,
+    "kind": "external",
+    "name": "Symbol",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Symbol",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 12,
+    "kind": "external",
+    "name": "Error",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Error",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 13,
+    "kind": "external",
+    "name": "EvalError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/EvalError",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~EvalError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 14,
+    "kind": "external",
+    "name": "InternalError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/InternalError",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~InternalError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 15,
+    "kind": "external",
+    "name": "RangeError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RangeError",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~RangeError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 16,
+    "kind": "external",
+    "name": "ReferenceError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ReferenceError",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~ReferenceError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 17,
+    "kind": "external",
+    "name": "SyntaxError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SyntaxError",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~SyntaxError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 18,
+    "kind": "external",
+    "name": "TypeError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypeError",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~TypeError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 19,
+    "kind": "external",
+    "name": "URIError",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/URIError",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~URIError",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 20,
+    "kind": "external",
+    "name": "Number",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Number",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 21,
+    "kind": "external",
+    "name": "number",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~number",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 22,
+    "kind": "external",
+    "name": "Date",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Date",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 23,
+    "kind": "external",
+    "name": "String",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~String",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 24,
+    "kind": "external",
+    "name": "string",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~string",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 25,
+    "kind": "external",
+    "name": "RegExp",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~RegExp",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 26,
+    "kind": "external",
+    "name": "Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 27,
+    "kind": "external",
+    "name": "Int8Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int8Array",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Int8Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 28,
+    "kind": "external",
+    "name": "Uint8Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Uint8Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 29,
+    "kind": "external",
+    "name": "Uint8ClampedArray",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8ClampedArray",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Uint8ClampedArray",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 30,
+    "kind": "external",
+    "name": "Int16Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int16Array",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Int16Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 31,
+    "kind": "external",
+    "name": "Uint16Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint16Array",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Uint16Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 32,
+    "kind": "external",
+    "name": "Int32Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Int32Array",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Int32Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 33,
+    "kind": "external",
+    "name": "Uint32Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint32Array",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Uint32Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 34,
+    "kind": "external",
+    "name": "Float32Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float32Array",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Float32Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 35,
+    "kind": "external",
+    "name": "Float64Array",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Float64Array",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Float64Array",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 36,
+    "kind": "external",
+    "name": "Map",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Map",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 37,
+    "kind": "external",
+    "name": "Set",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Set",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 38,
+    "kind": "external",
+    "name": "WeakMap",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~WeakMap",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 39,
+    "kind": "external",
+    "name": "WeakSet",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakSet",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~WeakSet",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 40,
+    "kind": "external",
+    "name": "ArrayBuffer",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~ArrayBuffer",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 41,
+    "kind": "external",
+    "name": "DataView",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~DataView",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 42,
+    "kind": "external",
+    "name": "JSON",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~JSON",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 43,
+    "kind": "external",
+    "name": "Promise",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Promise",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 44,
+    "kind": "external",
+    "name": "Generator",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Generator",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 45,
+    "kind": "external",
+    "name": "GeneratorFunction",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/GeneratorFunction",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~GeneratorFunction",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 46,
+    "kind": "external",
+    "name": "Reflect",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Reflect",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 47,
+    "kind": "external",
+    "name": "Proxy",
+    "externalLink": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy",
+    "memberof": "src/.external-ecmascript.js",
+    "static": true,
+    "longname": "src/.external-ecmascript.js~Proxy",
+    "access": "public",
+    "description": "",
+    "builtinExternal": true
+  },
+  {
+    "__docId__": 48,
+    "kind": "file",
+    "name": "src/amqp-base-client.mjs",
+    "content": "import AMQPChannel from './amqp-channel.mjs'\nimport AMQPError from './amqp-error.mjs'\nimport AMQPMessage from './amqp-message.mjs'\nimport AMQPView from './amqp-view.mjs'\n\nconst VERSION = '1.1.1'\n\n/**\n * Base class for AMQPClients.\n * Implements everything except how to connect, send data and close the socket\n */\nexport default class AMQPBaseClient {\n  constructor(vhost, username, password, name, platform) {\n    this.vhost = vhost\n    this.username = username\n    Object.defineProperty(this, 'password', {\n      value: password,\n      enumerable: false // hide it from console.log etc.\n    })\n    this.name = name // connection name\n    this.platform = platform\n    this.channels = [new AMQPChannel(this, 0)]\n    this.closed = false\n  }\n\n  /** @private */\n  connect() {\n    throw \"Abstract method not implemented\"\n  }\n\n  /** @private */\n  send() {\n    throw \"Abstract method not implemented\"\n  }\n\n  /** @private */\n  closeSocket() {\n    throw \"Abstract method not implemented\"\n  }\n\n  /** @private */\n  rejectClosed() {\n    return Promise.reject(new AMQPError(\"Connection closed\", this))\n  }\n\n  /** @private */\n  rejectConnect(err) {\n    if (this.connectPromise) {\n      const [, reject] = this.connectPromise\n      delete this.connectPromise\n      reject(err)\n    }\n    this.closed = true\n    this.closeSocket()\n  }\n\n  /**\n   * Gracefully close the AMQP connection\n   */\n  close({ code = 200, reason = \"\" } = {}) {\n    if (this.closed) return this.rejectClosed()\n    this.closed = true\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(512))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, 0); j += 2 // channel: 0\n    frame.setUint32(j, 0); j += 4 // frameSize\n    frame.setUint16(j, 10); j += 2 // class: connection\n    frame.setUint16(j, 50); j += 2 // method: close\n    frame.setUint16(j, code); j += 2 // reply code\n    j += frame.setShortString(j, reason) // reply reason\n    frame.setUint16(j, 0); j += 2 // failing-class-id\n    frame.setUint16(j, 0); j += 2 // failing-method-id\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    frame.setUint32(3, j - 8) // update frameSize\n    return new Promise((resolve, reject) => {\n      this.send(new Uint8Array(frame.buffer, 0, j))\n        .then(() => this.closePromise = [resolve, reject])\n        .catch(reject)\n    })\n  }\n\n  /**\n   * Open a channel\n   * Optionally an existing or non existing channel id can be specified\n   * return {Promise<AMQPChannel>} channel\n   */\n  channel(id) {\n    if (this.closed) return this.rejectClosed()\n    if (id > 0 && this.channels[id]) return this.channels[id]\n    // Store channels in an array, set position to null when channel is closed\n    // Look for first null value or add one the end\n    if (!id)\n      id = this.channels.findIndex((ch) => ch === undefined)\n    if (id === -1) id = this.channels.length\n    const channel = new AMQPChannel(this, id)\n    this.channels[id] = channel\n\n    let j = 0\n    const channelOpen = new AMQPView(new ArrayBuffer(13))\n    channelOpen.setUint8(j, 1); j += 1 // type: method\n    channelOpen.setUint16(j, id); j += 2 // channel id\n    channelOpen.setUint32(j, 5); j += 4 // frameSize\n    channelOpen.setUint16(j, 20); j += 2 // class: channel\n    channelOpen.setUint16(j, 10); j += 2 // method: open\n    channelOpen.setUint8(j, 0); j += 1 // reserved1\n    channelOpen.setUint8(j, 206); j += 1 // frame end byte\n    return new Promise((resolve, reject) => {\n      this.send(new Uint8Array(channelOpen.buffer, 0, 13))\n        .then(() => channel.promises.push([resolve, reject]))\n        .catch(reject)\n    })\n  }\n\n  /**\n   * Parse and act on frames in an AMQPView\n   * param {AMQPView} view over a ArrayBuffer\n   */\n  parseFrames(view) {\n    // Can possibly be multiple AMQP frames in a single WS frame\n    for (let i = 0; i < view.byteLength;) {\n      let j = 0 // position in outgoing frame\n      const type = view.getUint8(i); i += 1\n      const channelId = view.getUint16(i); i += 2\n      const frameSize = view.getUint32(i); i += 4\n      switch (type) {\n        case 1: { // method\n          const classId = view.getUint16(i); i += 2\n          const methodId = view.getUint16(i); i += 2\n          switch (classId) {\n            case 10: { // connection\n              switch (methodId) {\n                case 10: { // start\n                  // ignore start frame, just reply startok\n                  i += frameSize - 4\n\n                  const startOk = new AMQPView(new ArrayBuffer(4096))\n                  startOk.setUint8(j, 1); j += 1 // type: method\n                  startOk.setUint16(j, 0); j += 2 // channel: 0\n                  startOk.setUint32(j, 0); j += 4 // frameSize: to be updated\n                  startOk.setUint16(j, 10); j += 2 // class: connection\n                  startOk.setUint16(j, 11); j += 2 // method: startok\n                  const clientProps = {\n                    connection_name: this.name,\n                    product: \"amqp-client.js\",\n                    information: \"https://github.com/cloudamqp/amqp-client.js\",\n                    version: VERSION,\n                    platform: this.platform,\n                    capabilities: {\n                      \"authentication_failure_close\": true,\n                      \"basic.nack\": true,\n                      \"connection.blocked\": false,\n                      \"consumer_cancel_notify\": true,\n                      \"exchange_exchange_bindings\": true,\n                      \"per_consumer_qos\": true,\n                      \"publisher_confirms\": true,\n                    }\n                  }\n                  if (!this.name) delete clientProps[\"connection_name\"]\n                  j += startOk.setTable(j, clientProps) // client properties\n                  j += startOk.setShortString(j, \"PLAIN\") // mechanism\n                  const response = `\\u0000${this.username}\\u0000${this.password}`\n                  j += startOk.setLongString(j, response) // response\n                  j += startOk.setShortString(j, \"\") // locale\n                  startOk.setUint8(j, 206); j += 1 // frame end byte\n                  startOk.setUint32(3, j - 8) // update frameSize\n                  this.send(new Uint8Array(startOk.buffer, 0, j)).catch(this.rejectConnect)\n                  break\n                }\n                case 30: { // tune\n                  const channelMax = view.getUint16(i); i += 2\n                  const frameMax = view.getUint32(i); i += 4\n                  const heartbeat = view.getUint16(i); i += 2\n                  this.channelMax = channelMax\n                  this.frameMax = Math.min(4096, frameMax)\n                  this.heartbeat = Math.min(0, heartbeat)\n\n                  const tuneOk = new AMQPView(new ArrayBuffer(20))\n                  tuneOk.setUint8(j, 1); j += 1 // type: method\n                  tuneOk.setUint16(j, 0); j += 2 // channel: 0\n                  tuneOk.setUint32(j, 12); j += 4 // frameSize: 12\n                  tuneOk.setUint16(j, 10); j += 2 // class: connection\n                  tuneOk.setUint16(j, 31); j += 2 // method: tuneok\n                  tuneOk.setUint16(j, this.channelMax); j += 2 // channel max\n                  tuneOk.setUint32(j, this.frameMax); j += 4 // frame max\n                  tuneOk.setUint16(j, this.heartbeat); j += 2 // heartbeat\n                  tuneOk.setUint8(j, 206); j += 1 // frame end byte\n                  this.send(new Uint8Array(tuneOk.buffer, 0, j)).catch(this.rejectConnect)\n\n                  j = 0\n                  const open = new AMQPView(new ArrayBuffer(512))\n                  open.setUint8(j, 1); j += 1 // type: method\n                  open.setUint16(j, 0); j += 2 // channel: 0\n                  open.setUint32(j, 0); j += 4 // frameSize: to be updated\n                  open.setUint16(j, 10); j += 2 // class: connection\n                  open.setUint16(j, 40); j += 2 // method: open\n                  j += open.setShortString(j, this.vhost) // vhost\n                  open.setUint8(j, 0); j += 1 // reserved1\n                  open.setUint8(j, 0); j += 1 // reserved2\n                  open.setUint8(j, 206); j += 1 // frame end byte\n                  open.setUint32(3, j - 8) // update frameSize\n                  this.send(new Uint8Array(open.buffer, 0, j)).catch(this.rejectConnect)\n\n                  break\n                }\n                case 41: { // openok\n                  i += 1 // reserved1\n                  const [resolve, ] = this.connectPromise\n                  delete this.connectPromise\n                  resolve(this)\n                  break\n                }\n                case 50: { // close\n                  const code = view.getUint16(i); i += 2\n                  const [text, strLen] = view.getShortString(i); i += strLen\n                  const classId = view.getUint16(i); i += 2\n                  const methodId = view.getUint16(i); i += 2\n                  console.debug(\"connection closed by server\", code, text, classId, methodId)\n\n                  const msg = `connection closed: ${text} (${code})`\n                  const err = new AMQPError(msg, this)\n                  this.channels.forEach((ch) => ch.setClosed(err))\n                  this.channels = []\n\n                  const closeOk = new AMQPView(new ArrayBuffer(12))\n                  closeOk.setUint8(j, 1); j += 1 // type: method\n                  closeOk.setUint16(j, 0); j += 2 // channel: 0\n                  closeOk.setUint32(j, 4); j += 4 // frameSize\n                  closeOk.setUint16(j, 10); j += 2 // class: connection\n                  closeOk.setUint16(j, 51); j += 2 // method: closeok\n                  closeOk.setUint8(j, 206); j += 1 // frame end byte\n                  this.send(new Uint8Array(closeOk.buffer, 0, j))\n                    .catch(err => console.warn(\"Error while sending Connection#CloseOk\", err))\n                  this.rejectConnect(err)\n                  break\n                }\n                case 51: { // closeOk\n                  this.channels.forEach((ch) => ch.setClosed())\n                  this.channels = []\n                  const [resolve, ] = this.closePromise\n                  delete this.closePromise\n                  resolve()\n                  this.closeSocket()\n                  break\n                }\n                case 60: { // blocked\n                  const [reason, len] = view.getShortString(i); i += len\n                  this.blocked = reason\n                  break\n                }\n                case 61: { // unblocked\n                  this.blocked = null\n                  break\n                }\n                default:\n                  i += frameSize - 4\n                  console.error(\"unsupported class/method id\", classId, methodId)\n              }\n              break\n            }\n            case 20: { // channel\n              switch (methodId) {\n                case 11: { // openok\n                  i += 4 // reserved1 (long string)\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise(channel)\n                  break\n                }\n                case 21: { // flowOk\n                  const active = view.getUint8(i) !== 0; i += 1\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise(active)\n                  break\n                }\n                case 40: { // close\n                  const code = view.getUint16(i); i += 2\n                  const [text, strLen] = view.getShortString(i); i += strLen\n                  const classId = view.getUint16(i); i += 2\n                  const methodId = view.getUint16(i); i += 2\n                  console.debug(\"channel\", channelId, \"closed\", code, text, classId, methodId)\n\n                  const channel = this.channels[channelId]\n                  if (channel) {\n                    const msg = `channel ${channelId} closed: ${text} (${code})`\n                    const err = new AMQPError(msg, this)\n                    channel.setClosed(err)\n                    delete this.channels[channelId]\n                  } else {\n                    console.warn(\"channel\", channelId, \"already closed\")\n                  }\n\n                  const closeOk = new AMQPView(new ArrayBuffer(12))\n                  closeOk.setUint8(j, 1); j += 1 // type: method\n                  closeOk.setUint16(j, channelId); j += 2 // channel\n                  closeOk.setUint32(j, 4); j += 4 // frameSize\n                  closeOk.setUint16(j, 20); j += 2 // class: channel\n                  closeOk.setUint16(j, 41); j += 2 // method: closeok\n                  closeOk.setUint8(j, 206); j += 1 // frame end byte\n                  this.send(new Uint8Array(closeOk.buffer, 0, j))\n                    .catch(err => console.error(\"Error while sending Channel#closeOk\", err))\n                  break\n                }\n                case 41: { // closeOk\n                  const channel = this.channels[channelId]\n                  if (channel) {\n                    channel.setClosed()\n                    delete this.channels[channelId]\n                    channel.resolvePromise()\n                  } else {\n                    this.rejectPromise(`channel ${channelId} already closed`)\n                  }\n                  break\n                }\n                default:\n                  i += frameSize - 4 // skip rest of frame\n                  console.error(\"unsupported class/method id\", classId, methodId)\n              }\n              break\n            }\n            case 40: { // exchange\n              switch (methodId) {\n                case 11: { // declareOk\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise()\n                  break\n                }\n                case 21: { // deleteOk\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise()\n                  break\n                }\n                case 31: { // bindOk\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise()\n                  break\n                }\n                case 51: { // unbindOk\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise()\n                  break\n                }\n                default:\n                  i += frameSize - 4 // skip rest of frame\n                  console.error(\"unsupported class/method id\", classId, methodId)\n              }\n              break\n            }\n            case 50: { // queue\n              switch (methodId) {\n                case 11: { // declareOk\n                  const [name, strLen] = view.getShortString(i); i += strLen\n                  const messageCount = view.getUint32(i); i += 4\n                  const consumerCount = view.getUint32(i); i += 4\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise({ name, messageCount, consumerCount })\n                  break\n                }\n                case 21: { // bindOk\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise()\n                  break\n                }\n                case 31: { // purgeOk\n                  const messageCount = view.getUint32(i); i += 4\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise({ messageCount })\n                  break\n                }\n                case 41: { // deleteOk\n                  const messageCount = view.getUint32(i); i += 4\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise({ messageCount })\n                  break\n                }\n                case 51: { // unbindOk\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise()\n                  break\n                }\n                default:\n                  i += frameSize - 4\n                  console.error(\"unsupported class/method id\", classId, methodId)\n              }\n              break\n            }\n            case 60: { // basic\n              switch (methodId) {\n                case 11: { // qosOk\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise()\n                  break\n                }\n                case 21: { // consumeOk\n                  const [ consumerTag, len ] = view.getShortString(i); i += len\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise(consumerTag)\n                  break\n                }\n                case 31: { // cancelOk\n                  const [consumerTag, len] = view.getShortString(i); i += len\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise(consumerTag)\n                  break\n                }\n                case 50: { // return\n                  const code = view.getUint16(i); i += 2\n                  const [text, len] = view.getShortString(i); i += len\n                  const [exchange, exchangeLen] = view.getShortString(i); i += exchangeLen\n                  const [routingKey, routingKeyLen] = view.getShortString(i); i += routingKeyLen\n                  const channel = this.channels[channelId]\n                  if (!channel) {\n                    console.warn(\"Cannot return to closed channel\", channelId)\n                    break\n                  }\n                  channel.returned = {\n                    replyCode: code,\n                    replyText: text,\n                    exchange: exchange,\n                    routingKey: routingKey,\n                  }\n                  break\n                }\n                case 60: { // deliver\n                  const [ consumerTag, consumerTagLen ] = view.getShortString(i); i += consumerTagLen\n                  const deliveryTag = view.getUint64(i); i += 8\n                  const redelivered = view.getUint8(i) === 1; i += 1\n                  const [ exchange, exchangeLen ]= view.getShortString(i); i += exchangeLen\n                  const [ routingKey, routingKeyLen ]= view.getShortString(i); i += routingKeyLen\n                  const channel = this.channels[channelId]\n                  if (!channel) {\n                    console.warn(\"Cannot deliver to closed channel\", channelId)\n                    break\n                  }\n                  const message = new AMQPMessage(channel)\n                  message.consumerTag = consumerTag\n                  message.deliveryTag = deliveryTag\n                  message.exchange = exchange\n                  message.routingKey = routingKey\n                  message.redelivered = redelivered\n                  channel.delivery = message\n                  break\n                }\n                case 71: { // getOk\n                  const deliveryTag = view.getUint64(i); i += 8\n                  const redelivered = view.getUint8(i) === 1; i += 1\n                  const [exchange, exchangeLen]= view.getShortString(i); i += exchangeLen\n                  const [routingKey, routingKeyLen]= view.getShortString(i); i += routingKeyLen\n                  const messageCount = view.getUint32(i); i += 4\n                  const channel = this.channels[channelId]\n                  if (!channel) {\n                    console.warn(\"Cannot deliver to closed channel\", channelId)\n                    break\n                  }\n                  const message = new AMQPMessage(channel)\n                  message.deliveryTag = deliveryTag\n                  message.redelivered = redelivered\n                  message.exchange = exchange\n                  message.routingKey = routingKey\n                  message.messageCount = messageCount\n                  channel.getMessage = message\n                  break\n                }\n                case 72: { // getEmpty\n                  const [ , len]= view.getShortString(i); i += len // reserved1\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise(null)\n                  break\n                }\n                case 80: { // confirm ack\n                  const deliveryTag = view.getUint64(i); i += 8\n                  const multiple = view.getUint8(i) === 1; i += 1\n                  const channel = this.channels[channelId]\n                  if (!channel) {\n                    console.warn(\"Got publish confirm ack for closed channel\", channelId)\n                    break\n                  }\n                  channel.publishConfirmed(deliveryTag, multiple, false)\n                  break\n                }\n                case 111: { // recoverOk\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise()\n                  break\n                }\n                case 120: { // confirm nack\n                  const deliveryTag = view.getUint64(i); i += 8\n                  const multiple = view.getUint8(i) === 1; i += 1\n                  const channel = this.channels[channelId]\n                  if (!channel) {\n                    console.warn(\"Got publish confirm nack for closed channel\", channelId)\n                    break\n                  }\n                  channel.publishConfirmed(deliveryTag, multiple, true)\n                  break\n                }\n                default:\n                  i += frameSize - 4\n                  console.error(\"unsupported class/method id\", classId, methodId)\n              }\n              break\n            }\n            case 85: { // confirm\n              switch (methodId) {\n                case 11: { // selectOk\n                  const channel = this.channels[channelId]\n                  channel.confirmId = 0\n                  channel.resolvePromise()\n                  break\n                }\n                default:\n                  i += frameSize - 4\n                  console.error(\"unsupported class/method id\", classId, methodId)\n              }\n              break\n            }\n            case 90: { // tx / transaction\n              switch (methodId) {\n                case 11: // selectOk\n                case 21: // commitOk\n                case 31: { // rollbackOk\n                  const channel = this.channels[channelId]\n                  channel.resolvePromise()\n                  break\n                }\n                default:\n                  i += frameSize - 4\n                  console.error(\"unsupported class/method id\", classId, methodId)\n              }\n              break\n            }\n            default:\n              i += frameSize - 2\n              console.error(\"unsupported class id\", classId)\n          }\n          break\n        }\n        case 2: { // header\n          i += 2 // ignoring class id\n          i += 2 // ignoring weight\n          const bodySize = view.getUint64(i); i += 8\n          const [properties, propLen] = view.getProperties(i); i += propLen\n\n          const channel = this.channels[channelId]\n          if (!channel) {\n            console.warn(\"Cannot deliver to closed channel\", channelId)\n            break\n          }\n          const message = channel.delivery || channel.getMessage || channel.returned\n          message.bodySize = bodySize\n          message.properties = properties\n          message.body = new Uint8Array(bodySize)\n          message.bodyPos = 0 // if body is split over multiple frames\n          if (bodySize === 0)\n            channel.onMessageReady(message)\n          break\n        }\n        case 3: { // body\n          const channel = this.channels[channelId]\n          if (!channel) {\n            console.warn(\"Cannot deliver to closed channel\", channelId)\n            i += frameSize\n            break\n          }\n          const message = channel.delivery || channel.getMessage || channel.returned\n          const bodyPart = new Uint8Array(view.buffer, i, frameSize)\n          message.body.set(bodyPart, message.bodyPos)\n          message.bodyPos += frameSize\n          i += frameSize\n          if (message.bodyPos === message.bodySize)\n            channel.onMessageReady(message)\n          break\n        }\n        case 8: { // heartbeat\n          const heartbeat = new AMQPView(new ArrayBuffer(8))\n          heartbeat.setUint8(j, 1); j += 1 // type: method\n          heartbeat.setUint16(j, 0); j += 2 // channel: 0\n          heartbeat.setUint32(j, 0); j += 4 // frameSize\n          heartbeat.setUint8(j, 206); j += 1 // frame end byte\n          this.send(new Uint8Array(heartbeat.buffer, 0, j))\n            .catch(err => console.warn(\"Error while sending heartbeat\", err))\n          break\n        }\n        default:\n          console.error(\"invalid frame type:\", type)\n          i += frameSize\n      }\n      const frameEnd = view.getUint8(i); i += 1\n      if (frameEnd != 206)\n        console.error(\"Invalid frame end\", frameEnd)\n    }\n  }\n}\n",
+    "static": true,
+    "longname": "/home/carl/code/amqp-client.js/src/amqp-base-client.mjs",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 49,
+    "kind": "variable",
+    "name": "VERSION",
+    "memberof": "src/amqp-base-client.mjs",
+    "static": true,
+    "longname": "src/amqp-base-client.mjs~VERSION",
+    "access": "public",
+    "export": false,
+    "importPath": "@cloudamqp/amqp-client/src/amqp-base-client.mjs",
+    "importStyle": null,
+    "description": null,
+    "lineNumber": 6,
+    "undocument": true,
+    "type": {
+      "types": [
+        "string"
+      ]
+    },
+    "ignore": true
+  },
+  {
+    "__docId__": 50,
+    "kind": "class",
+    "name": "AMQPBaseClient",
+    "memberof": "src/amqp-base-client.mjs",
+    "static": true,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "access": "public",
+    "export": true,
+    "importPath": "@cloudamqp/amqp-client/src/amqp-base-client.mjs",
+    "importStyle": "AMQPBaseClient",
+    "description": "Base class for AMQPClients.\nImplements everything except how to connect, send data and close the socket",
+    "lineNumber": 12,
+    "interface": false
+  },
+  {
+    "__docId__": 51,
+    "kind": "constructor",
+    "name": "constructor",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#constructor",
+    "access": "public",
+    "description": null,
+    "lineNumber": 13,
+    "undocument": true
+  },
+  {
+    "__docId__": 52,
+    "kind": "member",
+    "name": "vhost",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#vhost",
+    "access": "public",
+    "description": null,
+    "lineNumber": 14,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 53,
+    "kind": "member",
+    "name": "username",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#username",
+    "access": "public",
+    "description": null,
+    "lineNumber": 15,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 54,
+    "kind": "member",
+    "name": "name",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#name",
+    "access": "public",
+    "description": null,
+    "lineNumber": 20,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 55,
+    "kind": "member",
+    "name": "platform",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#platform",
+    "access": "public",
+    "description": null,
+    "lineNumber": 21,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 56,
+    "kind": "member",
+    "name": "channels",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#channels",
+    "access": "public",
+    "description": null,
+    "lineNumber": 22,
+    "undocument": true,
+    "type": {
+      "types": [
+        "undefined[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 57,
+    "kind": "member",
+    "name": "closed",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#closed",
+    "access": "public",
+    "description": null,
+    "lineNumber": 23,
+    "undocument": true,
+    "type": {
+      "types": [
+        "boolean"
+      ]
+    }
+  },
+  {
+    "__docId__": 58,
+    "kind": "method",
+    "name": "connect",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#connect",
+    "access": "private",
+    "description": null,
+    "lineNumber": 27,
+    "params": [],
+    "return": null
+  },
+  {
+    "__docId__": 59,
+    "kind": "method",
+    "name": "send",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#send",
+    "access": "private",
+    "description": null,
+    "lineNumber": 32,
+    "params": [],
+    "return": null
+  },
+  {
+    "__docId__": 60,
+    "kind": "method",
+    "name": "closeSocket",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#closeSocket",
+    "access": "private",
+    "description": null,
+    "lineNumber": 37,
+    "params": [],
+    "return": null
+  },
+  {
+    "__docId__": 61,
+    "kind": "method",
+    "name": "rejectClosed",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#rejectClosed",
+    "access": "private",
+    "description": null,
+    "lineNumber": 42,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 62,
+    "kind": "method",
+    "name": "rejectConnect",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#rejectConnect",
+    "access": "private",
+    "description": null,
+    "lineNumber": 47,
+    "params": [
+      {
+        "name": "err",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 64,
+    "kind": "method",
+    "name": "close",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#close",
+    "access": "public",
+    "description": "Gracefully close the AMQP connection",
+    "lineNumber": 60,
+    "params": [
+      {
+        "name": "objectPattern",
+        "optional": true,
+        "types": [
+          "{\"code\": *, \"reason\": *}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 66,
+    "kind": "method",
+    "name": "channel",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#channel",
+    "access": "public",
+    "description": "Open a channel\nOptionally an existing or non existing channel id can be specified\nreturn {Promise<AMQPChannel>} channel",
+    "lineNumber": 88,
+    "params": [
+      {
+        "name": "id",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 67,
+    "kind": "method",
+    "name": "parseFrames",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#parseFrames",
+    "access": "public",
+    "description": "Parse and act on frames in an AMQPView\nparam {AMQPView} view over a ArrayBuffer",
+    "lineNumber": 119,
+    "params": [
+      {
+        "name": "view",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 68,
+    "kind": "member",
+    "name": "channelMax",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#channelMax",
+    "access": "public",
+    "description": null,
+    "lineNumber": 174,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 69,
+    "kind": "member",
+    "name": "frameMax",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#frameMax",
+    "access": "public",
+    "description": null,
+    "lineNumber": 175,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 70,
+    "kind": "member",
+    "name": "heartbeat",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#heartbeat",
+    "access": "public",
+    "description": null,
+    "lineNumber": 176,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 73,
+    "kind": "member",
+    "name": "blocked",
+    "memberof": "src/amqp-base-client.mjs~AMQPBaseClient",
+    "static": false,
+    "longname": "src/amqp-base-client.mjs~AMQPBaseClient#blocked",
+    "access": "public",
+    "description": null,
+    "lineNumber": 248,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 75,
+    "kind": "file",
+    "name": "src/amqp-channel.mjs",
+    "content": "import AMQPError from './amqp-error.mjs'\nimport AMQPQueue from './amqp-queue.mjs'\nimport AMQPView from './amqp-view.mjs'\nimport AMQPConsumer from './amqp-consumer.mjs'\n\n/**\n * Represents an AMQP Channel\n * Almost all actions in AMQP are performed on a Channel\n */\nexport default class AMQPChannel {\n  /**\n   * @param {AMQPBaseClient} the connection this channel belongs to\n   * @param {number} id of the channel\n   */\n  constructor(connection, id) {\n    this.connection = connection\n    this.id = id\n    this.consumers = {}\n    this.promises = []\n    this.unconfirmedPublishes = []\n    this.closed = false\n  }\n\n  /**\n   * Resolves the next RPC promise\n   * @return {Bool} true if a promise was resolved, otherwise false\n   */\n  resolvePromise(value) {\n    if (this.promises.length === 0) return false\n    const [resolve, ] = this.promises.shift()\n    resolve(value)\n    return true\n  }\n\n  /**\n   * Rejects the next RPC promise\n   * @return {Bool} true if a promise was rejected, otherwise false\n   */\n  rejectPromise(err) {\n    if (this.promises.length === 0) return false\n    const [, reject] = this.promises.shift()\n    reject(err)\n    return true\n  }\n\n  /**\n   * Send a RPC request, will resolve a RPC promise when RPC response arrives\n   * @private\n   * @params {AMQPView} frame with data\n   * @params {number} how long the frame actually is\n   */\n  sendRpc(frame, frameSize) {\n    return new Promise((resolve, reject) => {\n      this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))\n        .then(() => this.promises.push([resolve, reject]))\n        .catch(reject)\n    })\n  }\n\n  /**\n   * Marks the channel as closed\n   * All outstanding RPC requests will be rejected\n   * All outstanding publish confirms will be rejected\n   * All consumers will be marked as closed\n   * @param {Error} err - why the channel was closed\n   * @protected\n   */\n  setClosed(err) {\n    if (!this.closed) {\n      this.closed = true\n      Object.values(this.consumers).forEach((consumer) => consumer.setClosed(err))\n      this.consumers = []\n      // Empty and reject all RPC promises\n      while(this.rejectPromise(err)) { 1 }\n      this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))\n    }\n  }\n\n  /**\n   * @return {Promise<AMQPError>} Rejected promise with an error\n   * @private\n   */\n  rejectClosed() {\n    return Promise.reject(new AMQPError(\"Channel is closed\", this.connection))\n  }\n\n  /**\n   * Called from AMQPBaseClient when a publish is confirmed by the server\n   * Will full fill one or more (if multiple) Unconfirmed Publishes\n   * @param {number} deliveryTag\n   * @param {bool} multiple - true if all unconfirmed publishes up to this deliveryTag should be resolved or just this one\n   * @param {bool} nack - true if negative confirm, hence reject the unconfirmed publish(es)\n   */\n  publishConfirmed(deliveryTag, multiple, nack) {\n    // is queueMicrotask() needed here?\n    const idx = this.unconfirmedPublishes.findIndex(([tag,]) => tag === deliveryTag)\n    if (idx !== -1) {\n      const confirmed = multiple ?\n        this.unconfirmedPublishes.splice(0, idx + 1) :\n        this.unconfirmedPublishes.splice(idx, 1)\n      confirmed.forEach(([tag, resolve, reject]) => {\n        if (nack)\n          reject(new Error(\"Message rejected\"))\n        else\n          resolve(tag)\n      })\n    } else {\n      console.warn(\"Cant find unconfirmed deliveryTag\", deliveryTag, \"multiple:\", multiple, \"nack:\", nack)\n    }\n  }\n\n  /**\n   * Called from AMQPBaseClient when a message is ready\n   */\n  onMessageReady(message) {\n    if (this.delivery) {\n      this.delivery = null\n      this.deliver(message)\n    } else if (this.getMessage) {\n      this.getMessage = null\n      this.resolvePromise(message)\n    } else {\n      this.returned = null\n      this.onReturn(message)\n    }\n  }\n\n  /**\n   * Default handler for Returned messages\n   * @param {AMQPMessage} message\n   */\n  onReturn(message) {\n    console.error(\"Message returned from server\", message)\n  }\n\n  /**\n   * Close the channel gracefully\n   */\n  close({ code = 200, reason = \"\" } = {}) {\n    if (this.closed) return this.rejectClosed()\n    this.closed = true\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(512))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel\n    frame.setUint32(j, 0); j += 4 // frameSize\n    frame.setUint16(j, 20); j += 2 // class: channel\n    frame.setUint16(j, 40); j += 2 // method: close\n    frame.setUint16(j, code); j += 2 // reply code\n    j += frame.setShortString(j, reason) // reply reason\n    frame.setUint16(j, 0); j += 2 // failing-class-id\n    frame.setUint16(j, 0); j += 2 // failing-method-id\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    frame.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(frame, j)\n  }\n\n  /**\n   * Deliver a message to a consumer\n   * @param {AMQPMessage} message\n   * @return {Promise} Fulfilled when the message is processed\n   */\n  deliver(message) {\n    return new Promise((resolve, reject) => {\n      const consumer = this.consumers[message.consumerTag]\n      if (consumer) {\n        try {\n          consumer.onMessage(message)\n          resolve()\n        } catch (err) {\n          reject(err)\n        }\n      } else {\n        reject(new AMQPError(`Consumer ${message.consumerTag} on channel ${this.id} doesn't exists`, this.connection))\n      }\n    })\n  }\n\n  /**\n   * Enable or disable flow. Disabling flow will stop the server from delivering messages to consumers.\n   * Not supported in RabbitMQ\n   * @param {bool} active\n   */\n  flow(active = true) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(4096))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel: 1\n    frame.setUint32(j, 5); j += 4 // frameSize\n    frame.setUint16(j, 20); j += 2 // class: channel\n    frame.setUint16(j, 20); j += 2 // method: flow\n    frame.setUint8(j, active ? 1 : 0); j += 1 // active flow\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    return this.sendRpc(frame, j)\n  }\n\n  /**\n   * Bind a queue to an exchange\n   * @param {string} queue - name of the queue\n   * @param {string} exchange - name of the exchange\n   * @param {string} routingKey - key to bind with\n   * @param {object} args - optional arguments, e.g. for header exchanges\n   * @return {Promise} fulfilled when confirmed by the server\n   */\n  queueBind(queue, exchange, routingKey, args = {}) {\n    if (this.closed) return this.rejectClosed()\n    const noWait = false\n    let j = 0\n    const bind = new AMQPView(new ArrayBuffer(4096))\n    bind.setUint8(j, 1); j += 1 // type: method\n    bind.setUint16(j, this.id); j += 2 // channel: 1\n    bind.setUint32(j, 0); j += 4 // frameSize\n    bind.setUint16(j, 50); j += 2 // class: queue\n    bind.setUint16(j, 20); j += 2 // method: bind\n    bind.setUint16(j, 0); j += 2 // reserved1\n    j += bind.setShortString(j, queue)\n    j += bind.setShortString(j, exchange)\n    j += bind.setShortString(j, routingKey)\n    bind.setUint8(j, noWait ? 1 : 0); j += 1 // noWait\n    j += bind.setTable(j, args)\n    bind.setUint8(j, 206); j += 1 // frame end byte\n    bind.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(bind, j)\n  }\n\n  queueUnbind(queue, exchange, routingKey, args = {}) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const unbind = new AMQPView(new ArrayBuffer(4096))\n    unbind.setUint8(j, 1); j += 1 // type: method\n    unbind.setUint16(j, this.id); j += 2 // channel: 1\n    unbind.setUint32(j, 0); j += 4 // frameSize\n    unbind.setUint16(j, 50); j += 2 // class: queue\n    unbind.setUint16(j, 50); j += 2 // method: unbind\n    unbind.setUint16(j, 0); j += 2 // reserved1\n    j += unbind.setShortString(j, queue)\n    j += unbind.setShortString(j, exchange)\n    j += unbind.setShortString(j, routingKey)\n    j += unbind.setTable(j, args)\n    unbind.setUint8(j, 206); j += 1 // frame end byte\n    unbind.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(unbind, j)\n  }\n\n  queuePurge(queue) {\n    if (this.closed) return this.rejectClosed()\n    const noWait = true\n    let j = 0\n    const purge = new AMQPView(new ArrayBuffer(512))\n    purge.setUint8(j, 1); j += 1 // type: method\n    purge.setUint16(j, this.id); j += 2 // channel: 1\n    purge.setUint32(j, 0); j += 4 // frameSize\n    purge.setUint16(j, 50); j += 2 // class: queue\n    purge.setUint16(j, 30); j += 2 // method: purge\n    purge.setUint16(j, 0); j += 2 // reserved1\n    j += purge.setShortString(j, queue)\n    purge.setUint8(j, noWait ? 1 : 0); j += 1 // noWait\n    purge.setUint8(j, 206); j += 1 // frame end byte\n    purge.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(purge, j)\n  }\n\n  queueDeclare(name = \"\", {passive = false, durable = name !== \"\", autoDelete = name === \"\", exclusive = name === \"\"} = {}, args = {}) {\n    if (this.closed) return this.rejectClosed()\n    const noWait = false\n    let j = 0\n    const declare = new AMQPView(new ArrayBuffer(4096))\n    declare.setUint8(j, 1); j += 1 // type: method\n    declare.setUint16(j, this.id); j += 2 // channel: 1\n    declare.setUint32(j, 0); j += 4 // frameSize\n    declare.setUint16(j, 50); j += 2 // class: queue\n    declare.setUint16(j, 10); j += 2 // method: declare\n    declare.setUint16(j, 0); j += 2 // reserved1\n    j += declare.setShortString(j, name) // name\n    let bits = 0\n    if (passive)    bits = bits | (1 << 0)\n    if (durable)    bits = bits | (1 << 1)\n    if (exclusive)  bits = bits | (1 << 2)\n    if (autoDelete) bits = bits | (1 << 3)\n    if (noWait)     bits = bits | (1 << 4)\n    declare.setUint8(j, bits); j += 1\n    j += declare.setTable(j, args) // arguments\n    declare.setUint8(j, 206); j += 1 // frame end byte\n    declare.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(declare, j)\n  }\n\n  queueDelete(name = \"\", { ifUnused = false, ifEmpty = false } = {}) {\n    if (this.closed) return this.rejectClosed()\n    const noWait = false\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(512))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel: 1\n    frame.setUint32(j, 0); j += 4 // frameSize\n    frame.setUint16(j, 50); j += 2 // class: queue\n    frame.setUint16(j, 40); j += 2 // method: delete\n    frame.setUint16(j, 0); j += 2 // reserved1\n    j += frame.setShortString(j, name) // name\n    let bits = 0\n    if (ifUnused) bits = bits | (1 << 0)\n    if (ifEmpty)  bits = bits | (1 << 1)\n    if (noWait)   bits = bits | (1 << 2)\n    frame.setUint8(j, bits); j += 1\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    frame.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(frame, j)\n  }\n\n  basicQos(prefetchCount, prefetchSize = 0, global = false) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(19))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel: 1\n    frame.setUint32(j, 11); j += 4 // frameSize\n    frame.setUint16(j, 60); j += 2 // class: basic\n    frame.setUint16(j, 10); j += 2 // method: qos\n    frame.setUint32(j, prefetchSize); j += 4 // prefetch size\n    frame.setUint16(j, prefetchCount); j += 2 // prefetch count\n    frame.setUint8(j, global ? 1 : 0); j += 1 // glocal\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    return this.sendRpc(frame, j)\n  }\n\n  basicGet(queue, { noAck = true } = {}) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(512))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel: 1\n    frame.setUint32(j, 11); j += 4 // frameSize\n    frame.setUint16(j, 60); j += 2 // class: basic\n    frame.setUint16(j, 70); j += 2 // method: get\n    frame.setUint16(j, 0); j += 2 // reserved1\n    j += frame.setShortString(j, queue) // queue\n    frame.setUint8(j, noAck ? 1 : 0); j += 1 // noAck\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    frame.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(frame, j)\n  }\n\n  basicConsume(queue, {tag = \"\", noAck = true, exclusive = false, args = {}} = {}, callback) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const noWait = false\n    const noLocal = false\n    const frame = new AMQPView(new ArrayBuffer(4096))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel: 1\n    frame.setUint32(j, 0); j += 4 // frameSize\n    frame.setUint16(j, 60); j += 2 // class: basic\n    frame.setUint16(j, 20); j += 2 // method: consume\n    frame.setUint16(j, 0); j += 2 // reserved1\n    j += frame.setShortString(j, queue) // queue\n    j += frame.setShortString(j, tag) // tag\n    let bits = 0\n    if (noLocal)   bits = bits | (1 << 0)\n    if (noAck)     bits = bits | (1 << 1)\n    if (exclusive) bits = bits | (1 << 2)\n    if (noWait)    bits = bits | (1 << 3)\n    frame.setUint8(j, bits); j += 1 // noLocal/noAck/exclusive/noWait\n    j += frame.setTable(j, args) // arguments table\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    frame.setUint32(3, j - 8) // update frameSize\n\n    return new Promise((resolve, reject) => {\n      this.sendRpc(frame, j).then((consumerTag) =>  {\n        const consumer = new AMQPConsumer(this, consumerTag, callback)\n        this.consumers[consumerTag] = consumer\n        resolve(consumer)\n      }).catch(reject)\n    })\n  }\n\n  basicCancel(tag) {\n    if (this.closed) return this.rejectClosed()\n    const noWait = false\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(512))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel: 1\n    frame.setUint32(j, 0); j += 4 // frameSize\n    frame.setUint16(j, 60); j += 2 // class: basic\n    frame.setUint16(j, 30); j += 2 // method: cancel\n    j += frame.setShortString(j, tag) // tag\n    frame.setUint8(j, noWait ? 1 : 0); j += 1 // noWait\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    frame.setUint32(3, j - 8) // update frameSize\n\n    return new Promise((resolve, reject) => {\n      this.sendRpc(frame, j).then((consumerTag) => {\n        const consumer = this.consumers[consumerTag]\n        consumer.setClosed()\n        delete this.consumers[consumerTag]\n        resolve(this)\n      }).catch(reject)\n    })\n  }\n\n  basicAck(deliveryTag, multiple = false) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(21))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel\n    frame.setUint32(j, 13); j += 4 // frameSize\n    frame.setUint16(j, 60); j += 2 // class: basic\n    frame.setUint16(j, 80); j += 2 // method: ack\n    frame.setUint64(j, deliveryTag); j += 8\n    frame.setUint8(j, multiple ? 1 : 0); j += 1\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    return this.connection.send(new Uint8Array(frame.buffer, 0, 21))\n  }\n\n  basicReject(deliveryTag, requeue = false) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(21))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel\n    frame.setUint32(j, 13); j += 4 // frameSize\n    frame.setUint16(j, 60); j += 2 // class: basic\n    frame.setUint16(j, 90); j += 2 // method: reject\n    frame.setUint64(j, deliveryTag); j += 8\n    frame.setUint8(j, requeue ? 1 : 0); j += 1\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    return this.connection.send(new Uint8Array(frame.buffer, 0, 21))\n  }\n\n  basicNack(deliveryTag, requeue = false, multiple = false) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(21))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel\n    frame.setUint32(j, 13); j += 4 // frameSize\n    frame.setUint16(j, 60); j += 2 // class: basic\n    frame.setUint16(j, 120); j += 2 // method: nack\n    frame.setUint64(j, deliveryTag); j += 8\n    let bits = 0\n    if (multiple) bits = bits | (1 << 0)\n    if (requeue)  bits = bits | (1 << 1)\n    frame.setUint8(j, bits); j += 1\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    return this.connection.send(new Uint8Array(frame.buffer, 0, 21))\n  }\n\n  basicRecover(requeue = false) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(13))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel\n    frame.setUint32(j, 5); j += 4 // frameSize\n    frame.setUint16(j, 60); j += 2 // class: basic\n    frame.setUint16(j, 110); j += 2 // method: recover\n    frame.setUint8(j, requeue ? 1 : 0); j += 1\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    return this.sendRpc(frame, j)\n  }\n\n  basicPublish(exchange, routingkey, data, properties, mandatory, immediate) {\n    if (this.closed) return this.rejectClosed()\n    if (this.connection.blocked)\n      return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))\n\n    if (data instanceof Uint8Array) {\n      // noop\n    } else if (data instanceof ArrayBuffer) {\n      data = new Uint8Array(data)\n    } else if (typeof data === \"string\") {\n      const encoder = new TextEncoder()\n      data = encoder.encode(data)\n    } else {\n      const json = JSON.stringify(data)\n      const encoder = new TextEncoder()\n      data = encoder.encode(json)\n    }\n\n    const promises = []\n    let j = 0\n    let buffer = new AMQPView(new ArrayBuffer(4096))\n    buffer.setUint8(j, 1); j += 1 // type: method\n    buffer.setUint16(j, this.id); j += 2 // channel\n    j += 4 // frame size, update later\n    buffer.setUint16(j, 60); j += 2 // class: basic\n    buffer.setUint16(j, 40); j += 2 // method: publish\n    buffer.setUint16(j, 0); j += 2 // reserved1\n    j += buffer.setShortString(j, exchange) // exchange\n    j += buffer.setShortString(j, routingkey) // routing key\n    let bits = 0\n    if (mandatory) bits = bits | (1 << 0)\n    if (immediate) bits = bits | (1 << 1)\n    buffer.setUint8(j, bits); j += 1 // mandatory/immediate\n    buffer.setUint8(j, 206); j += 1 // frame end byte\n    buffer.setUint32(3, j - 8) // update frameSize\n\n    const headerStart = j\n    buffer.setUint8(j, 2); j += 1 // type: header\n    buffer.setUint16(j, this.id); j += 2 // channel\n    j += 4 // frame size, update later\n    buffer.setUint16(j, 60); j += 2 // class: basic\n    buffer.setUint16(j, 0); j += 2 // weight\n    buffer.setUint32(j, 0); j += 4 // bodysize (upper 32 of 64 bits)\n    buffer.setUint32(j, data.byteLength); j += 4 // bodysize\n    j += buffer.setProperties(j, properties); // properties\n    buffer.setUint8(j, 206); j += 1 // frame end byte\n    buffer.setUint32(headerStart + 3, j - headerStart - 8) // update frameSize\n\n    // Send current frames if there's no body to send\n    if (data.byteLength === 0) {\n      const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))\n      promises.push(p)\n    } else if (j >= 4096 - 8) {\n      // Send current frames if a body frame can't fit in the rest of the frame buffer\n      const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))\n      promises.push(p)\n      j = 0\n    }\n\n    // split body into multiple frames if body > frameMax\n    for (let bodyPos = 0; bodyPos < data.byteLength;) {\n      const frameSize = Math.min(data.byteLength - bodyPos, 4096 - 8 - j) // frame overhead is 8 bytes\n      const dataSlice = new Uint8Array(data.buffer, bodyPos, frameSize)\n\n      if (j === 0)\n        buffer = new AMQPView(new ArrayBuffer(frameSize + 8))\n      buffer.setUint8(j, 3); j += 1 // type: body\n      buffer.setUint16(j, this.id); j += 2 // channel\n      buffer.setUint32(j, frameSize); j += 4 // frameSize\n      const bodyView = new Uint8Array(buffer.buffer, j, frameSize)\n      bodyView.set(dataSlice); j += frameSize // body content\n      buffer.setUint8(j, 206); j += 1 // frame end byte\n      const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))\n      promises.push(p)\n      bodyPos += frameSize\n      j = 0\n    }\n    // if publish confirm is enabled, put a promise on a queue if the sends were ok\n    // the promise on the queue will be fullfilled by the read loop when an ack/nack\n    // comes from the server\n    if (this.confirmId !== undefined) {\n      return new Promise((resolve, reject) =>\n        Promise.all(promises)\n          .then(() => this.unconfirmedPublishes.push([++this.confirmId, resolve, reject]))\n          .catch(reject)\n      )\n    } else {\n      return new Promise((resolve, reject) =>\n        Promise.all(promises)\n          .then(() => resolve(0))\n          .catch(reject))\n    }\n  }\n\n  confirmSelect() {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(13))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel\n    frame.setUint32(j, 5); j += 4 // frame size\n    frame.setUint16(j, 85); j += 2 // class: confirm\n    frame.setUint16(j, 10); j += 2 // method: select\n    frame.setUint8(j, 0); j += 1 // noWait\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    return this.sendRpc(frame, j) // parseFrames in base will set channel.confirmId = 0\n  }\n\n  exchangeDeclare(name, type, { passive = false, durable = true, autoDelete = false, internal = false } = {}, args = {}) {\n    const noWait = false\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(4096))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel\n    frame.setUint32(j, 0); j += 4 // frame size\n    frame.setUint16(j, 40); j += 2 // class: exchange\n    frame.setUint16(j, 10); j += 2 // method: declare\n    frame.setUint16(j, 0); j += 2 // reserved1\n    j += frame.setShortString(j, name)\n    j += frame.setShortString(j, type)\n    let bits = 0\n    if (passive)    bits = bits | (1 << 0)\n    if (durable)    bits = bits | (1 << 1)\n    if (autoDelete) bits = bits | (1 << 2)\n    if (internal)   bits = bits | (1 << 3)\n    if (noWait)     bits = bits | (1 << 4)\n    frame.setUint8(j, bits); j += 1\n    j += frame.setTable(j, args)\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    frame.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(frame, j)\n  }\n\n  exchangeDelete(name, { ifUnused = false } = {}) {\n    const noWait = false\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(512))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel\n    frame.setUint32(j, 0); j += 4 // frame size\n    frame.setUint16(j, 40); j += 2 // class: exchange\n    frame.setUint16(j, 20); j += 2 // method: declare\n    frame.setUint16(j, 0); j += 2 // reserved1\n    j += frame.setShortString(j, name)\n    let bits = 0\n    if (ifUnused) bits = bits | (1 << 0)\n    if (noWait)   bits = bits | (1 << 1)\n    frame.setUint8(j, bits); j += 1\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    frame.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(frame, j)\n  }\n\n  exchangeBind(destination, source, routingKey = \"\", args = {}) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const bind = new AMQPView(new ArrayBuffer(4096))\n    bind.setUint8(j, 1); j += 1 // type: method\n    bind.setUint16(j, this.id); j += 2 // channel: 1\n    bind.setUint32(j, 0); j += 4 // frameSize\n    bind.setUint16(j, 40); j += 2 // class: exchange\n    bind.setUint16(j, 30); j += 2 // method: bind\n    bind.setUint16(j, 0); j += 2 // reserved1\n    j += bind.setShortString(j, destination)\n    j += bind.setShortString(j, source)\n    j += bind.setShortString(j, routingKey)\n    bind.setUint8(j, 0); j += 1 // noWait\n    j += bind.setTable(j, args)\n    bind.setUint8(j, 206); j += 1 // frame end byte\n    bind.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(bind, j)\n  }\n\n  exchangeUnbind(destination, source, routingKey = \"\", args = {}) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const unbind = new AMQPView(new ArrayBuffer(4096))\n    unbind.setUint8(j, 1); j += 1 // type: method\n    unbind.setUint16(j, this.id); j += 2 // channel: 1\n    unbind.setUint32(j, 0); j += 4 // frameSize\n    unbind.setUint16(j, 40); j += 2 // class: exchange\n    unbind.setUint16(j, 40); j += 2 // method: unbind\n    unbind.setUint16(j, 0); j += 2 // reserved1\n    j += unbind.setShortString(j, destination)\n    j += unbind.setShortString(j, source)\n    j += unbind.setShortString(j, routingKey)\n    unbind.setUint8(j, 0); j += 1 // noWait\n    j += unbind.setTable(j, args)\n    unbind.setUint8(j, 206); j += 1 // frame end byte\n    unbind.setUint32(3, j - 8) // update frameSize\n    return this.sendRpc(unbind, j)\n  }\n\n  txSelect() {\n    return this.txMethod(10)\n  }\n\n  txCommit() {\n    return this.txMethod(20)\n  }\n\n  txRollback() {\n    return this.txMethod(30)\n  }\n\n  txMethod(methodId) {\n    if (this.closed) return this.rejectClosed()\n    let j = 0\n    const frame = new AMQPView(new ArrayBuffer(12))\n    frame.setUint8(j, 1); j += 1 // type: method\n    frame.setUint16(j, this.id); j += 2 // channel: 1\n    frame.setUint32(j, 4); j += 4 // frameSize\n    frame.setUint16(j, 90); j += 2 // class: Tx\n    frame.setUint16(j, methodId); j += 2\n    frame.setUint8(j, 206); j += 1 // frame end byte\n    return this.sendRpc(frame, j)\n  }\n\n  queue(name = \"\", props = {}, args = {}) {\n    return new Promise((resolve, reject) => {\n      this.queueDeclare(name, props, args)\n        .then(({name}) => resolve(new AMQPQueue(this, name)))\n        .catch(reject)\n    })\n  }\n\n  prefetch(prefetchCount) {\n    return this.basicQos(prefetchCount)\n  }\n}\n",
+    "static": true,
+    "longname": "/home/carl/code/amqp-client.js/src/amqp-channel.mjs",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 76,
+    "kind": "class",
+    "name": "AMQPChannel",
+    "memberof": "src/amqp-channel.mjs",
+    "static": true,
+    "longname": "src/amqp-channel.mjs~AMQPChannel",
+    "access": "public",
+    "export": true,
+    "importPath": "@cloudamqp/amqp-client/src/amqp-channel.mjs",
+    "importStyle": "AMQPChannel",
+    "description": "Represents an AMQP Channel\nAlmost all actions in AMQP are performed on a Channel",
+    "lineNumber": 10,
+    "interface": false
+  },
+  {
+    "__docId__": 77,
+    "kind": "constructor",
+    "name": "constructor",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#constructor",
+    "access": "public",
+    "description": "",
+    "lineNumber": 15,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "AMQPBaseClient"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "the",
+        "description": "connection this channel belongs to"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "number"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "id",
+        "description": "of the channel"
+      }
+    ]
+  },
+  {
+    "__docId__": 78,
+    "kind": "member",
+    "name": "connection",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#connection",
+    "access": "public",
+    "description": null,
+    "lineNumber": 16,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 79,
+    "kind": "member",
+    "name": "id",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#id",
+    "access": "public",
+    "description": null,
+    "lineNumber": 17,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 80,
+    "kind": "member",
+    "name": "consumers",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#consumers",
+    "access": "public",
+    "description": null,
+    "lineNumber": 18,
+    "undocument": true,
+    "type": {
+      "types": [
+        "{}"
+      ]
+    }
+  },
+  {
+    "__docId__": 81,
+    "kind": "member",
+    "name": "promises",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#promises",
+    "access": "public",
+    "description": null,
+    "lineNumber": 19,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 82,
+    "kind": "member",
+    "name": "unconfirmedPublishes",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#unconfirmedPublishes",
+    "access": "public",
+    "description": null,
+    "lineNumber": 20,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 83,
+    "kind": "member",
+    "name": "closed",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#closed",
+    "access": "public",
+    "description": null,
+    "lineNumber": 21,
+    "undocument": true,
+    "type": {
+      "types": [
+        "boolean"
+      ]
+    }
+  },
+  {
+    "__docId__": 84,
+    "kind": "method",
+    "name": "resolvePromise",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#resolvePromise",
+    "access": "public",
+    "description": "Resolves the next RPC promise",
+    "lineNumber": 28,
+    "return": {
+      "nullable": null,
+      "types": [
+        "Bool"
+      ],
+      "spread": false,
+      "description": "true if a promise was resolved, otherwise false"
+    },
+    "params": [
+      {
+        "name": "value",
+        "types": [
+          "*"
+        ]
+      }
+    ]
+  },
+  {
+    "__docId__": 85,
+    "kind": "method",
+    "name": "rejectPromise",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#rejectPromise",
+    "access": "public",
+    "description": "Rejects the next RPC promise",
+    "lineNumber": 39,
+    "return": {
+      "nullable": null,
+      "types": [
+        "Bool"
+      ],
+      "spread": false,
+      "description": "true if a promise was rejected, otherwise false"
+    },
+    "params": [
+      {
+        "name": "err",
+        "types": [
+          "*"
+        ]
+      }
+    ]
+  },
+  {
+    "__docId__": 86,
+    "kind": "method",
+    "name": "sendRpc",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#sendRpc",
+    "access": "private",
+    "description": "Send a RPC request, will resolve a RPC promise when RPC response arrives",
+    "lineNumber": 52,
+    "unknown": [
+      {
+        "tagName": "@params",
+        "tagValue": "{AMQPView} frame with data"
+      },
+      {
+        "tagName": "@params",
+        "tagValue": "{number} how long the frame actually is"
+      }
+    ],
+    "params": [
+      {
+        "name": "frame",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "frameSize",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 87,
+    "kind": "method",
+    "name": "setClosed",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#setClosed",
+    "access": "protected",
+    "description": "Marks the channel as closed\nAll outstanding RPC requests will be rejected\nAll outstanding publish confirms will be rejected\nAll consumers will be marked as closed",
+    "lineNumber": 68,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "Error"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "err",
+        "description": "why the channel was closed"
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 90,
+    "kind": "method",
+    "name": "rejectClosed",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#rejectClosed",
+    "access": "private",
+    "description": "",
+    "lineNumber": 83,
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise<AMQPError>"
+      ],
+      "spread": false,
+      "description": "Rejected promise with an error"
+    },
+    "params": []
+  },
+  {
+    "__docId__": 91,
+    "kind": "method",
+    "name": "publishConfirmed",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#publishConfirmed",
+    "access": "public",
+    "description": "Called from AMQPBaseClient when a publish is confirmed by the server\nWill full fill one or more (if multiple) Unconfirmed Publishes",
+    "lineNumber": 94,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "number"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "deliveryTag",
+        "description": ""
+      },
+      {
+        "nullable": null,
+        "types": [
+          "bool"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "multiple",
+        "description": "true if all unconfirmed publishes up to this deliveryTag should be resolved or just this one"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "bool"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "nack",
+        "description": "true if negative confirm, hence reject the unconfirmed publish(es)"
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 92,
+    "kind": "method",
+    "name": "onMessageReady",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#onMessageReady",
+    "access": "public",
+    "description": "Called from AMQPBaseClient when a message is ready",
+    "lineNumber": 115,
+    "params": [
+      {
+        "name": "message",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 93,
+    "kind": "member",
+    "name": "delivery",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#delivery",
+    "access": "public",
+    "description": null,
+    "lineNumber": 117,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 94,
+    "kind": "member",
+    "name": "getMessage",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#getMessage",
+    "access": "public",
+    "description": null,
+    "lineNumber": 120,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 95,
+    "kind": "member",
+    "name": "returned",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#returned",
+    "access": "public",
+    "description": null,
+    "lineNumber": 123,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 96,
+    "kind": "method",
+    "name": "onReturn",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#onReturn",
+    "access": "public",
+    "description": "Default handler for Returned messages",
+    "lineNumber": 132,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "AMQPMessage"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "message",
+        "description": ""
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 97,
+    "kind": "method",
+    "name": "close",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#close",
+    "access": "public",
+    "description": "Close the channel gracefully",
+    "lineNumber": 139,
+    "params": [
+      {
+        "name": "objectPattern",
+        "optional": true,
+        "types": [
+          "{\"code\": *, \"reason\": *}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 99,
+    "kind": "method",
+    "name": "deliver",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#deliver",
+    "access": "public",
+    "description": "Deliver a message to a consumer",
+    "lineNumber": 163,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "AMQPMessage"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "message",
+        "description": ""
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise"
+      ],
+      "spread": false,
+      "description": "Fulfilled when the message is processed"
+    }
+  },
+  {
+    "__docId__": 100,
+    "kind": "method",
+    "name": "flow",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#flow",
+    "access": "public",
+    "description": "Enable or disable flow. Disabling flow will stop the server from delivering messages to consumers.\nNot supported in RabbitMQ",
+    "lineNumber": 184,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "bool"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "active",
+        "description": ""
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 101,
+    "kind": "method",
+    "name": "queueBind",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#queueBind",
+    "access": "public",
+    "description": "Bind a queue to an exchange",
+    "lineNumber": 206,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "queue",
+        "description": "name of the queue"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "exchange",
+        "description": "name of the exchange"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "routingKey",
+        "description": "key to bind with"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "object"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "args",
+        "description": "optional arguments, e.g. for header exchanges"
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise"
+      ],
+      "spread": false,
+      "description": "fulfilled when confirmed by the server"
+    }
+  },
+  {
+    "__docId__": 102,
+    "kind": "method",
+    "name": "queueUnbind",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#queueUnbind",
+    "access": "public",
+    "description": null,
+    "lineNumber": 227,
+    "undocument": true,
+    "params": [
+      {
+        "name": "queue",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "exchange",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "routingKey",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "args",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 103,
+    "kind": "method",
+    "name": "queuePurge",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#queuePurge",
+    "access": "public",
+    "description": null,
+    "lineNumber": 246,
+    "undocument": true,
+    "params": [
+      {
+        "name": "queue",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 104,
+    "kind": "method",
+    "name": "queueDeclare",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#queueDeclare",
+    "access": "public",
+    "description": null,
+    "lineNumber": 264,
+    "undocument": true,
+    "params": [
+      {
+        "name": "name",
+        "optional": true,
+        "types": [
+          "string"
+        ],
+        "defaultRaw": "",
+        "defaultValue": ""
+      },
+      {
+        "name": "objectPattern1",
+        "optional": true,
+        "types": [
+          "{\"passive\": *, \"durable\": *, \"autoDelete\": *, \"exclusive\": *}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      },
+      {
+        "name": "args",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 105,
+    "kind": "method",
+    "name": "queueDelete",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#queueDelete",
+    "access": "public",
+    "description": null,
+    "lineNumber": 289,
+    "undocument": true,
+    "params": [
+      {
+        "name": "name",
+        "optional": true,
+        "types": [
+          "string"
+        ],
+        "defaultRaw": "",
+        "defaultValue": ""
+      },
+      {
+        "name": "objectPattern1",
+        "optional": true,
+        "types": [
+          "{\"ifUnused\": *, \"ifEmpty\": *}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 106,
+    "kind": "method",
+    "name": "basicQos",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#basicQos",
+    "access": "public",
+    "description": null,
+    "lineNumber": 311,
+    "undocument": true,
+    "params": [
+      {
+        "name": "prefetchCount",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "prefetchSize",
+        "optional": true,
+        "types": [
+          "number"
+        ],
+        "defaultRaw": 0,
+        "defaultValue": "0"
+      },
+      {
+        "name": "global",
+        "optional": true,
+        "types": [
+          "boolean"
+        ],
+        "defaultRaw": false,
+        "defaultValue": "false"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 107,
+    "kind": "method",
+    "name": "basicGet",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#basicGet",
+    "access": "public",
+    "description": null,
+    "lineNumber": 327,
+    "undocument": true,
+    "params": [
+      {
+        "name": "queue",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "objectPattern1",
+        "optional": true,
+        "types": [
+          "{\"noAck\": *}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 108,
+    "kind": "method",
+    "name": "basicConsume",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#basicConsume",
+    "access": "public",
+    "description": null,
+    "lineNumber": 344,
+    "undocument": true,
+    "params": [
+      {
+        "name": "queue",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "objectPattern1",
+        "optional": true,
+        "types": [
+          "{\"tag\": *, \"noAck\": *, \"exclusive\": *, \"args\": *}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      },
+      {
+        "name": "callback",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 109,
+    "kind": "method",
+    "name": "basicCancel",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#basicCancel",
+    "access": "public",
+    "description": null,
+    "lineNumber": 377,
+    "undocument": true,
+    "params": [
+      {
+        "name": "tag",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 110,
+    "kind": "method",
+    "name": "basicAck",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#basicAck",
+    "access": "public",
+    "description": null,
+    "lineNumber": 402,
+    "undocument": true,
+    "params": [
+      {
+        "name": "deliveryTag",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "multiple",
+        "optional": true,
+        "types": [
+          "boolean"
+        ],
+        "defaultRaw": false,
+        "defaultValue": "false"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 111,
+    "kind": "method",
+    "name": "basicReject",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#basicReject",
+    "access": "public",
+    "description": null,
+    "lineNumber": 417,
+    "undocument": true,
+    "params": [
+      {
+        "name": "deliveryTag",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "requeue",
+        "optional": true,
+        "types": [
+          "boolean"
+        ],
+        "defaultRaw": false,
+        "defaultValue": "false"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 112,
+    "kind": "method",
+    "name": "basicNack",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#basicNack",
+    "access": "public",
+    "description": null,
+    "lineNumber": 432,
+    "undocument": true,
+    "params": [
+      {
+        "name": "deliveryTag",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "requeue",
+        "optional": true,
+        "types": [
+          "boolean"
+        ],
+        "defaultRaw": false,
+        "defaultValue": "false"
+      },
+      {
+        "name": "multiple",
+        "optional": true,
+        "types": [
+          "boolean"
+        ],
+        "defaultRaw": false,
+        "defaultValue": "false"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 113,
+    "kind": "method",
+    "name": "basicRecover",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#basicRecover",
+    "access": "public",
+    "description": null,
+    "lineNumber": 450,
+    "undocument": true,
+    "params": [
+      {
+        "name": "requeue",
+        "optional": true,
+        "types": [
+          "boolean"
+        ],
+        "defaultRaw": false,
+        "defaultValue": "false"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 114,
+    "kind": "method",
+    "name": "basicPublish",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#basicPublish",
+    "access": "public",
+    "description": null,
+    "lineNumber": 464,
+    "undocument": true,
+    "params": [
+      {
+        "name": "exchange",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "routingkey",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "data",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "properties",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "mandatory",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "immediate",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 115,
+    "kind": "method",
+    "name": "confirmSelect",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#confirmSelect",
+    "access": "public",
+    "description": null,
+    "lineNumber": 558,
+    "undocument": true,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 116,
+    "kind": "method",
+    "name": "exchangeDeclare",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#exchangeDeclare",
+    "access": "public",
+    "description": null,
+    "lineNumber": 572,
+    "undocument": true,
+    "params": [
+      {
+        "name": "name",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "type",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "objectPattern2",
+        "optional": true,
+        "types": [
+          "{\"passive\": *, \"durable\": *, \"autoDelete\": *, \"internal\": *}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      },
+      {
+        "name": "args",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 117,
+    "kind": "method",
+    "name": "exchangeDelete",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#exchangeDelete",
+    "access": "public",
+    "description": null,
+    "lineNumber": 597,
+    "undocument": true,
+    "params": [
+      {
+        "name": "name",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "objectPattern1",
+        "optional": true,
+        "types": [
+          "{\"ifUnused\": *}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 118,
+    "kind": "method",
+    "name": "exchangeBind",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#exchangeBind",
+    "access": "public",
+    "description": null,
+    "lineNumber": 617,
+    "undocument": true,
+    "params": [
+      {
+        "name": "destination",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "source",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "routingKey",
+        "optional": true,
+        "types": [
+          "string"
+        ],
+        "defaultRaw": "",
+        "defaultValue": ""
+      },
+      {
+        "name": "args",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 119,
+    "kind": "method",
+    "name": "exchangeUnbind",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#exchangeUnbind",
+    "access": "public",
+    "description": null,
+    "lineNumber": 637,
+    "undocument": true,
+    "params": [
+      {
+        "name": "destination",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "source",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "routingKey",
+        "optional": true,
+        "types": [
+          "string"
+        ],
+        "defaultRaw": "",
+        "defaultValue": ""
+      },
+      {
+        "name": "args",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 120,
+    "kind": "method",
+    "name": "txSelect",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#txSelect",
+    "access": "public",
+    "description": null,
+    "lineNumber": 657,
+    "undocument": true,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 121,
+    "kind": "method",
+    "name": "txCommit",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#txCommit",
+    "access": "public",
+    "description": null,
+    "lineNumber": 661,
+    "undocument": true,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 122,
+    "kind": "method",
+    "name": "txRollback",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#txRollback",
+    "access": "public",
+    "description": null,
+    "lineNumber": 665,
+    "undocument": true,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 123,
+    "kind": "method",
+    "name": "txMethod",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#txMethod",
+    "access": "public",
+    "description": null,
+    "lineNumber": 669,
+    "undocument": true,
+    "params": [
+      {
+        "name": "methodId",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 124,
+    "kind": "method",
+    "name": "queue",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#queue",
+    "access": "public",
+    "description": null,
+    "lineNumber": 682,
+    "undocument": true,
+    "params": [
+      {
+        "name": "name",
+        "optional": true,
+        "types": [
+          "string"
+        ],
+        "defaultRaw": "",
+        "defaultValue": ""
+      },
+      {
+        "name": "props",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      },
+      {
+        "name": "args",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 125,
+    "kind": "method",
+    "name": "prefetch",
+    "memberof": "src/amqp-channel.mjs~AMQPChannel",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-channel.mjs~AMQPChannel#prefetch",
+    "access": "public",
+    "description": null,
+    "lineNumber": 690,
+    "undocument": true,
+    "params": [
+      {
+        "name": "prefetchCount",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 126,
+    "kind": "file",
+    "name": "src/amqp-consumer.mjs",
+    "content": "import AMQPError from './amqp-error.mjs'\n\nexport default class AMQPConsumer {\n  constructor(channel, tag, onMessage) {\n    this.channel = channel\n    this.tag = tag\n    this.onMessage = onMessage\n  }\n\n  setClosed(err) {\n    this.closed = true\n    this.closedError = err\n    clearTimeout(this.timeoutId)\n    if (err) {\n      if (this.rejectWait) this.rejectWait(err)\n    } else {\n      if (this.resolveWait) this.resolveWait()\n    }\n  }\n\n  cancel() {\n    return this.channel.basicCancel(this.tag)\n  }\n\n  /** Wait for the consumer to finish\n    * Returns a Promise that\n    * resolves if the consumer/channel/connection is closed by the client\n    * rejects if the server closed or there was a network error */\n  wait(timeout) {\n    if (this.closedError) return Promise.reject(this.closedError)\n    if (this.closed) return Promise.resolve()\n    return new Promise((resolve, reject) => {\n      this.resolveWait = resolve\n      this.rejectWait = reject\n      if (timeout) {\n        const onTimeout = () => reject(new AMQPError(\"Timeout\", this.channel.connection))\n        this.timeoutId = setTimeout(onTimeout, timeout)\n      }\n    })\n  }\n}\n",
+    "static": true,
+    "longname": "/home/carl/code/amqp-client.js/src/amqp-consumer.mjs",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 127,
+    "kind": "class",
+    "name": "AMQPConsumer",
+    "memberof": "src/amqp-consumer.mjs",
+    "static": true,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer",
+    "access": "public",
+    "export": true,
+    "importPath": "@cloudamqp/amqp-client/src/amqp-consumer.mjs",
+    "importStyle": "AMQPConsumer",
+    "description": null,
+    "lineNumber": 3,
+    "undocument": true,
+    "interface": false
+  },
+  {
+    "__docId__": 128,
+    "kind": "constructor",
+    "name": "constructor",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#constructor",
+    "access": "public",
+    "description": null,
+    "lineNumber": 4,
+    "undocument": true
+  },
+  {
+    "__docId__": 129,
+    "kind": "member",
+    "name": "channel",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#channel",
+    "access": "public",
+    "description": null,
+    "lineNumber": 5,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 130,
+    "kind": "member",
+    "name": "tag",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#tag",
+    "access": "public",
+    "description": null,
+    "lineNumber": 6,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 131,
+    "kind": "member",
+    "name": "onMessage",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#onMessage",
+    "access": "public",
+    "description": null,
+    "lineNumber": 7,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 132,
+    "kind": "method",
+    "name": "setClosed",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#setClosed",
+    "access": "public",
+    "description": null,
+    "lineNumber": 10,
+    "undocument": true,
+    "params": [
+      {
+        "name": "err",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 133,
+    "kind": "member",
+    "name": "closed",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#closed",
+    "access": "public",
+    "description": null,
+    "lineNumber": 11,
+    "undocument": true,
+    "type": {
+      "types": [
+        "boolean"
+      ]
+    }
+  },
+  {
+    "__docId__": 134,
+    "kind": "member",
+    "name": "closedError",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#closedError",
+    "access": "public",
+    "description": null,
+    "lineNumber": 12,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 135,
+    "kind": "method",
+    "name": "cancel",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#cancel",
+    "access": "public",
+    "description": null,
+    "lineNumber": 21,
+    "undocument": true,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 136,
+    "kind": "method",
+    "name": "wait",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#wait",
+    "access": "public",
+    "description": "Wait for the consumer to finish\nReturns a Promise that\nresolves if the consumer/channel/connection is closed by the client\nrejects if the server closed or there was a network error",
+    "lineNumber": 29,
+    "params": [
+      {
+        "name": "timeout",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 137,
+    "kind": "member",
+    "name": "resolveWait",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#resolveWait",
+    "access": "public",
+    "description": null,
+    "lineNumber": 33,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 138,
+    "kind": "member",
+    "name": "rejectWait",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#rejectWait",
+    "access": "public",
+    "description": null,
+    "lineNumber": 34,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 139,
+    "kind": "member",
+    "name": "timeoutId",
+    "memberof": "src/amqp-consumer.mjs~AMQPConsumer",
+    "static": false,
+    "longname": "src/amqp-consumer.mjs~AMQPConsumer#timeoutId",
+    "access": "public",
+    "description": null,
+    "lineNumber": 37,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 140,
+    "kind": "file",
+    "name": "src/amqp-error.mjs",
+    "content": "export default class AMQPError extends Error {\n  constructor(message, connection) {\n    super(message)\n    this.name = \"AMQPError\"\n    this.connection = connection\n  }\n}\n",
+    "static": true,
+    "longname": "/home/carl/code/amqp-client.js/src/amqp-error.mjs",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 141,
+    "kind": "class",
+    "name": "AMQPError",
+    "memberof": "src/amqp-error.mjs",
+    "static": true,
+    "longname": "src/amqp-error.mjs~AMQPError",
+    "access": "public",
+    "export": true,
+    "importPath": "@cloudamqp/amqp-client/src/amqp-error.mjs",
+    "importStyle": "AMQPError",
+    "description": null,
+    "lineNumber": 1,
+    "undocument": true,
+    "interface": false,
+    "extends": [
+      "Error"
+    ]
+  },
+  {
+    "__docId__": 142,
+    "kind": "constructor",
+    "name": "constructor",
+    "memberof": "src/amqp-error.mjs~AMQPError",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-error.mjs~AMQPError#constructor",
+    "access": "public",
+    "description": null,
+    "lineNumber": 2,
+    "undocument": true
+  },
+  {
+    "__docId__": 143,
+    "kind": "member",
+    "name": "name",
+    "memberof": "src/amqp-error.mjs~AMQPError",
+    "static": false,
+    "longname": "src/amqp-error.mjs~AMQPError#name",
+    "access": "public",
+    "description": null,
+    "lineNumber": 4,
+    "undocument": true,
+    "type": {
+      "types": [
+        "string"
+      ]
+    }
+  },
+  {
+    "__docId__": 144,
+    "kind": "member",
+    "name": "connection",
+    "memberof": "src/amqp-error.mjs~AMQPError",
+    "static": false,
+    "longname": "src/amqp-error.mjs~AMQPError#connection",
+    "access": "public",
+    "description": null,
+    "lineNumber": 5,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 145,
+    "kind": "file",
+    "name": "src/amqp-message.mjs",
+    "content": "export default class AMQPMessage {\n  constructor(channel) {\n    this.channel = channel\n  }\n\n  bodyToString() {\n    const decoder = new TextDecoder()\n    return decoder.decode(this.body)\n  }\n\n  /** Alias for bodyToString()\n  */\n  bodyString() {\n    return this.bodyToString()\n  }\n\n  ack(multiple = false) {\n    return this.channel.basicAck(this.deliveryTag, multiple)\n  }\n\n  reject(requeue = false) {\n    return this.channel.basicReject(this.deliveryTag, requeue)\n  }\n\n  nack(requeue = false, multiple = false) {\n    return this.channel.basicNack(this.deliveryTag, requeue, multiple)\n  }\n}\n",
+    "static": true,
+    "longname": "/home/carl/code/amqp-client.js/src/amqp-message.mjs",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 146,
+    "kind": "class",
+    "name": "AMQPMessage",
+    "memberof": "src/amqp-message.mjs",
+    "static": true,
+    "longname": "src/amqp-message.mjs~AMQPMessage",
+    "access": "public",
+    "export": true,
+    "importPath": "@cloudamqp/amqp-client/src/amqp-message.mjs",
+    "importStyle": "AMQPMessage",
+    "description": null,
+    "lineNumber": 1,
+    "undocument": true,
+    "interface": false
+  },
+  {
+    "__docId__": 147,
+    "kind": "constructor",
+    "name": "constructor",
+    "memberof": "src/amqp-message.mjs~AMQPMessage",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-message.mjs~AMQPMessage#constructor",
+    "access": "public",
+    "description": null,
+    "lineNumber": 2,
+    "undocument": true
+  },
+  {
+    "__docId__": 148,
+    "kind": "member",
+    "name": "channel",
+    "memberof": "src/amqp-message.mjs~AMQPMessage",
+    "static": false,
+    "longname": "src/amqp-message.mjs~AMQPMessage#channel",
+    "access": "public",
+    "description": null,
+    "lineNumber": 3,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 149,
+    "kind": "method",
+    "name": "bodyToString",
+    "memberof": "src/amqp-message.mjs~AMQPMessage",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-message.mjs~AMQPMessage#bodyToString",
+    "access": "public",
+    "description": null,
+    "lineNumber": 6,
+    "undocument": true,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 150,
+    "kind": "method",
+    "name": "bodyString",
+    "memberof": "src/amqp-message.mjs~AMQPMessage",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-message.mjs~AMQPMessage#bodyString",
+    "access": "public",
+    "description": "Alias for bodyToString()",
+    "lineNumber": 13,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 151,
+    "kind": "method",
+    "name": "ack",
+    "memberof": "src/amqp-message.mjs~AMQPMessage",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-message.mjs~AMQPMessage#ack",
+    "access": "public",
+    "description": null,
+    "lineNumber": 17,
+    "undocument": true,
+    "params": [
+      {
+        "name": "multiple",
+        "optional": true,
+        "types": [
+          "boolean"
+        ],
+        "defaultRaw": false,
+        "defaultValue": "false"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 152,
+    "kind": "method",
+    "name": "reject",
+    "memberof": "src/amqp-message.mjs~AMQPMessage",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-message.mjs~AMQPMessage#reject",
+    "access": "public",
+    "description": null,
+    "lineNumber": 21,
+    "undocument": true,
+    "params": [
+      {
+        "name": "requeue",
+        "optional": true,
+        "types": [
+          "boolean"
+        ],
+        "defaultRaw": false,
+        "defaultValue": "false"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 153,
+    "kind": "method",
+    "name": "nack",
+    "memberof": "src/amqp-message.mjs~AMQPMessage",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-message.mjs~AMQPMessage#nack",
+    "access": "public",
+    "description": null,
+    "lineNumber": 25,
+    "undocument": true,
+    "params": [
+      {
+        "name": "requeue",
+        "optional": true,
+        "types": [
+          "boolean"
+        ],
+        "defaultRaw": false,
+        "defaultValue": "false"
+      },
+      {
+        "name": "multiple",
+        "optional": true,
+        "types": [
+          "boolean"
+        ],
+        "defaultRaw": false,
+        "defaultValue": "false"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 154,
+    "kind": "file",
+    "name": "src/amqp-queue.mjs",
+    "content": "export default class AMQPQueue {\n  constructor(channel, name) {\n    this.channel = channel\n    this.name = name\n  }\n\n  bind(exchange, routingkey, args = {}) {\n    return new Promise((resolve, reject) => {\n      this.channel.queueBind(this.name, exchange, routingkey, args)\n        .then(() => resolve(this))\n        .catch(reject)\n    })\n  }\n\n  unbind(exchange, routingkey, args = {}) {\n    return new Promise((resolve, reject) => {\n      this.channel.queueUnind(this.name, exchange, routingkey, args)\n        .then(() => resolve(this))\n        .catch(reject)\n    })\n  }\n\n  publish(body, properties) {\n    return new Promise((resolve, reject) => {\n      this.channel.basicPublish(\"\", this.name, body, properties)\n        .then(() => resolve(this))\n        .catch(reject)\n    })\n  }\n\n  subscribe({noAck = true, exclusive = false} = {}, callback) {\n    return new Promise((resolve, reject) => {\n      this.channel.basicConsume(this.name, {noAck, exclusive}, callback)\n        .then(resolve)\n        .catch(reject)\n    })\n  }\n\n  unsubscribe(consumerTag) {\n    return new Promise((resolve, reject) => {\n      this.channel.basicCancel(consumerTag)\n        .then(() => resolve(this))\n        .catch(reject)\n    })\n  }\n\n  delete() {\n    return new Promise((resolve, reject) => {\n      this.channel.queueDelete(this.name)\n        .then(() => resolve(this))\n        .catch(reject)\n    })\n  }\n\n  get({ noAck = true}) {\n    return this.channel.basicGet(this.name, { noAck })\n  }\n}\n",
+    "static": true,
+    "longname": "/home/carl/code/amqp-client.js/src/amqp-queue.mjs",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 155,
+    "kind": "class",
+    "name": "AMQPQueue",
+    "memberof": "src/amqp-queue.mjs",
+    "static": true,
+    "longname": "src/amqp-queue.mjs~AMQPQueue",
+    "access": "public",
+    "export": true,
+    "importPath": "@cloudamqp/amqp-client/src/amqp-queue.mjs",
+    "importStyle": "AMQPQueue",
+    "description": null,
+    "lineNumber": 1,
+    "undocument": true,
+    "interface": false
+  },
+  {
+    "__docId__": 156,
+    "kind": "constructor",
+    "name": "constructor",
+    "memberof": "src/amqp-queue.mjs~AMQPQueue",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-queue.mjs~AMQPQueue#constructor",
+    "access": "public",
+    "description": null,
+    "lineNumber": 2,
+    "undocument": true
+  },
+  {
+    "__docId__": 157,
+    "kind": "member",
+    "name": "channel",
+    "memberof": "src/amqp-queue.mjs~AMQPQueue",
+    "static": false,
+    "longname": "src/amqp-queue.mjs~AMQPQueue#channel",
+    "access": "public",
+    "description": null,
+    "lineNumber": 3,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 158,
+    "kind": "member",
+    "name": "name",
+    "memberof": "src/amqp-queue.mjs~AMQPQueue",
+    "static": false,
+    "longname": "src/amqp-queue.mjs~AMQPQueue#name",
+    "access": "public",
+    "description": null,
+    "lineNumber": 4,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 159,
+    "kind": "method",
+    "name": "bind",
+    "memberof": "src/amqp-queue.mjs~AMQPQueue",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-queue.mjs~AMQPQueue#bind",
+    "access": "public",
+    "description": null,
+    "lineNumber": 7,
+    "undocument": true,
+    "params": [
+      {
+        "name": "exchange",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "routingkey",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "args",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 160,
+    "kind": "method",
+    "name": "unbind",
+    "memberof": "src/amqp-queue.mjs~AMQPQueue",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-queue.mjs~AMQPQueue#unbind",
+    "access": "public",
+    "description": null,
+    "lineNumber": 15,
+    "undocument": true,
+    "params": [
+      {
+        "name": "exchange",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "routingkey",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "args",
+        "optional": true,
+        "types": [
+          "{}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 161,
+    "kind": "method",
+    "name": "publish",
+    "memberof": "src/amqp-queue.mjs~AMQPQueue",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-queue.mjs~AMQPQueue#publish",
+    "access": "public",
+    "description": null,
+    "lineNumber": 23,
+    "undocument": true,
+    "params": [
+      {
+        "name": "body",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "properties",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 162,
+    "kind": "method",
+    "name": "subscribe",
+    "memberof": "src/amqp-queue.mjs~AMQPQueue",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-queue.mjs~AMQPQueue#subscribe",
+    "access": "public",
+    "description": null,
+    "lineNumber": 31,
+    "undocument": true,
+    "params": [
+      {
+        "name": "objectPattern",
+        "optional": true,
+        "types": [
+          "{\"noAck\": *, \"exclusive\": *}"
+        ],
+        "defaultRaw": {},
+        "defaultValue": "{}"
+      },
+      {
+        "name": "callback",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 163,
+    "kind": "method",
+    "name": "unsubscribe",
+    "memberof": "src/amqp-queue.mjs~AMQPQueue",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-queue.mjs~AMQPQueue#unsubscribe",
+    "access": "public",
+    "description": null,
+    "lineNumber": 39,
+    "undocument": true,
+    "params": [
+      {
+        "name": "consumerTag",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 164,
+    "kind": "method",
+    "name": "delete",
+    "memberof": "src/amqp-queue.mjs~AMQPQueue",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-queue.mjs~AMQPQueue#delete",
+    "access": "public",
+    "description": null,
+    "lineNumber": 47,
+    "undocument": true,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 165,
+    "kind": "method",
+    "name": "get",
+    "memberof": "src/amqp-queue.mjs~AMQPQueue",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-queue.mjs~AMQPQueue#get",
+    "access": "public",
+    "description": null,
+    "lineNumber": 55,
+    "undocument": true,
+    "params": [
+      {
+        "name": "objectPattern",
+        "types": [
+          "{\"noAck\": *}"
+        ],
+        "defaultRaw": {
+          "noAck": null
+        },
+        "defaultValue": "{\"noAck\":null}"
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 166,
+    "kind": "file",
+    "name": "src/amqp-socket-client.mjs",
+    "content": "import AMQPBaseClient from './amqp-base-client.mjs'\nimport AMQPError from './amqp-error.mjs'\nimport AMQPView from './amqp-view.mjs'\nimport { Buffer } from 'buffer'\nimport net from 'net'\nimport tls from 'tls'\nimport process from 'process'\n\nexport default class AMQPClient extends AMQPBaseClient {\n  constructor(url) {\n    const u = new URL(url)\n    const vhost = decodeURIComponent(u.pathname.slice(1)) || \"/\"\n    const username = u.username || \"guest\"\n    const password = u.password || \"guest\"\n    const name = u.searchParams.get(\"name\")\n    const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`\n    super(vhost, username, password, name, platform)\n    this.tls = u.protocol === \"amqps:\"\n    this.host = u.host || \"localhost\"\n    this.port = u.port || this.tls ? 5671 : 5672\n  }\n\n  connect() {\n    const socket = this.tls ? this.connectTLS() : this.connectPlain()\n    Object.defineProperty(this, 'socket', {\n      value: socket,\n      enumerable: false // hide it from console.log etc.\n    })\n    return new Promise((resolve, reject) => {\n      this.socket.on('error', (err) => reject(new AMQPError(err, this)))\n      this.connectPromise = [resolve, reject]\n    })\n  }\n\n  connectPlain() {\n    let framePos = 0\n    let frameSize = 0\n    const frameBuffer = new Uint8Array(4096)\n    const self = this\n    const socket = net.connect({\n      host: this.host,\n      port: this.port,\n      onread: {\n        // Reuses a 4KiB Buffer for every read from the socket.\n        buffer: Buffer.alloc(4096),\n        callback: function(nread, buf) {\n          // Find frame boundaries and only pass a single frame at a time\n          let bufPos = 0\n          while (bufPos < nread) {\n            // read frame size of next frame\n            if (frameSize === 0)\n              frameSize = buf.readInt32BE(bufPos + 3) + 8\n\n            const leftOfFrame = frameSize - framePos\n            const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + leftOfFrame)\n            framePos += copied\n            bufPos += copied\n            if (framePos === frameSize) {\n              const view = new AMQPView(frameBuffer.buffer, 0, frameSize)\n              self.parseFrames(view)\n              frameSize = framePos = 0\n            }\n          }\n        }\n      }\n    })\n    socket.on('connect', () => {\n      const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])\n      this.send(amqpstart)\n    })\n    return socket\n  }\n\n  connectTLS() {\n    const socket = tls.connect({\n      host: this.host,\n      port: this.port,\n      servername: this.host, // SNI\n    })\n    socket.on('secureConnect', () => {\n      const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])\n      this.send(amqpstart)\n    })\n    let framePos = 0\n    let frameSize = 0\n    const frameBuffer = new Uint8Array(4096)\n    socket.on('data', (buf) => {\n      // Find frame boundaries and only pass a single frame at a time\n      let bufPos = 0\n      while (bufPos < buf.byteLength) {\n        // read frame size of next frame\n        if (frameSize === 0)\n          frameSize = buf.readInt32BE(bufPos + 3) + 8\n\n        const leftOfFrame = frameSize - framePos\n        const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + leftOfFrame)\n        framePos += copied\n        bufPos += copied\n        if (framePos === frameSize) {\n          const view = new AMQPView(frameBuffer.buffer, 0, frameSize)\n          this.parseFrames(view)\n          frameSize = framePos = 0\n        }\n      }\n    })\n    return socket\n  }\n\n  send(bytes) {\n    return new Promise((resolve, reject) => {\n      this.socket.write(bytes, '', (err) => err ? reject(err) : resolve())\n    })\n  }\n\n  closeSocket() {\n    this.socket.end()\n  }\n}\n",
+    "static": true,
+    "longname": "/home/carl/code/amqp-client.js/src/amqp-socket-client.mjs",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 167,
+    "kind": "class",
+    "name": "AMQPClient",
+    "memberof": "src/amqp-socket-client.mjs",
+    "static": true,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient",
+    "access": "public",
+    "export": true,
+    "importPath": "@cloudamqp/amqp-client",
+    "importStyle": "AMQPClient",
+    "description": null,
+    "lineNumber": 9,
+    "undocument": true,
+    "interface": false,
+    "extends": [
+      "src/amqp-base-client.mjs~AMQPBaseClient"
+    ]
+  },
+  {
+    "__docId__": 168,
+    "kind": "constructor",
+    "name": "constructor",
+    "memberof": "src/amqp-socket-client.mjs~AMQPClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient#constructor",
+    "access": "public",
+    "description": null,
+    "lineNumber": 10,
+    "undocument": true
+  },
+  {
+    "__docId__": 169,
+    "kind": "member",
+    "name": "tls",
+    "memberof": "src/amqp-socket-client.mjs~AMQPClient",
+    "static": false,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient#tls",
+    "access": "public",
+    "description": null,
+    "lineNumber": 18,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 170,
+    "kind": "member",
+    "name": "host",
+    "memberof": "src/amqp-socket-client.mjs~AMQPClient",
+    "static": false,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient#host",
+    "access": "public",
+    "description": null,
+    "lineNumber": 19,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 171,
+    "kind": "member",
+    "name": "port",
+    "memberof": "src/amqp-socket-client.mjs~AMQPClient",
+    "static": false,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient#port",
+    "access": "public",
+    "description": null,
+    "lineNumber": 20,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 172,
+    "kind": "method",
+    "name": "connect",
+    "memberof": "src/amqp-socket-client.mjs~AMQPClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient#connect",
+    "access": "public",
+    "description": null,
+    "lineNumber": 23,
+    "undocument": true,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 173,
+    "kind": "member",
+    "name": "connectPromise",
+    "memberof": "src/amqp-socket-client.mjs~AMQPClient",
+    "static": false,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient#connectPromise",
+    "access": "public",
+    "description": null,
+    "lineNumber": 31,
+    "undocument": true,
+    "type": {
+      "types": [
+        "undefined[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 174,
+    "kind": "method",
+    "name": "connectPlain",
+    "memberof": "src/amqp-socket-client.mjs~AMQPClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient#connectPlain",
+    "access": "public",
+    "description": null,
+    "lineNumber": 35,
+    "undocument": true,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 175,
+    "kind": "method",
+    "name": "connectTLS",
+    "memberof": "src/amqp-socket-client.mjs~AMQPClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient#connectTLS",
+    "access": "public",
+    "description": null,
+    "lineNumber": 74,
+    "undocument": true,
+    "params": [],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 176,
+    "kind": "method",
+    "name": "send",
+    "memberof": "src/amqp-socket-client.mjs~AMQPClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient#send",
+    "access": "public",
+    "description": null,
+    "lineNumber": 109,
+    "undocument": true,
+    "params": [
+      {
+        "name": "bytes",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 177,
+    "kind": "method",
+    "name": "closeSocket",
+    "memberof": "src/amqp-socket-client.mjs~AMQPClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-socket-client.mjs~AMQPClient#closeSocket",
+    "access": "public",
+    "description": null,
+    "lineNumber": 115,
+    "undocument": true,
+    "params": [],
+    "return": null
+  },
+  {
+    "__docId__": 178,
+    "kind": "file",
+    "name": "src/amqp-view.mjs",
+    "content": "export default class AMQPView extends DataView {\n  getUint64(byteOffset, littleEndian) {\n    // split 64-bit number into two 32-bit (4-byte) parts\n    const left =  this.getUint32(byteOffset, littleEndian)\n    const right = this.getUint32(byteOffset + 4, littleEndian)\n\n    // combine the two 32-bit values\n    const combined = littleEndian ? left + 2**32 * right : 2**32 * left + right\n\n    if (!Number.isSafeInteger(combined))\n      console.warn(combined, 'exceeds MAX_SAFE_INTEGER. Precision may be lost')\n\n    return combined\n  }\n\n  setUint64(byteOffset, value, littleEndian) {\n    this.setBigUint64(byteOffset, BigInt(value), littleEndian)\n  }\n\n  getInt64(byteOffset, value, littleEndian) {\n    return Number(this.getBigInt64(byteOffset, littleEndian))\n  }\n\n  setInt64(byteOffset, value, littleEndian) {\n    this.setBigInt64(byteOffset, BigInt(value), littleEndian)\n  }\n\n  getShortString(byteOffset, littleEndian) {\n    const len = this.getUint8(byteOffset, littleEndian)\n    byteOffset += 1\n    const view = new Uint8Array(this.buffer, byteOffset, len)\n    const decoder = new TextDecoder()\n    return [decoder.decode(view), len + 1]\n  }\n\n  setShortString(byteOffset, string, littleEndian) {\n    const encoder = new TextEncoder()\n    const utf8 = encoder.encode(string)\n    this.setUint8(byteOffset, utf8.byteLength, littleEndian)\n    byteOffset += 1\n    const view = new Uint8Array(this.buffer, byteOffset)\n    view.set(utf8)\n    return utf8.byteLength + 1\n  }\n\n  getLongString(byteOffset, littleEndian) {\n    const len = this.getUint32(byteOffset, littleEndian)\n    byteOffset += 4\n    const view = new Uint8Array(this.buffer, byteOffset, len)\n    const decoder = new TextDecoder()\n    return [decoder.decode(view), len + 4]\n  }\n\n  setLongString(byteOffset, string, littleEndian) {\n    const encoder = new TextEncoder()\n    const utf8 = encoder.encode(string)\n    this.setUint32(byteOffset, utf8.byteLength, littleEndian)\n    byteOffset += 4\n    const view = new Uint8Array(this.buffer, byteOffset)\n    view.set(utf8)\n    return utf8.byteLength + 4\n  }\n\n  getProperties(byteOffset, littleEndian) {\n    let j = byteOffset\n    const flags = this.getUint16(j, littleEndian); j += 2\n    const props = {}\n    if ((flags & 0x8000) > 0) {\n      const [contentType, len] = this.getShortString(j, littleEndian); j += len\n      props.contentType = contentType\n    }\n    if ((flags & 0x4000) > 0) {\n      const [contentEncoding, len] = this.getShortString(j, littleEndian); j += len\n      props.contentEncoding = contentEncoding\n    }\n    if ((flags & 0x2000) > 0) {\n      const [headers, len] = this.getTable(j, littleEndian); j += len\n      props.headers = headers\n    }\n    if ((flags & 0x1000) > 0) {\n      props.deliveryMode = this.getUint8(j, littleEndian); j += 1\n    }\n    if ((flags & 0x0800) > 0) {\n      props.priority = this.getUint8(j, littleEndian); j += 1\n    }\n    if ((flags & 0x0400) > 0) {\n      const [correlationId, len] = this.getShortString(j, littleEndian); j += len\n      props.correlationId = correlationId\n    }\n    if ((flags & 0x0200) > 0) {\n      const [replyTo, len] = this.getShortString(j, littleEndian); j += len\n      props.replyTo = replyTo\n    }\n    if ((flags & 0x0100) > 0) {\n      const [expiration, len] = this.getShortString(j, littleEndian); j += len\n      props.expiration = expiration\n    }\n    if ((flags & 0x0080) > 0) {\n      const [messageId, len] = this.getShortString(j, littleEndian); j += len\n      props.messageId = messageId\n    }\n    if ((flags & 0x0040) > 0) {\n      props.timestamp = new Date(this.getInt64(j, littleEndian) * 1000); j += 8\n    }\n    if ((flags & 0x0020) > 0) {\n      const [type, len] = this.getShortString(j, littleEndian); j += len\n      props.type = type\n    }\n    if ((flags & 0x0010) > 0) {\n      const [userId, len] = this.getShortString(j, littleEndian); j += len\n      props.userId = userId\n    }\n    if ((flags & 0x0008) > 0) {\n      const [appId, len] = this.getShortString(j, littleEndian); j += len\n      props.appId = appId\n    }\n    const len = j - byteOffset\n    return [props, len]\n  }\n\n  setProperties(byteOffset, properties, littleEndian) {\n    let j = byteOffset\n    let flags = 0\n    if (!(properties)) properties = {}\n    if (properties.contentType)     flags = flags | 0x8000\n    if (properties.contentEncoding) flags = flags | 0x4000\n    if (properties.headers)         flags = flags | 0x2000\n    if (properties.deliveryMode)    flags = flags | 0x1000\n    if (properties.priority)        flags = flags | 0x0800\n    if (properties.correlationId)   flags = flags | 0x0400\n    if (properties.replyTo)         flags = flags | 0x0200\n    if (properties.expiration)      flags = flags | 0x0100\n    if (properties.messageId)       flags = flags | 0x0080\n    if (properties.timestamp)       flags = flags | 0x0040\n    if (properties.type)            flags = flags | 0x0020\n    if (properties.userId)          flags = flags | 0x0010\n    if (properties.appId)           flags = flags | 0x0008\n    this.setUint16(j, flags, littleEndian)\n    j += 2\n    if (properties.contentType) {\n      j += this.setShortString(j, properties.contentType)\n    }\n    if (properties.contentEncoding) {\n      j += this.setShortString(j, properties.contentEncoding)\n    }\n    if (properties.headers) {\n      j += this.setTable(j, properties.headers)\n    }\n    if (properties.deliveryMode) {\n      this.setUint8(j, properties.deliveryMode); j += 1\n    }\n    if (properties.priority) {\n      this.setUint8(j, properties.priority); j += 1\n    }\n    if (properties.correlationId) {\n      j += this.setShortString(j, properties.correlationId)\n    }\n    if (properties.replyTo) {\n      j += this.setShortString(j, properties.replyTo)\n    }\n    if (properties.expiration) {\n      j += this.setShortString(j, properties.expiration)\n    }\n    if (properties.messageId) {\n      j += this.setShortString(j, properties.messageId)\n    }\n    if (properties.timestamp) { // Date\n      const unixEpoch = Math.floor(Number(properties.timestamp) / 1000)\n      this.setInt64(j, unixEpoch, littleEndian); j += 8\n    }\n    if (properties.type) {\n      j += this.setShortString(j, properties.type)\n    }\n    if (properties.userId) {\n      j += this.setShortString(j, properties.userId)\n    }\n    if (properties.appId) {\n      j += this.setShortString(j, properties.appId)\n    }\n    const len = j - byteOffset\n    return len\n  }\n\n  getTable(byteOffset, littleEndian) {\n    const table = {}\n    let i = byteOffset\n    const len = this.getUint32(byteOffset, littleEndian); i += 4\n    for (; i < byteOffset + 4 + len;) {\n      const [k, strLen] = this.getShortString(i, littleEndian); i += strLen\n      const [v, vLen] = this.getField(i, littleEndian); i += vLen\n      table[k] = v\n    }\n    return [table, len + 4]\n  }\n\n  setTable(byteOffset, table, littleEndian) {\n    // skip the first 4 bytes which are for the size\n    let i = byteOffset + 4\n    for (let [key, value] of Object.entries(table)) {\n      i += this.setShortString(i, key, littleEndian)\n      i += this.setField(i, value, littleEndian)\n    }\n    this.setUint32(byteOffset, i - byteOffset - 4, littleEndian) // update prefix length\n    return i - byteOffset\n  }\n\n  getField(byteOffset, littleEndian) {\n    let i = byteOffset\n    const k = this.getUint8(i, littleEndian); i += 1\n    const type = String.fromCharCode(k)\n    let v\n    let len\n    switch (type) {\n      case 't': v = this.getUint8(i, littleEndian) === 1; i += 1; break\n      case 'b': v = this.getInt8(i, littleEndian); i += 1; break\n      case 'B': v = this.getUint8(i, littleEndian); i += 1; break\n      case 's': v = this.getInt16(i, littleEndian); i += 2; break\n      case 'u': v = this.getUint16(i, littleEndian); i += 2; break\n      case 'I': v = this.getInt32(i, littleEndian); i += 4; break\n      case 'i': v = this.getUint32(i, littleEndian); i += 4; break\n      case 'l': v = this.getInt64(i, littleEndian); i += 8; break\n      case 'f': v = this.getFloat32(i, littleEndian); i += 4; break\n      case 'd': v = this.getFloat64(i, littleEndian); i += 8; break\n      case 'S': [v, len] = this.getLongString(i, littleEndian); i += len; break\n      case 'F': [v, len] = this.getTable(i, littleEndian); i += len; break\n      case 'A': [v, len] = this.getArray(i, littleEndian); i += len; break\n      case 'x': [v, len] = this.getByteArray(i); i += len; break\n      case 'T': v = new Date(this.getInt64(i, littleEndian) * 1000); i += 8; break\n      case 'V': v = null; break\n      case 'D': {\n        const scale = this.getUint8(i, littleEndian); i += 1\n        const value = this.getUint32(i, littleEndian); i += 4\n        v = value / 10**scale\n        break\n      }\n      default:\n        throw `Field type '${k}' not supported`\n    }\n    return [v, i - byteOffset]\n  }\n\n  setField(byteOffset, field, littleEndian) {\n    let i = byteOffset\n    switch (typeof field) {\n      case \"string\":\n        this.setUint8(i, 'S'.charCodeAt(), littleEndian); i += 1\n        i += this.setLongString(i, field, littleEndian)\n        break\n      case \"boolean\":\n        this.setUint8(i, 't'.charCodeAt(), littleEndian); i += 1\n        this.setUint8(i, field ? 1 : 0, littleEndian); i += 1\n        break\n      case \"bigint\":\n        this.setUint8(i, 'l'.charCodeAt(), littleEndian); i += 1\n        this.setBigInt64(i, field, littleEndian); i += 8\n        break\n      case \"number\":\n        if (Number.isInteger(field)) {\n          if (-(2**32) < field < 2**32) {\n            this.setUint8(i, 'I'.charCodeAt(), littleEndian); i += 1\n            this.setInt32(i, field, littleEndian); i += 4\n          } else {\n            this.setUint8(i, 'l'.charCodeAt(), littleEndian); i += 1\n            this.setInt64(i, field, littleEndian); i += 8\n          }\n        } else { // float\n          if (-(2**32) < field < 2**32) {\n            this.setUint8(i, 'f'.charCodeAt(), littleEndian); i += 1\n            this.setFloat32(i, field, littleEndian); i += 4\n          } else {\n            this.setUint8(i, 'd'.charCodeAt(), littleEndian); i += 1\n            this.setFloat64(i, field, littleEndian); i += 8\n          }\n        }\n        break\n      case undefined:\n      case null:\n        this.setUint8(i, 'V'.charCodeAt(), littleEndian); i += 1\n        break\n      case \"object\":\n        if (Array.isArray(field)) {\n          this.setUint8(i, 'A'.charCodeAt(), littleEndian); i += 1\n          i += this.setArray(i, field, littleEndian)\n        } else if (field instanceof ArrayBuffer || field instanceof Uint8Array) {\n          this.setUint8(i, 'x'.charCodeAt(), littleEndian); i += 1\n          i += this.setByteArray(i, field)\n        } else if (field instanceof Date) {\n          this.setUint8(i, 'T'.charCodeAt(), littleEndian); i += 1\n          const unixEpoch = Math.floor(Number(field) / 1000)\n          this.setInt64(i, unixEpoch, littleEndian); i += 8\n        } else { // hopefully it's a hash like object\n          this.setUint8(i, 'F'.charCodeAt(), littleEndian); i += 1\n          i += this.setTable(i, field, littleEndian)\n        }\n        break\n      default:\n        throw `Unsupported field type '${field}'`\n    }\n    return i - byteOffset\n  }\n\n  getArray(byteOffset, littleEndian) {\n    const len = this.getUint32(byteOffset, littleEndian); byteOffset += 4\n    const endOffset = byteOffset + len\n    const v = []\n    for (; byteOffset < endOffset;) {\n      const [field, fieldLen] = this.getField(byteOffset, littleEndian); byteOffset += fieldLen\n      v.push(field)\n    }\n    return [v, len + 4]\n  }\n\n  setArray(byteOffset, array, littleEndian) {\n    const start = byteOffset\n    byteOffset += 4 // bytelength\n    array.forEach((e) => {\n      byteOffset += this.setField(e)\n    })\n    this.setUint32(start, byteOffset - start - 4, littleEndian) // update length\n    return byteOffset - start\n  }\n\n  getByteArray(byteOffset) {\n    const len = this.getUint32(byteOffset)\n    const v = new Uint8Array(this.buffer, byteOffset + 4, len)\n    return [v, len + 4]\n  }\n\n  setByteArray(byteOffset, data) {\n    const len = this.setUint32(byteOffset, data.byteLength)\n    const view = new Uint8Array(this.buffer, byteOffset + 4, len)\n    view.set(data)\n    return data.bytelength + 4\n  }\n\n  setFrameEnd(j) {\n    this.setUint32(3, j - 7) // update frameSize\n    this.setUint8(j, 206) // frame end byte\n    return 1\n  }\n}\n",
+    "static": true,
+    "longname": "/home/carl/code/amqp-client.js/src/amqp-view.mjs",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 179,
+    "kind": "class",
+    "name": "AMQPView",
+    "memberof": "src/amqp-view.mjs",
+    "static": true,
+    "longname": "src/amqp-view.mjs~AMQPView",
+    "access": "public",
+    "export": true,
+    "importPath": "@cloudamqp/amqp-client/src/amqp-view.mjs",
+    "importStyle": "AMQPView",
+    "description": null,
+    "lineNumber": 1,
+    "undocument": true,
+    "interface": false,
+    "extends": [
+      "DataView"
+    ]
+  },
+  {
+    "__docId__": 180,
+    "kind": "method",
+    "name": "getUint64",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#getUint64",
+    "access": "public",
+    "description": null,
+    "lineNumber": 2,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 181,
+    "kind": "method",
+    "name": "setUint64",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#setUint64",
+    "access": "public",
+    "description": null,
+    "lineNumber": 16,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "value",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 182,
+    "kind": "method",
+    "name": "getInt64",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#getInt64",
+    "access": "public",
+    "description": null,
+    "lineNumber": 20,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "value",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 183,
+    "kind": "method",
+    "name": "setInt64",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#setInt64",
+    "access": "public",
+    "description": null,
+    "lineNumber": 24,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "value",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": null
+  },
+  {
+    "__docId__": 184,
+    "kind": "method",
+    "name": "getShortString",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#getShortString",
+    "access": "public",
+    "description": null,
+    "lineNumber": 28,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "undefined[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 185,
+    "kind": "method",
+    "name": "setShortString",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#setShortString",
+    "access": "public",
+    "description": null,
+    "lineNumber": 36,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "string",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 186,
+    "kind": "method",
+    "name": "getLongString",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#getLongString",
+    "access": "public",
+    "description": null,
+    "lineNumber": 46,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "undefined[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 187,
+    "kind": "method",
+    "name": "setLongString",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#setLongString",
+    "access": "public",
+    "description": null,
+    "lineNumber": 54,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "string",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 188,
+    "kind": "method",
+    "name": "getProperties",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#getProperties",
+    "access": "public",
+    "description": null,
+    "lineNumber": 64,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "undefined[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 189,
+    "kind": "method",
+    "name": "setProperties",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#setProperties",
+    "access": "public",
+    "description": null,
+    "lineNumber": 121,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "properties",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 190,
+    "kind": "method",
+    "name": "getTable",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#getTable",
+    "access": "public",
+    "description": null,
+    "lineNumber": 184,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "undefined[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 191,
+    "kind": "method",
+    "name": "setTable",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#setTable",
+    "access": "public",
+    "description": null,
+    "lineNumber": 196,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "table",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 192,
+    "kind": "method",
+    "name": "getField",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#getField",
+    "access": "public",
+    "description": null,
+    "lineNumber": 207,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "undefined[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 193,
+    "kind": "method",
+    "name": "setField",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#setField",
+    "access": "public",
+    "description": null,
+    "lineNumber": 242,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "field",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 194,
+    "kind": "method",
+    "name": "getArray",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#getArray",
+    "access": "public",
+    "description": null,
+    "lineNumber": 302,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "undefined[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 195,
+    "kind": "method",
+    "name": "setArray",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#setArray",
+    "access": "public",
+    "description": null,
+    "lineNumber": 313,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "array",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "littleEndian",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 196,
+    "kind": "method",
+    "name": "getByteArray",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#getByteArray",
+    "access": "public",
+    "description": null,
+    "lineNumber": 323,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "undefined[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 197,
+    "kind": "method",
+    "name": "setByteArray",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#setByteArray",
+    "access": "public",
+    "description": null,
+    "lineNumber": 329,
+    "undocument": true,
+    "params": [
+      {
+        "name": "byteOffset",
+        "types": [
+          "*"
+        ]
+      },
+      {
+        "name": "data",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 198,
+    "kind": "method",
+    "name": "setFrameEnd",
+    "memberof": "src/amqp-view.mjs~AMQPView",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-view.mjs~AMQPView#setFrameEnd",
+    "access": "public",
+    "description": null,
+    "lineNumber": 336,
+    "undocument": true,
+    "params": [
+      {
+        "name": "j",
+        "types": [
+          "*"
+        ]
+      }
+    ],
+    "return": {
+      "types": [
+        "number"
+      ]
+    }
+  },
+  {
+    "__docId__": 199,
+    "kind": "file",
+    "name": "src/amqp-websocket-client.mjs",
+    "content": "import AMQPBaseClient from './amqp-base-client.mjs'\nimport AMQPView from './amqp-view.mjs'\n\n/** \n * WebSocket client for AMQP 0-9-1 servers\n */\nexport default class AMQPWebSocketClient extends AMQPBaseClient {\n  /**\n   * Create a AMQPWebSocketClient\n   * @param {string} url to the websocket endpoint\n   * @param {string} vhost, default '/'\n   * @param {string} username, default 'guest'\n   * @param {string} password, default 'guest'\n   * @param {string} name of the connection, no default\n   */\n  constructor(url, vhost = \"/\", username = \"guest\", password = \"guest\", name = undefined) {\n    super(vhost, username, password, name, window.navigator.userAgent)\n    this.url = url\n  }\n\n  /**\n   * Establish a WebSocket connection\n   * @return {Promise} Promise to returns itself when successfully connected\n   */\n  connect() {\n    const socket = new WebSocket(this.url)\n    this.socket = socket\n    socket.binaryType = \"arraybuffer\"\n    socket.onmessage = (event) => this.parseFrames(new AMQPView(event.data))\n    return new Promise((resolve, reject) => {\n      this.connectPromise = [resolve, reject]\n      socket.onclose = reject\n      socket.onerror = reject\n      socket.onopen = () => {\n        const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])\n        socket.send(amqpstart)\n      }\n    })\n  }\n\n  /**\n   * @private\n   * @param {Uint8array} bytes to send\n   * @return {Promise} fulfilled when the data is enqueued\n   */\n  send(bytes) {\n    return new Promise((resolve, reject) => {\n      try {\n        this.socket.send(bytes)\n        resolve()\n      } catch (err) {\n        reject(err)\n      }\n    })\n  }\n\n  /**\n   *\n   * @private\n   */\n  closeSocket() {\n    this.socket.close()\n  }\n}\n",
+    "static": true,
+    "longname": "/home/carl/code/amqp-client.js/src/amqp-websocket-client.mjs",
+    "access": "public",
+    "description": null,
+    "lineNumber": 1
+  },
+  {
+    "__docId__": 200,
+    "kind": "class",
+    "name": "AMQPWebSocketClient",
+    "memberof": "src/amqp-websocket-client.mjs",
+    "static": true,
+    "longname": "src/amqp-websocket-client.mjs~AMQPWebSocketClient",
+    "access": "public",
+    "export": true,
+    "importPath": "@cloudamqp/amqp-client/src/amqp-websocket-client.mjs",
+    "importStyle": "AMQPWebSocketClient",
+    "description": "WebSocket client for AMQP 0-9-1 servers",
+    "lineNumber": 7,
+    "interface": false,
+    "extends": [
+      "src/amqp-base-client.mjs~AMQPBaseClient"
+    ]
+  },
+  {
+    "__docId__": 201,
+    "kind": "constructor",
+    "name": "constructor",
+    "memberof": "src/amqp-websocket-client.mjs~AMQPWebSocketClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-websocket-client.mjs~AMQPWebSocketClient#constructor",
+    "access": "public",
+    "description": "Create a AMQPWebSocketClient",
+    "lineNumber": 16,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "url",
+        "description": "to the websocket endpoint"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "vhost,",
+        "description": "default '/'"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "username,",
+        "description": "default 'guest'"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "password,",
+        "description": "default 'guest'"
+      },
+      {
+        "nullable": null,
+        "types": [
+          "string"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "name",
+        "description": "of the connection, no default"
+      }
+    ]
+  },
+  {
+    "__docId__": 202,
+    "kind": "member",
+    "name": "url",
+    "memberof": "src/amqp-websocket-client.mjs~AMQPWebSocketClient",
+    "static": false,
+    "longname": "src/amqp-websocket-client.mjs~AMQPWebSocketClient#url",
+    "access": "public",
+    "description": null,
+    "lineNumber": 18,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 203,
+    "kind": "method",
+    "name": "connect",
+    "memberof": "src/amqp-websocket-client.mjs~AMQPWebSocketClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-websocket-client.mjs~AMQPWebSocketClient#connect",
+    "access": "public",
+    "description": "Establish a WebSocket connection",
+    "lineNumber": 25,
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise"
+      ],
+      "spread": false,
+      "description": "Promise to returns itself when successfully connected"
+    },
+    "params": []
+  },
+  {
+    "__docId__": 204,
+    "kind": "member",
+    "name": "socket",
+    "memberof": "src/amqp-websocket-client.mjs~AMQPWebSocketClient",
+    "static": false,
+    "longname": "src/amqp-websocket-client.mjs~AMQPWebSocketClient#socket",
+    "access": "public",
+    "description": null,
+    "lineNumber": 27,
+    "undocument": true,
+    "type": {
+      "types": [
+        "*"
+      ]
+    }
+  },
+  {
+    "__docId__": 205,
+    "kind": "member",
+    "name": "connectPromise",
+    "memberof": "src/amqp-websocket-client.mjs~AMQPWebSocketClient",
+    "static": false,
+    "longname": "src/amqp-websocket-client.mjs~AMQPWebSocketClient#connectPromise",
+    "access": "public",
+    "description": null,
+    "lineNumber": 31,
+    "undocument": true,
+    "type": {
+      "types": [
+        "undefined[]"
+      ]
+    }
+  },
+  {
+    "__docId__": 206,
+    "kind": "method",
+    "name": "send",
+    "memberof": "src/amqp-websocket-client.mjs~AMQPWebSocketClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-websocket-client.mjs~AMQPWebSocketClient#send",
+    "access": "private",
+    "description": "",
+    "lineNumber": 46,
+    "params": [
+      {
+        "nullable": null,
+        "types": [
+          "Uint8array"
+        ],
+        "spread": false,
+        "optional": false,
+        "name": "bytes",
+        "description": "to send"
+      }
+    ],
+    "return": {
+      "nullable": null,
+      "types": [
+        "Promise"
+      ],
+      "spread": false,
+      "description": "fulfilled when the data is enqueued"
+    }
+  },
+  {
+    "__docId__": 207,
+    "kind": "method",
+    "name": "closeSocket",
+    "memberof": "src/amqp-websocket-client.mjs~AMQPWebSocketClient",
+    "generator": false,
+    "async": false,
+    "static": false,
+    "longname": "src/amqp-websocket-client.mjs~AMQPWebSocketClient#closeSocket",
+    "access": "private",
+    "description": "",
+    "lineNumber": 61,
+    "params": [],
+    "return": null
+  },
+  {
+    "kind": "index",
+    "content": "# amqp-client.js\n\nAMQP 0-9-1 client both for Node.js and browsers (using WebSocket)\n\n## Install\n\n```\nnpm install @cloudamqp/amqp-client --save\n```\n\n## Example usage\n\n```javascript\nimport AMQPClient from 'amqp-client'\n\nasync function run() {\n  try {\n    const amqp = new AMQPClient(\"amqp://localhost\")\n    const conn = await amqp.connect()\n    const ch = await conn.channel()\n    const q = await ch.queue()\n    const consumer = await q.subscribe({noAck: true}, async (msg) => {\n      console.log(msg.bodyString())\n      await consumer.cancel()\n    })\n    await q.publish(\"Hello World\")\n    await consumer.wait() // will block until consumer is cancled or throw an error if server closed channel/connection\n    await conn.close()\n  } catch (e) {\n    console.error(\"ERROR\", e)\n    e.connection.close()\n    setTimeout(run, 1000) // will try to reconnect in 1s\n  }\n}\n\nrun()\n```\n",
+    "longname": "/home/carl/code/amqp-client.js/README.md",
+    "name": "./README.md",
+    "static": true,
+    "access": "public"
+  },
+  {
+    "kind": "packageJSON",
+    "content": "{\n  \"type\": \"module\",\n  \"name\": \"@cloudamqp/amqp-client\",\n  \"version\": \"1.1.1\",\n  \"description\": \"AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)\",\n  \"main\": \"src/amqp-socket-client.mjs\",\n  \"scripts\": {\n    \"docs\": \"esdoc\",\n    \"test\": \"ava\",\n    \"prebuild\": \"sed -i'' \\\"s/VERSION = .*/VERSION = '$npm_package_version'/\\\" src/amqp-base-client.mjs && git add src/amqp-base-client.mjs\",\n    \"build\": \"rollup -c\",\n    \"preversion\": \"npm test\",\n    \"version\": \"npm run build && git add -A dist\"\n  },\n  \"files\": [\n    \"src/\",\n    \"dist/\"\n  ],\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"git+https://github.com/cloudamqp/amqp-client.js.git\"\n  },\n  \"keywords\": [\n    \"amqp\",\n    \"rabbitmq\"\n  ],\n  \"author\": \"CloudAMQP <contact@cloudamqp.com>\",\n  \"license\": \"Apache-2.0\",\n  \"bugs\": {\n    \"url\": \"https://github.com/cloudamqp/amqp-client.js/issues\"\n  },\n  \"homepage\": \"https://github.com/cloudamqp/amqp-client.js#readme\",\n  \"devDependencies\": {\n    \"ava\": \"^3.15.0\",\n    \"esdoc\": \"^1.1.0\",\n    \"esdoc-standard-plugin\": \"^1.0.0\",\n    \"eslint\": \"^7.20.0\",\n    \"rollup\": \"^2.39.1\"\n  }\n}\n",
+    "longname": "/home/carl/code/amqp-client.js/package.json",
+    "name": "package.json",
+    "static": true,
+    "access": "public"
+  }
+]

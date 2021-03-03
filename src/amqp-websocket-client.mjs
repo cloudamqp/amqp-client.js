@@ -1,12 +1,27 @@
 import AMQPBaseClient from './amqp-base-client.mjs'
 import AMQPView from './amqp-view.mjs'
 
+/** 
+ * WebSocket client for AMQP 0-9-1 servers
+ */
 export default class AMQPWebSocketClient extends AMQPBaseClient {
+  /**
+   * Create a AMQPWebSocketClient
+   * @param {string} url to the websocket endpoint
+   * @param {string} vhost, default '/'
+   * @param {string} username, default 'guest'
+   * @param {string} password, default 'guest'
+   * @param {string} name of the connection, no default
+   */
   constructor(url, vhost = "/", username = "guest", password = "guest", name = undefined) {
     super(vhost, username, password, name, window.navigator.userAgent)
     this.url = url
   }
 
+  /**
+   * Establish a WebSocket connection
+   * @return {Promise} Promise to returns itself when successfully connected
+   */
   connect() {
     const socket = new WebSocket(this.url)
     this.socket = socket
@@ -23,6 +38,11 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
     })
   }
 
+  /**
+   * @private
+   * @param {Uint8array} bytes to send
+   * @return {Promise} fulfilled when the data is enqueued
+   */
   send(bytes) {
     return new Promise((resolve, reject) => {
       try {
@@ -34,6 +54,10 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
     })
   }
 
+  /**
+   *
+   * @private
+   */
   closeSocket() {
     this.socket.close()
   }

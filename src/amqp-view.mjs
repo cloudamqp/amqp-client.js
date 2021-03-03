@@ -1,3 +1,7 @@
+/**
+ * An extended DataView, with AMQP protocol specific methods
+ * Only used internally
+ */
 export default class AMQPView extends DataView {
   getUint64(byteOffset, littleEndian) {
     // split 64-bit number into two 32-bit (4-byte) parts
