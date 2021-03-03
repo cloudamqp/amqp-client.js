@@ -187,9 +187,9 @@ test('can change flow state of channel', async t => {
   const amqp = new AMQPClient("amqp://localhost")
   const conn = await amqp.connect()
   const ch = await conn.channel()
-  let flow = await ch.flow(false)
+  let flow = await ch.basicFlow(false)
   t.is(flow, false)
-  flow = await ch.flow(true)
+  flow = await ch.basicFlow(true)
   t.is(flow, true)
 })
 
