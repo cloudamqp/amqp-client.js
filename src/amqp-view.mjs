@@ -1,6 +1,6 @@
 /**
  * An extended DataView, with AMQP protocol specific methods
- * Only used internally
+ * @ignore
  */
 export default class AMQPView extends DataView {
   getUint64(byteOffset, littleEndian) {

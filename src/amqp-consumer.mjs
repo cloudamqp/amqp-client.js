@@ -15,25 +15,6 @@ export default class AMQPConsumer {
     this.onMessage = onMessage
   }
 
-  setClosed(err) {
-    this.closed = true
-    this.closedError = err
-    clearTimeout(this.timeoutId)
-    if (err) {
-      if (this.rejectWait) this.rejectWait(err)
-    } else {
-      if (this.resolveWait) this.resolveWait()
-    }
-  }
-
-  /**
-   * Cancel/abort/stop the consumer. No more messages will be deliviered to the consumer.
-   * Note that any unacked messages are still unacked as they belong to the channel and not the consumer.
-   */
-  cancel() {
-    return this.channel.basicCancel(this.tag)
-  }
-
   /**
    * Wait for the consumer to finish.
    * @param {number} [timeout] wait for this many milliseconds and then return regardless
@@ -50,5 +31,24 @@ export default class AMQPConsumer {
         this.timeoutId = setTimeout(onTimeout, timeout)
       }
     })
+  }
+
+  /**
+   * Cancel/abort/stop the consumer. No more messages will be deliviered to the consumer.
+   * Note that any unacked messages are still unacked as they belong to the channel and not the consumer.
+   */
+  cancel() {
+    return this.channel.basicCancel(this.tag)
+  }
+
+  setClosed(err) {
+    this.closed = true
+    this.closedError = err
+    clearTimeout(this.timeoutId)
+    if (err) {
+      if (this.rejectWait) this.rejectWait(err)
+    } else {
+      if (this.resolveWait) this.resolveWait()
+    }
   }
 }

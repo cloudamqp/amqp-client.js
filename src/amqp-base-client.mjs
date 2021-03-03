@@ -23,35 +23,36 @@ export default class AMQPBaseClient {
     this.closed = false
   }
 
-  /** @private */
-  connect() {
-    throw "Abstract method not implemented"
-  }
+  /**
+   * Open a channel
+   * Optionally an existing or non existing channel id can be specified
+   * return {Promise<AMQPChannel, AMQPError>} channel
+   */
+  channel(id) {
+    if (this.closed) return this.rejectClosed()
+    if (id > 0 && this.channels[id]) return this.channels[id]
+    // Store channels in an array, set position to null when channel is closed
+    // Look for first null value or add one the end
+    if (!id)
+      id = this.channels.findIndex((ch) => ch === undefined)
+    if (id === -1) id = this.channels.length
+    const channel = new AMQPChannel(this, id)
+    this.channels[id] = channel
 
-  /** @private */
-  send() {
-    throw "Abstract method not implemented"
-  }
-
-  /** @private */
-  closeSocket() {
-    throw "Abstract method not implemented"
-  }
-
-  /** @private */
-  rejectClosed() {
-    return Promise.reject(new AMQPError("Connection closed", this))
-  }
-
-  /** @private */
-  rejectConnect(err) {
-    if (this.connectPromise) {
-      const [, reject] = this.connectPromise
-      delete this.connectPromise
-      reject(err)
-    }
-    this.closed = true
-    this.closeSocket()
+    let j = 0
+    const channelOpen = new AMQPView(new ArrayBuffer(13))
+    channelOpen.setUint8(j, 1); j += 1 // type: method
+    channelOpen.setUint16(j, id); j += 2 // channel id
+    channelOpen.setUint32(j, 5); j += 4 // frameSize
+    channelOpen.setUint16(j, 20); j += 2 // class: channel
+    channelOpen.setUint16(j, 10); j += 2 // method: open
+    channelOpen.setUint8(j, 0); j += 1 // reserved1
+    channelOpen.setUint8(j, 206); j += 1 // frame end byte
+    return new Promise((resolve, reject) => {
+      this.send(new Uint8Array(channelOpen.buffer, 0, 13))
+        .then(() => channel.promises.push([resolve, reject]))
+        .catch(reject)
+    })
   }
 
   /**
@@ -84,35 +85,43 @@ export default class AMQPBaseClient {
   }
 
   /**
-   * Open a channel
-   * Optionally an existing or non existing channel id can be specified
-   * return {Promise<AMQPChannel>} channel
+   * @abstract
+   * @private
    */
-  channel(id) {
-    if (this.closed) return this.rejectClosed()
-    if (id > 0 && this.channels[id]) return this.channels[id]
-    // Store channels in an array, set position to null when channel is closed
-    // Look for first null value or add one the end
-    if (!id)
-      id = this.channels.findIndex((ch) => ch === undefined)
-    if (id === -1) id = this.channels.length
-    const channel = new AMQPChannel(this, id)
-    this.channels[id] = channel
+  connect() {
+    throw "Abstract method not implemented"
+  }
 
-    let j = 0
-    const channelOpen = new AMQPView(new ArrayBuffer(13))
-    channelOpen.setUint8(j, 1); j += 1 // type: method
-    channelOpen.setUint16(j, id); j += 2 // channel id
-    channelOpen.setUint32(j, 5); j += 4 // frameSize
-    channelOpen.setUint16(j, 20); j += 2 // class: channel
-    channelOpen.setUint16(j, 10); j += 2 // method: open
-    channelOpen.setUint8(j, 0); j += 1 // reserved1
-    channelOpen.setUint8(j, 206); j += 1 // frame end byte
-    return new Promise((resolve, reject) => {
-      this.send(new Uint8Array(channelOpen.buffer, 0, 13))
-        .then(() => channel.promises.push([resolve, reject]))
-        .catch(reject)
-    })
+  /**
+   * @abstract
+   * @private
+   */
+  send() {
+    throw "Abstract method not implemented"
+  }
+
+  /**
+   * @abstract
+   * @private
+   */
+  closeSocket() {
+    throw "Abstract method not implemented"
+  }
+
+  /** @private */
+  rejectClosed() {
+    return Promise.reject(new AMQPError("Connection closed", this))
+  }
+
+  /** @private */
+  rejectConnect(err) {
+    if (this.connectPromise) {
+      const [, reject] = this.connectPromise
+      delete this.connectPromise
+      reject(err)
+    }
+    this.closed = true
+    this.closeSocket()
   }
 
   /**

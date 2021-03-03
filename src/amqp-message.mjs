@@ -27,13 +27,13 @@ export default class AMQPMessage {
     return this.channel.basicAck(this.deliveryTag, multiple)
   }
 
-  /** Rejected the message */
-  reject(requeue = false) {
-    return this.channel.basicReject(this.deliveryTag, requeue)
-  }
-
   /** Negative acknowledgment (same as reject) */
   nack(requeue = false, multiple = false) {
     return this.channel.basicNack(this.deliveryTag, requeue, multiple)
+  }
+
+  /** Rejected the message */
+  reject(requeue = false) {
+    return this.channel.basicReject(this.deliveryTag, requeue)
   }
 }

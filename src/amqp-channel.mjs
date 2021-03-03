@@ -19,112 +19,22 @@ export default class AMQPChannel {
   }
 
   /**
-   * Resolves the next RPC promise
-   * @ignore
-   * @return {Bool} true if a promise was resolved, otherwise false
+   * Declare a queue and return a AMQPQueue object.
+   * @return {Promise<AMQPQueue, AMQPError>} Convient wrapper around a Queue object
    */
-  resolvePromise(value) {
-    if (this.promises.length === 0) return false
-    const [resolve, ] = this.promises.shift()
-    resolve(value)
-    return true
-  }
-
-  /**
-   * Rejects the next RPC promise
-   * @ignore
-   * @return {Bool} true if a promise was rejected, otherwise false
-   */
-  rejectPromise(err) {
-    if (this.promises.length === 0) return false
-    const [, reject] = this.promises.shift()
-    reject(err)
-    return true
-  }
-
-  /**
-   * Send a RPC request, will resolve a RPC promise when RPC response arrives
-   * @ignore
-   * @param {AMQPView} frame with data
-   * @param {number} how long the frame actually is
-   */
-  sendRpc(frame, frameSize) {
+  queue(name = "", props = {}, args = {}) {
     return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
-        .then(() => this.promises.push([resolve, reject]))
+      this.queueDeclare(name, props, args)
+        .then(({name}) => resolve(new AMQPQueue(this, name)))
         .catch(reject)
     })
   }
 
   /**
-   * Marks the channel as closed
-   * All outstanding RPC requests will be rejected
-   * All outstanding publish confirms will be rejected
-   * All consumers will be marked as closed
-   * @ignore
-   * @param {Error} err - why the channel was closed
-   * @protected
+   * Alias for basicQos
    */
-  setClosed(err) {
-    if (!this.closed) {
-      this.closed = true
-      Object.values(this.consumers).forEach((consumer) => consumer.setClosed(err))
-      this.consumers = []
-      // Empty and reject all RPC promises
-      while(this.rejectPromise(err)) { 1 }
-      this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
-    }
-  }
-
-  /**
-   * @ignore
-   * @return {Promise<AMQPError>} Rejected promise with an error
-   */
-  rejectClosed() {
-    return Promise.reject(new AMQPError("Channel is closed", this.connection))
-  }
-
-  /**
-   * Called from AMQPBaseClient when a publish is confirmed by the server.
-   * Will fulfill one or more (if multiple) Unconfirmed Publishes.
-   * @ignore
-   * @param {number} deliveryTag
-   * @param {bool} multiple - true if all unconfirmed publishes up to this deliveryTag should be resolved or just this one
-   * @param {bool} nack - true if negative confirm, hence reject the unconfirmed publish(es)
-   */
-  publishConfirmed(deliveryTag, multiple, nack) {
-    // is queueMicrotask() needed here?
-    const idx = this.unconfirmedPublishes.findIndex(([tag,]) => tag === deliveryTag)
-    if (idx !== -1) {
-      const confirmed = multiple ?
-        this.unconfirmedPublishes.splice(0, idx + 1) :
-        this.unconfirmedPublishes.splice(idx, 1)
-      confirmed.forEach(([tag, resolve, reject]) => {
-        if (nack)
-          reject(new Error("Message rejected"))
-        else
-          resolve(tag)
-      })
-    } else {
-      console.warn("Cant find unconfirmed deliveryTag", deliveryTag, "multiple:", multiple, "nack:", nack)
-    }
-  }
-
-  /**
-   * Called from AMQPBaseClient when a message is ready
-   * @ignore
-   */
-  onMessageReady(message) {
-    if (this.delivery) {
-      this.delivery = null
-      this.deliver(message)
-    } else if (this.getMessage) {
-      this.getMessage = null
-      this.resolvePromise(message)
-    } else {
-      this.returned = null
-      this.onReturn(message)
-    }
+  prefetch(prefetchCount) {
+    return this.basicQos(prefetchCount)
   }
 
   /**
@@ -157,217 +67,6 @@ export default class AMQPChannel {
     frame.setUint16(j, 0); j += 2 // failing-method-id
     frame.setUint8(j, 206); j += 1 // frame end byte
     frame.setUint32(3, j - 8) // update frameSize
-    return this.sendRpc(frame, j)
-  }
-
-  /**
-   * Deliver a message to a consumer
-   * @ignore
-   * @param {AMQPMessage} message
-   * @return {Promise} Fulfilled when the message is processed
-   */
-  deliver(message) {
-    return new Promise((resolve, reject) => {
-      const consumer = this.consumers[message.consumerTag]
-      if (consumer) {
-        try {
-          consumer.onMessage(message)
-          resolve()
-        } catch (err) {
-          reject(err)
-        }
-      } else {
-        reject(new AMQPError(`Consumer ${message.consumerTag} on channel ${this.id} doesn't exists`, this.connection))
-      }
-    })
-  }
-
-  /**
-   * Enable or disable flow. Disabling flow will stop the server from delivering messages to consumers.
-   * Not supported in RabbitMQ
-   * @param {bool} active
-   */
-  flow(active = true) {
-    if (this.closed) return this.rejectClosed()
-    let j = 0
-    const frame = new AMQPView(new ArrayBuffer(4096))
-    frame.setUint8(j, 1); j += 1 // type: method
-    frame.setUint16(j, this.id); j += 2 // channel: 1
-    frame.setUint32(j, 5); j += 4 // frameSize
-    frame.setUint16(j, 20); j += 2 // class: channel
-    frame.setUint16(j, 20); j += 2 // method: flow
-    frame.setUint8(j, active ? 1 : 0); j += 1 // active flow
-    frame.setUint8(j, 206); j += 1 // frame end byte
-    return this.sendRpc(frame, j)
-  }
-
-  /**
-   * Bind a queue to an exchange
-   * @param {string} queue - name of the queue
-   * @param {string} exchange - name of the exchange
-   * @param {string} routingKey - key to bind with
-   * @param {object} args - optional arguments, e.g. for header exchanges
-   * @return {Promise} fulfilled when confirmed by the server
-   */
-  queueBind(queue, exchange, routingKey, args = {}) {
-    if (this.closed) return this.rejectClosed()
-    const noWait = false
-    let j = 0
-    const bind = new AMQPView(new ArrayBuffer(4096))
-    bind.setUint8(j, 1); j += 1 // type: method
-    bind.setUint16(j, this.id); j += 2 // channel: 1
-    bind.setUint32(j, 0); j += 4 // frameSize
-    bind.setUint16(j, 50); j += 2 // class: queue
-    bind.setUint16(j, 20); j += 2 // method: bind
-    bind.setUint16(j, 0); j += 2 // reserved1
-    j += bind.setShortString(j, queue)
-    j += bind.setShortString(j, exchange)
-    j += bind.setShortString(j, routingKey)
-    bind.setUint8(j, noWait ? 1 : 0); j += 1 // noWait
-    j += bind.setTable(j, args)
-    bind.setUint8(j, 206); j += 1 // frame end byte
-    bind.setUint32(3, j - 8) // update frameSize
-    return this.sendRpc(bind, j)
-  }
-
-  /**
-   * Unbind a queue from an exchange
-   * @param {string} queue - name of the queue
-   * @param {string} exchange - name of the exchange
-   * @param {string} routingKey - key that was bound
-   * @param {object} args - arguments, e.g. for header exchanges
-   * @return {Promise} fulfilled when confirmed by the server
-   */
-  queueUnbind(queue, exchange, routingKey, args = {}) {
-    if (this.closed) return this.rejectClosed()
-    let j = 0
-    const unbind = new AMQPView(new ArrayBuffer(4096))
-    unbind.setUint8(j, 1); j += 1 // type: method
-    unbind.setUint16(j, this.id); j += 2 // channel: 1
-    unbind.setUint32(j, 0); j += 4 // frameSize
-    unbind.setUint16(j, 50); j += 2 // class: queue
-    unbind.setUint16(j, 50); j += 2 // method: unbind
-    unbind.setUint16(j, 0); j += 2 // reserved1
-    j += unbind.setShortString(j, queue)
-    j += unbind.setShortString(j, exchange)
-    j += unbind.setShortString(j, routingKey)
-    j += unbind.setTable(j, args)
-    unbind.setUint8(j, 206); j += 1 // frame end byte
-    unbind.setUint32(3, j - 8) // update frameSize
-    return this.sendRpc(unbind, j)
-  }
-
-  /**
-   * Purge a queue
-   * @param {string} queue - name of the queue
-   * @return {Promise} fulfilled when confirmed by the server
-   */
-  queuePurge(queue) {
-    if (this.closed) return this.rejectClosed()
-    const noWait = true
-    let j = 0
-    const purge = new AMQPView(new ArrayBuffer(512))
-    purge.setUint8(j, 1); j += 1 // type: method
-    purge.setUint16(j, this.id); j += 2 // channel: 1
-    purge.setUint32(j, 0); j += 4 // frameSize
-    purge.setUint16(j, 50); j += 2 // class: queue
-    purge.setUint16(j, 30); j += 2 // method: purge
-    purge.setUint16(j, 0); j += 2 // reserved1
-    j += purge.setShortString(j, queue)
-    purge.setUint8(j, noWait ? 1 : 0); j += 1 // noWait
-    purge.setUint8(j, 206); j += 1 // frame end byte
-    purge.setUint32(3, j - 8) // update frameSize
-    return this.sendRpc(purge, j)
-  }
-
-  /**
-   * Declare a queue
-   * @param {string} name - name of the queue, if empty the server will generate a name
-   * @param {object} params
-   * @param {bool} params.passive - if the queue name doesn't exists the channel will be closed with an error, fulfilled if the queue name does exists
-   * @param {bool} params.durable - if the queue should survive server restarts
-   * @param {bool} params.autoDelete - if the queue should be deleted when the last consumer of the queue disconnects
-   * @param {bool} params.exclusive - if the queue should be deleted when the channel is closed
-   * @param {object} args - optional custom queue arguments
-   * @return {Promise<{queueName: string, messages: number, consumers: number}, AMQPError>} fulfilled when confirmed by the server
-   */
-  queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {}, args = {}) {
-    if (this.closed) return this.rejectClosed()
-    const noWait = false
-    let j = 0
-    const declare = new AMQPView(new ArrayBuffer(4096))
-    declare.setUint8(j, 1); j += 1 // type: method
-    declare.setUint16(j, this.id); j += 2 // channel: 1
-    declare.setUint32(j, 0); j += 4 // frameSize
-    declare.setUint16(j, 50); j += 2 // class: queue
-    declare.setUint16(j, 10); j += 2 // method: declare
-    declare.setUint16(j, 0); j += 2 // reserved1
-    j += declare.setShortString(j, name) // name
-    let bits = 0
-    if (passive)    bits = bits | (1 << 0)
-    if (durable)    bits = bits | (1 << 1)
-    if (exclusive)  bits = bits | (1 << 2)
-    if (autoDelete) bits = bits | (1 << 3)
-    if (noWait)     bits = bits | (1 << 4)
-    declare.setUint8(j, bits); j += 1
-    j += declare.setTable(j, args) // arguments
-    declare.setUint8(j, 206); j += 1 // frame end byte
-    declare.setUint32(3, j - 8) // update frameSize
-    return this.sendRpc(declare, j)
-  }
-
-  /**
-   * Delete a queue
-   * @param {string} name - name of the queue, if empty it will delete the last declared queue
-   * @param {object} params
-   * @param {bool} params.ifUnused - only delete if the queue doesn't have any consumers
-   * @param {bool} params.ifEmpty - only delete if the queue is empty
-   * @return {Promise<{messageCount: number}, AMQPError>}
-   */
-  queueDelete(name = "", { ifUnused = false, ifEmpty = false } = {}) {
-    if (this.closed) return this.rejectClosed()
-    const noWait = false
-    let j = 0
-    const frame = new AMQPView(new ArrayBuffer(512))
-    frame.setUint8(j, 1); j += 1 // type: method
-    frame.setUint16(j, this.id); j += 2 // channel: 1
-    frame.setUint32(j, 0); j += 4 // frameSize
-    frame.setUint16(j, 50); j += 2 // class: queue
-    frame.setUint16(j, 40); j += 2 // method: delete
-    frame.setUint16(j, 0); j += 2 // reserved1
-    j += frame.setShortString(j, name) // name
-    let bits = 0
-    if (ifUnused) bits = bits | (1 << 0)
-    if (ifEmpty)  bits = bits | (1 << 1)
-    if (noWait)   bits = bits | (1 << 2)
-    frame.setUint8(j, bits); j += 1
-    frame.setUint8(j, 206); j += 1 // frame end byte
-    frame.setUint32(3, j - 8) // update frameSize
-    return this.sendRpc(frame, j)
-  }
-
-  /**
-   * Set prefetch limit.
-   * Recommended to set as each unacknowledge message will be store in memory of the client.
-   * The server won't deliver more messages than the limit until messages are acknowledged.
-   * @param {number} prefetchCount - number of messages to limit to
-   * @param {number} prefetchSize - number of bytes to limit to (not supported by RabbitMQ)
-   * @param {bool} global - if the prefetch is limited to the channel, or if false to each consumer
-   * @return {Promise<, AMQPError>}
-   */
-  basicQos(prefetchCount, prefetchSize = 0, global = false) {
-    if (this.closed) return this.rejectClosed()
-    let j = 0
-    const frame = new AMQPView(new ArrayBuffer(19))
-    frame.setUint8(j, 1); j += 1 // type: method
-    frame.setUint16(j, this.id); j += 2 // channel: 1
-    frame.setUint32(j, 11); j += 4 // frameSize
-    frame.setUint16(j, 60); j += 2 // class: basic
-    frame.setUint16(j, 10); j += 2 // method: qos
-    frame.setUint32(j, prefetchSize); j += 4 // prefetch size
-    frame.setUint16(j, prefetchCount); j += 2 // prefetch count
-    frame.setUint8(j, global ? 1 : 0); j += 1 // glocal
-    frame.setUint8(j, 206); j += 1 // frame end byte
     return this.sendRpc(frame, j)
   }
 
@@ -494,27 +193,6 @@ export default class AMQPChannel {
    * Acknowledge a delivered message
    * @param {string} deliveryTag - tag of the message
    * @param {bool} [requeue=false] - if the message should be requeued or removed
-   * @return {Promise<, AMQPError>}
-   */
-  basicReject(deliveryTag, requeue = false) {
-    if (this.closed) return this.rejectClosed()
-    let j = 0
-    const frame = new AMQPView(new ArrayBuffer(21))
-    frame.setUint8(j, 1); j += 1 // type: method
-    frame.setUint16(j, this.id); j += 2 // channel
-    frame.setUint32(j, 13); j += 4 // frameSize
-    frame.setUint16(j, 60); j += 2 // class: basic
-    frame.setUint16(j, 90); j += 2 // method: reject
-    frame.setUint64(j, deliveryTag); j += 8
-    frame.setUint8(j, requeue ? 1 : 0); j += 1
-    frame.setUint8(j, 206); j += 1 // frame end byte
-    return this.connection.send(new Uint8Array(frame.buffer, 0, 21))
-  }
-
-  /**
-   * Acknowledge a delivered message
-   * @param {string} deliveryTag - tag of the message
-   * @param {bool} [requeue=false] - if the message should be requeued or removed
    * @param {bool} [multiple=false] - batch confirm all messages up to this delivery tag
    * @return {Promise<, AMQPError>}
    */
@@ -532,6 +210,27 @@ export default class AMQPChannel {
     if (multiple) bits = bits | (1 << 0)
     if (requeue)  bits = bits | (1 << 1)
     frame.setUint8(j, bits); j += 1
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    return this.connection.send(new Uint8Array(frame.buffer, 0, 21))
+  }
+
+  /**
+   * Acknowledge a delivered message
+   * @param {string} deliveryTag - tag of the message
+   * @param {bool} [requeue=false] - if the message should be requeued or removed
+   * @return {Promise<, AMQPError>}
+   */
+  basicReject(deliveryTag, requeue = false) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(21))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel
+    frame.setUint32(j, 13); j += 4 // frameSize
+    frame.setUint16(j, 60); j += 2 // class: basic
+    frame.setUint16(j, 90); j += 2 // method: reject
+    frame.setUint64(j, deliveryTag); j += 8
+    frame.setUint8(j, requeue ? 1 : 0); j += 1
     frame.setUint8(j, 206); j += 1 // frame end byte
     return this.connection.send(new Uint8Array(frame.buffer, 0, 21))
   }
@@ -660,6 +359,50 @@ export default class AMQPChannel {
   }
 
   /**
+   * Set prefetch limit.
+   * Recommended to set as each unacknowledge message will be store in memory of the client.
+   * The server won't deliver more messages than the limit until messages are acknowledged.
+   * @param {number} prefetchCount - number of messages to limit to
+   * @param {number} prefetchSize - number of bytes to limit to (not supported by RabbitMQ)
+   * @param {bool} global - if the prefetch is limited to the channel, or if false to each consumer
+   * @return {Promise<, AMQPError>}
+   */
+  basicQos(prefetchCount, prefetchSize = 0, global = false) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(19))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel: 1
+    frame.setUint32(j, 11); j += 4 // frameSize
+    frame.setUint16(j, 60); j += 2 // class: basic
+    frame.setUint16(j, 10); j += 2 // method: qos
+    frame.setUint32(j, prefetchSize); j += 4 // prefetch size
+    frame.setUint16(j, prefetchCount); j += 2 // prefetch count
+    frame.setUint8(j, global ? 1 : 0); j += 1 // glocal
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    return this.sendRpc(frame, j)
+  }
+
+  /**
+   * Enable or disable flow. Disabling flow will stop the server from delivering messages to consumers.
+   * Not supported in RabbitMQ
+   * @param {bool} active
+   */
+  basicFlow(active = true) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(4096))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel: 1
+    frame.setUint32(j, 5); j += 4 // frameSize
+    frame.setUint16(j, 20); j += 2 // class: channel
+    frame.setUint16(j, 20); j += 2 // method: flow
+    frame.setUint8(j, active ? 1 : 0); j += 1 // active flow
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    return this.sendRpc(frame, j)
+  }
+
+  /**
    * Enable publish confirm. The server will then confirm each publish with an Ack or Nack when the message is enqueued.
    * @return {Promise<, AMQPError>}
    */
@@ -675,6 +418,151 @@ export default class AMQPChannel {
     frame.setUint8(j, 0); j += 1 // noWait
     frame.setUint8(j, 206); j += 1 // frame end byte
     return this.sendRpc(frame, j) // parseFrames in base will set channel.confirmId = 0
+  }
+
+  /**
+   * Declare a queue
+   * @param {string} name - name of the queue, if empty the server will generate a name
+   * @param {object} params
+   * @param {bool} params.passive - if the queue name doesn't exists the channel will be closed with an error, fulfilled if the queue name does exists
+   * @param {bool} params.durable - if the queue should survive server restarts
+   * @param {bool} params.autoDelete - if the queue should be deleted when the last consumer of the queue disconnects
+   * @param {bool} params.exclusive - if the queue should be deleted when the channel is closed
+   * @param {object} args - optional custom queue arguments
+   * @return {Promise<{queueName: string, messages: number, consumers: number}, AMQPError>} fulfilled when confirmed by the server
+   */
+  queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {}, args = {}) {
+    if (this.closed) return this.rejectClosed()
+    const noWait = false
+    let j = 0
+    const declare = new AMQPView(new ArrayBuffer(4096))
+    declare.setUint8(j, 1); j += 1 // type: method
+    declare.setUint16(j, this.id); j += 2 // channel: 1
+    declare.setUint32(j, 0); j += 4 // frameSize
+    declare.setUint16(j, 50); j += 2 // class: queue
+    declare.setUint16(j, 10); j += 2 // method: declare
+    declare.setUint16(j, 0); j += 2 // reserved1
+    j += declare.setShortString(j, name) // name
+    let bits = 0
+    if (passive)    bits = bits | (1 << 0)
+    if (durable)    bits = bits | (1 << 1)
+    if (exclusive)  bits = bits | (1 << 2)
+    if (autoDelete) bits = bits | (1 << 3)
+    if (noWait)     bits = bits | (1 << 4)
+    declare.setUint8(j, bits); j += 1
+    j += declare.setTable(j, args) // arguments
+    declare.setUint8(j, 206); j += 1 // frame end byte
+    declare.setUint32(3, j - 8) // update frameSize
+    return this.sendRpc(declare, j)
+  }
+
+  /**
+   * Delete a queue
+   * @param {string} name - name of the queue, if empty it will delete the last declared queue
+   * @param {object} params
+   * @param {bool} params.ifUnused - only delete if the queue doesn't have any consumers
+   * @param {bool} params.ifEmpty - only delete if the queue is empty
+   * @return {Promise<{messageCount: number}, AMQPError>}
+   */
+  queueDelete(name = "", { ifUnused = false, ifEmpty = false } = {}) {
+    if (this.closed) return this.rejectClosed()
+    const noWait = false
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(512))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, this.id); j += 2 // channel: 1
+    frame.setUint32(j, 0); j += 4 // frameSize
+    frame.setUint16(j, 50); j += 2 // class: queue
+    frame.setUint16(j, 40); j += 2 // method: delete
+    frame.setUint16(j, 0); j += 2 // reserved1
+    j += frame.setShortString(j, name) // name
+    let bits = 0
+    if (ifUnused) bits = bits | (1 << 0)
+    if (ifEmpty)  bits = bits | (1 << 1)
+    if (noWait)   bits = bits | (1 << 2)
+    frame.setUint8(j, bits); j += 1
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    frame.setUint32(3, j - 8) // update frameSize
+    return this.sendRpc(frame, j)
+  }
+
+  /**
+   * Bind a queue to an exchange
+   * @param {string} queue - name of the queue
+   * @param {string} exchange - name of the exchange
+   * @param {string} routingKey - key to bind with
+   * @param {object} args - optional arguments, e.g. for header exchanges
+   * @return {Promise} fulfilled when confirmed by the server
+   */
+  queueBind(queue, exchange, routingKey, args = {}) {
+    if (this.closed) return this.rejectClosed()
+    const noWait = false
+    let j = 0
+    const bind = new AMQPView(new ArrayBuffer(4096))
+    bind.setUint8(j, 1); j += 1 // type: method
+    bind.setUint16(j, this.id); j += 2 // channel: 1
+    bind.setUint32(j, 0); j += 4 // frameSize
+    bind.setUint16(j, 50); j += 2 // class: queue
+    bind.setUint16(j, 20); j += 2 // method: bind
+    bind.setUint16(j, 0); j += 2 // reserved1
+    j += bind.setShortString(j, queue)
+    j += bind.setShortString(j, exchange)
+    j += bind.setShortString(j, routingKey)
+    bind.setUint8(j, noWait ? 1 : 0); j += 1 // noWait
+    j += bind.setTable(j, args)
+    bind.setUint8(j, 206); j += 1 // frame end byte
+    bind.setUint32(3, j - 8) // update frameSize
+    return this.sendRpc(bind, j)
+  }
+
+  /**
+   * Unbind a queue from an exchange
+   * @param {string} queue - name of the queue
+   * @param {string} exchange - name of the exchange
+   * @param {string} routingKey - key that was bound
+   * @param {object} args - arguments, e.g. for header exchanges
+   * @return {Promise} fulfilled when confirmed by the server
+   */
+  queueUnbind(queue, exchange, routingKey, args = {}) {
+    if (this.closed) return this.rejectClosed()
+    let j = 0
+    const unbind = new AMQPView(new ArrayBuffer(4096))
+    unbind.setUint8(j, 1); j += 1 // type: method
+    unbind.setUint16(j, this.id); j += 2 // channel: 1
+    unbind.setUint32(j, 0); j += 4 // frameSize
+    unbind.setUint16(j, 50); j += 2 // class: queue
+    unbind.setUint16(j, 50); j += 2 // method: unbind
+    unbind.setUint16(j, 0); j += 2 // reserved1
+    j += unbind.setShortString(j, queue)
+    j += unbind.setShortString(j, exchange)
+    j += unbind.setShortString(j, routingKey)
+    j += unbind.setTable(j, args)
+    unbind.setUint8(j, 206); j += 1 // frame end byte
+    unbind.setUint32(3, j - 8) // update frameSize
+    return this.sendRpc(unbind, j)
+  }
+
+  /**
+   * Purge a queue
+   * @param {string} queue - name of the queue
+   * @return {Promise} fulfilled when confirmed by the server
+   */
+  queuePurge(queue) {
+    if (this.closed) return this.rejectClosed()
+    const noWait = true
+    let j = 0
+    const purge = new AMQPView(new ArrayBuffer(512))
+    purge.setUint8(j, 1); j += 1 // type: method
+    purge.setUint16(j, this.id); j += 2 // channel: 1
+    purge.setUint32(j, 0); j += 4 // frameSize
+    purge.setUint16(j, 50); j += 2 // class: queue
+    purge.setUint16(j, 30); j += 2 // method: purge
+    purge.setUint16(j, 0); j += 2 // reserved1
+    j += purge.setShortString(j, queue)
+    purge.setUint8(j, noWait ? 1 : 0); j += 1 // noWait
+    purge.setUint8(j, 206); j += 1 // frame end byte
+    purge.setUint32(3, j - 8) // update frameSize
+    return this.sendRpc(purge, j)
   }
 
   /**
@@ -833,21 +721,133 @@ export default class AMQPChannel {
   }
 
   /**
-   * Declare a queue and return a AMQPQueue object.
-   * @return {Promise<AMQPQueue, AMQPError>} Convient wrapper around a Queue object
+   * Resolves the next RPC promise
+   * @ignore
+   * @return {Bool} true if a promise was resolved, otherwise false
    */
-  queue(name = "", props = {}, args = {}) {
+  resolvePromise(value) {
+    if (this.promises.length === 0) return false
+    const [resolve, ] = this.promises.shift()
+    resolve(value)
+    return true
+  }
+
+  /**
+   * Rejects the next RPC promise
+   * @ignore
+   * @return {Bool} true if a promise was rejected, otherwise false
+   */
+  rejectPromise(err) {
+    if (this.promises.length === 0) return false
+    const [, reject] = this.promises.shift()
+    reject(err)
+    return true
+  }
+
+  /**
+   * Send a RPC request, will resolve a RPC promise when RPC response arrives
+   * @ignore
+   * @param {AMQPView} frame with data
+   * @param {number} how long the frame actually is
+   */
+  sendRpc(frame, frameSize) {
     return new Promise((resolve, reject) => {
-      this.queueDeclare(name, props, args)
-        .then(({name}) => resolve(new AMQPQueue(this, name)))
+      this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
+        .then(() => this.promises.push([resolve, reject]))
         .catch(reject)
     })
   }
 
   /**
-   * Alias for basicQos
+   * Marks the channel as closed
+   * All outstanding RPC requests will be rejected
+   * All outstanding publish confirms will be rejected
+   * All consumers will be marked as closed
+   * @ignore
+   * @param {Error} err - why the channel was closed
+   * @protected
    */
-  prefetch(prefetchCount) {
-    return this.basicQos(prefetchCount)
+  setClosed(err) {
+    if (!this.closed) {
+      this.closed = true
+      Object.values(this.consumers).forEach((consumer) => consumer.setClosed(err))
+      this.consumers = []
+      // Empty and reject all RPC promises
+      while(this.rejectPromise(err)) { 1 }
+      this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
+    }
+  }
+
+  /**
+   * @ignore
+   * @return {Promise<AMQPError>} Rejected promise with an error
+   */
+  rejectClosed() {
+    return Promise.reject(new AMQPError("Channel is closed", this.connection))
+  }
+
+  /**
+   * Called from AMQPBaseClient when a publish is confirmed by the server.
+   * Will fulfill one or more (if multiple) Unconfirmed Publishes.
+   * @ignore
+   * @param {number} deliveryTag
+   * @param {bool} multiple - true if all unconfirmed publishes up to this deliveryTag should be resolved or just this one
+   * @param {bool} nack - true if negative confirm, hence reject the unconfirmed publish(es)
+   */
+  publishConfirmed(deliveryTag, multiple, nack) {
+    // is queueMicrotask() needed here?
+    const idx = this.unconfirmedPublishes.findIndex(([tag,]) => tag === deliveryTag)
+    if (idx !== -1) {
+      const confirmed = multiple ?
+        this.unconfirmedPublishes.splice(0, idx + 1) :
+        this.unconfirmedPublishes.splice(idx, 1)
+      confirmed.forEach(([tag, resolve, reject]) => {
+        if (nack)
+          reject(new Error("Message rejected"))
+        else
+          resolve(tag)
+      })
+    } else {
+      console.warn("Cant find unconfirmed deliveryTag", deliveryTag, "multiple:", multiple, "nack:", nack)
+    }
+  }
+
+  /**
+   * Called from AMQPBaseClient when a message is ready
+   * @ignore
+   */
+  onMessageReady(message) {
+    if (this.delivery) {
+      this.delivery = null
+      this.deliver(message)
+    } else if (this.getMessage) {
+      this.getMessage = null
+      this.resolvePromise(message)
+    } else {
+      this.returned = null
+      this.onReturn(message)
+    }
+  }
+
+  /**
+   * Deliver a message to a consumer
+   * @ignore
+   * @param {AMQPMessage} message
+   * @return {Promise} Fulfilled when the message is processed
+   */
+  deliver(message) {
+    return new Promise((resolve, reject) => {
+      const consumer = this.consumers[message.consumerTag]
+      if (consumer) {
+        try {
+          consumer.onMessage(message)
+          resolve()
+        } catch (err) {
+          reject(err)
+        }
+      } else {
+        reject(new AMQPError(`Consumer ${message.consumerTag} on channel ${this.id} doesn't exists`, this.connection))
+      }
+    })
   }
 }
