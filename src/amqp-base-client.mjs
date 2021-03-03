@@ -8,6 +8,11 @@ const VERSION = '1.1.1'
 /**
  * Base class for AMQPClients.
  * Implements everything except how to connect, send data and close the socket
+ * @param {string} vhost
+ * @param {string} username
+ * @param {string} password
+ * @param {string} name - name of the connection, set in client properties
+ * @param {string} platform - used in client properties
  */
 export default class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
