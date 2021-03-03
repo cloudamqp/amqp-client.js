@@ -1,6 +1,14 @@
 import AMQPError from './amqp-error.mjs'
 
+/**
+ * A consumer, subscribed to a queue
+ */
 export default class AMQPConsumer {
+  /**
+   * @param {AMQPChannel} channel - the consumer is created on
+   * @param {string} tag - consumer tag
+   * @param {function(message: AMQPMessage)} onMessage - callback executed when a message arrive
+   */
   constructor(channel, tag, onMessage) {
     this.channel = channel
     this.tag = tag
@@ -18,14 +26,19 @@ export default class AMQPConsumer {
     }
   }
 
+  /**
+   * Cancel/abort/stop the consumer. No more messages will be deliviered to the consumer.
+   * Note that any unacked messages are still unacked as they belong to the channel and not the consumer.
+   */
   cancel() {
     return this.channel.basicCancel(this.tag)
   }
 
-  /** Wait for the consumer to finish
-    * Returns a Promise that
-    * resolves if the consumer/channel/connection is closed by the client
-    * rejects if the server closed or there was a network error */
+  /**
+   * Wait for the consumer to finish.
+   * @param {number} [timeout] wait for this many milliseconds and then return regardless
+   * @return {Promise<, AMQPError>} - Fulfilled when the consumer/channel/connection is closed by the client. Rejected if the timeout is hit.
+   */
   wait(timeout) {
     if (this.closedError) return Promise.reject(this.closedError)
     if (this.closed) return Promise.resolve()

@@ -1,7 +1,10 @@
+/**
+ * AMQP message
+ * @param {AMQPChannel} channel - Channel this message was delivered on
+ * @property {Uint8array} body - The raw message body
+ * @property {Uint8array} deliveryTag - The deliveryTag of this message
+ */
 export default class AMQPMessage {
-  /**
-   * @param {AMQPChannel} channel - channel this message was delivered on
-   */
   constructor(channel) {
     this.channel = channel
   }
@@ -15,10 +18,6 @@ export default class AMQPMessage {
     return decoder.decode(this.body)
   }
 
-  /**
-   * @deprecated
-   * @return {string}
-   */
   bodyString() {
     return this.bodyToString()
   }

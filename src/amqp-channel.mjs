@@ -5,12 +5,10 @@ import AMQPConsumer from './amqp-consumer.mjs'
 
 /**
  * Represents an AMQP Channel. Almost all actions in AMQP are performed on a Channel.
+ * @param {AMQPBaseClient} connection - The connection this channel belongs to
+ * @param {number} id - ID of the channel
  */
 export default class AMQPChannel {
-  /**
-   * @param {AMQPBaseClient} connection - the connection this channel belongs to
-   * @param {number} id of the channel
-   */
   constructor(connection, id) {
     this.connection = connection
     this.id = id
@@ -22,6 +20,7 @@ export default class AMQPChannel {
 
   /**
    * Resolves the next RPC promise
+   * @ignore
    * @return {Bool} true if a promise was resolved, otherwise false
    */
   resolvePromise(value) {
@@ -33,6 +32,7 @@ export default class AMQPChannel {
 
   /**
    * Rejects the next RPC promise
+   * @ignore
    * @return {Bool} true if a promise was rejected, otherwise false
    */
   rejectPromise(err) {
@@ -44,9 +44,9 @@ export default class AMQPChannel {
 
   /**
    * Send a RPC request, will resolve a RPC promise when RPC response arrives
-   * @private
-   * @params {AMQPView} frame with data
-   * @params {number} how long the frame actually is
+   * @ignore
+   * @param {AMQPView} frame with data
+   * @param {number} how long the frame actually is
    */
   sendRpc(frame, frameSize) {
     return new Promise((resolve, reject) => {
@@ -61,6 +61,7 @@ export default class AMQPChannel {
    * All outstanding RPC requests will be rejected
    * All outstanding publish confirms will be rejected
    * All consumers will be marked as closed
+   * @ignore
    * @param {Error} err - why the channel was closed
    * @protected
    */
@@ -76,16 +77,17 @@ export default class AMQPChannel {
   }
 
   /**
+   * @ignore
    * @return {Promise<AMQPError>} Rejected promise with an error
-   * @private
    */
   rejectClosed() {
     return Promise.reject(new AMQPError("Channel is closed", this.connection))
   }
 
   /**
-   * Called from AMQPBaseClient when a publish is confirmed by the server
-   * Will full fill one or more (if multiple) Unconfirmed Publishes
+   * Called from AMQPBaseClient when a publish is confirmed by the server.
+   * Will fulfill one or more (if multiple) Unconfirmed Publishes.
+   * @ignore
    * @param {number} deliveryTag
    * @param {bool} multiple - true if all unconfirmed publishes up to this deliveryTag should be resolved or just this one
    * @param {bool} nack - true if negative confirm, hence reject the unconfirmed publish(es)
@@ -110,6 +112,7 @@ export default class AMQPChannel {
 
   /**
    * Called from AMQPBaseClient when a message is ready
+   * @ignore
    */
   onMessageReady(message) {
     if (this.delivery) {
@@ -134,7 +137,9 @@ export default class AMQPChannel {
 
   /**
    * Close the channel gracefully
-   * @param {{code: number, reason: string}}
+   * @param {object} params
+   * @param {number} params.code - Close code
+   * @param {string} params.reason - Reason for closing the channel
    */
   close({ code = 200, reason = "" } = {}) {
     if (this.closed) return this.rejectClosed()
@@ -157,6 +162,7 @@ export default class AMQPChannel {
 
   /**
    * Deliver a message to a consumer
+   * @ignore
    * @param {AMQPMessage} message
    * @return {Promise} Fulfilled when the message is processed
    */
@@ -277,11 +283,11 @@ export default class AMQPChannel {
   /**
    * Declare a queue
    * @param {string} name - name of the queue, if empty the server will generate a name
-   * @param {object} param
-   * @param {bool} param.passive - if the queue name doesn't exists the channel will be closed with an error, fulfilled if the queue name does exists
-   * @param {bool} param.durable - if the queue should survive server restarts
-   * @param {bool} param.autoDelete - if the queue should be deleted when the last consumer of the queue disconnects
-   * @param {bool} param.exclusive - if the queue should be deleted when the channel is closed
+   * @param {object} params
+   * @param {bool} params.passive - if the queue name doesn't exists the channel will be closed with an error, fulfilled if the queue name does exists
+   * @param {bool} params.durable - if the queue should survive server restarts
+   * @param {bool} params.autoDelete - if the queue should be deleted when the last consumer of the queue disconnects
+   * @param {bool} params.exclusive - if the queue should be deleted when the channel is closed
    * @param {object} args - optional custom queue arguments
    * @return {Promise<{queueName: string, messages: number, consumers: number}, AMQPError>} fulfilled when confirmed by the server
    */
@@ -313,9 +319,9 @@ export default class AMQPChannel {
   /**
    * Delete a queue
    * @param {string} name - name of the queue, if empty it will delete the last declared queue
-   * @param {object} param
-   * @param {bool} param.ifUnused - only delete if the queue doesn't have any consumers
-   * @param {bool} param.ifEmpty - only delete if the queue is empty
+   * @param {object} params
+   * @param {bool} params.ifUnused - only delete if the queue doesn't have any consumers
+   * @param {bool} params.ifEmpty - only delete if the queue is empty
    * @return {Promise<{messageCount: number}, AMQPError>}
    */
   queueDelete(name = "", { ifUnused = false, ifEmpty = false } = {}) {

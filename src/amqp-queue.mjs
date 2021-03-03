@@ -1,9 +1,19 @@
+/**
+ * Convience class for queues
+ */
 export default class AMQPQueue {
+  /**
+   * @param {AMQPChannel} channel - channel this queue was declared on
+   * @param {string} name - name of the queue
+   */
   constructor(channel, name) {
     this.channel = channel
     this.name = name
   }
 
+  /**
+   * Bind the queue to an exchange
+   */
   bind(exchange, routingkey, args = {}) {
     return new Promise((resolve, reject) => {
       this.channel.queueBind(this.name, exchange, routingkey, args)
@@ -12,6 +22,9 @@ export default class AMQPQueue {
     })
   }
 
+  /**
+   * Delete a binding between this queue and an exchange
+   */
   unbind(exchange, routingkey, args = {}) {
     return new Promise((resolve, reject) => {
       this.channel.queueUnind(this.name, exchange, routingkey, args)
@@ -28,12 +41,11 @@ export default class AMQPQueue {
     })
   }
 
+  /**
+   * @return {Promise<AMQPConsumer, AMQPError>}
+   */
   subscribe({noAck = true, exclusive = false} = {}, callback) {
-    return new Promise((resolve, reject) => {
-      this.channel.basicConsume(this.name, {noAck, exclusive}, callback)
-        .then(resolve)
-        .catch(reject)
-    })
+    return this.channel.basicConsume(this.name, {noAck, exclusive}, callback)
   }
 
   unsubscribe(consumerTag) {

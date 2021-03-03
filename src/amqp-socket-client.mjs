@@ -6,6 +6,10 @@ import net from 'net'
 import tls from 'tls'
 import process from 'process'
 
+/**
+ * AMQP 0-9-1 client over TCP socket.
+ * @param {string} url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
+ */
 export default class AMQPClient extends AMQPBaseClient {
   constructor(url) {
     const u = new URL(url)
@@ -20,6 +24,9 @@ export default class AMQPClient extends AMQPBaseClient {
     this.port = u.port || this.tls ? 5671 : 5672
   }
 
+  /**
+   * Try establish a connection
+   */
   connect() {
     const socket = this.tls ? this.connectTLS() : this.connectPlain()
     Object.defineProperty(this, 'socket', {
