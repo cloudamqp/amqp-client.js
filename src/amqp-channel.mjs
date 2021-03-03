@@ -74,7 +74,7 @@ export default class AMQPChannel {
    * Synchronously receive a message from a queue
    * @param {string} queue - name of the queue to poll
    * @param {object} param
-   * @param {bool} [param.noAck=true] - if message is removed from the server upon delivery, or have to be acknowledged
+   * @param {boolean} [param.noAck=true] - if message is removed from the server upon delivery, or have to be acknowledged
    * @return {Promise<AMQPMessage|null, AMQPError>} - returns null if the queue is empty otherwise a single message
    */
   basicGet(queue, { noAck = true } = {}) {
@@ -99,8 +99,8 @@ export default class AMQPChannel {
    * @param {string} queue - name of the queue to poll
    * @param {object} param
    * @param {string} [param.tag=""] - tag of the consumer, will be server generated if left empty
-   * @param {bool} [param.noAck=true] - if messages are removed from the server upon delivery, or have to be acknowledged
-   * @param {bool} [param.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
+   * @param {boolean} [param.noAck=true] - if messages are removed from the server upon delivery, or have to be acknowledged
+   * @param {boolean} [param.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
    * @param {object} [param.args={}] - custom arguments
    * @param {function(message: AMQPMessage)} callback - will be called for each message delivered to this consumer
    * @return {Promise<AMQPConsumer, AMQPError>}
@@ -171,7 +171,7 @@ export default class AMQPChannel {
   /**
    * Acknowledge a delivered message
    * @param {string} deliveryTag - tag of the message
-   * @param {bool} [multiple=false] - batch confirm all messages up to this delivery tag
+   * @param {boolean} [multiple=false] - batch confirm all messages up to this delivery tag
    * @return {Promise<, AMQPError>}
    */
   basicAck(deliveryTag, multiple = false) {
@@ -192,8 +192,8 @@ export default class AMQPChannel {
   /**
    * Acknowledge a delivered message
    * @param {string} deliveryTag - tag of the message
-   * @param {bool} [requeue=false] - if the message should be requeued or removed
-   * @param {bool} [multiple=false] - batch confirm all messages up to this delivery tag
+   * @param {boolean} [requeue=false] - if the message should be requeued or removed
+   * @param {boolean} [multiple=false] - batch confirm all messages up to this delivery tag
    * @return {Promise<, AMQPError>}
    */
   basicNack(deliveryTag, requeue = false, multiple = false) {
@@ -217,7 +217,7 @@ export default class AMQPChannel {
   /**
    * Acknowledge a delivered message
    * @param {string} deliveryTag - tag of the message
-   * @param {bool} [requeue=false] - if the message should be requeued or removed
+   * @param {boolean} [requeue=false] - if the message should be requeued or removed
    * @return {Promise<, AMQPError>}
    */
   basicReject(deliveryTag, requeue = false) {
@@ -237,7 +237,7 @@ export default class AMQPChannel {
 
   /**
    * Tell the server to redeliver all unacknowledged messages again, or reject and requeue them.
-   * @param {bool} [requeue=false] - if the message should be requeued or redeliviered to this channel
+   * @param {boolean} [requeue=false] - if the message should be requeued or redeliviered to this channel
    * @return {Promise<, AMQPError>}
    */
   basicRecover(requeue = false) {
@@ -260,8 +260,21 @@ export default class AMQPChannel {
    * @param {string} routingKey - routing key
    * @param {string|uint8array} data - the data to be published, can be a string or an uint8array
    * @param {object} properties - publish properties
-   * @param {bool} [mandatory] - if the message should be returned if there's no queue to be delivered to
-   * @param {bool} [immediate] - if the message should be returned if it can't be delivered to a consumer immediately (not supported in RabbitMQ)
+   * @param {string} properties.contentType - mime type, eg. application/json
+   * @param {string} properties.contentEncoding - eg. gzip
+   * @param {object} properties.headers - custom headers, can also be used for routing with header exchanges
+   * @param {number} properties.deliveryMode - 1 for transient, 2 for persisent
+   * @param {number} properties.priority - between 0 and 255
+   * @param {string} properties.correlationId - for RPC requests
+   * @param {string} properties.replyTo - for RPC requests
+   * @param {string} properties.expiration - number in milliseconds, as string
+   * @param {string} properties.messageId
+   * @param {Date} properties.timestamp - the time the message was generated
+   * @param {string} properties.type
+   * @param {string} properties.userId
+   * @param {string} properties.appId
+   * @param {boolean} [mandatory] - if the message should be returned if there's no queue to be delivered to
+   * @param {boolean} [immediate] - if the message should be returned if it can't be delivered to a consumer immediately (not supported in RabbitMQ)
    * @return {Promise<number, AMQPError>} - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
   basicPublish(exchange, routingKey, data, properties, mandatory, immediate) {
@@ -364,7 +377,7 @@ export default class AMQPChannel {
    * The server won't deliver more messages than the limit until messages are acknowledged.
    * @param {number} prefetchCount - number of messages to limit to
    * @param {number} prefetchSize - number of bytes to limit to (not supported by RabbitMQ)
-   * @param {bool} global - if the prefetch is limited to the channel, or if false to each consumer
+   * @param {boolean} global - if the prefetch is limited to the channel, or if false to each consumer
    * @return {Promise<, AMQPError>}
    */
   basicQos(prefetchCount, prefetchSize = 0, global = false) {
@@ -386,7 +399,7 @@ export default class AMQPChannel {
   /**
    * Enable or disable flow. Disabling flow will stop the server from delivering messages to consumers.
    * Not supported in RabbitMQ
-   * @param {bool} active
+   * @param {boolean} active
    */
   basicFlow(active = true) {
     if (this.closed) return this.rejectClosed()
@@ -424,10 +437,10 @@ export default class AMQPChannel {
    * Declare a queue
    * @param {string} name - name of the queue, if empty the server will generate a name
    * @param {object} params
-   * @param {bool} params.passive - if the queue name doesn't exists the channel will be closed with an error, fulfilled if the queue name does exists
-   * @param {bool} params.durable - if the queue should survive server restarts
-   * @param {bool} params.autoDelete - if the queue should be deleted when the last consumer of the queue disconnects
-   * @param {bool} params.exclusive - if the queue should be deleted when the channel is closed
+   * @param {boolean} params.passive - if the queue name doesn't exists the channel will be closed with an error, fulfilled if the queue name does exists
+   * @param {boolean} params.durable - if the queue should survive server restarts
+   * @param {boolean} params.autoDelete - if the queue should be deleted when the last consumer of the queue disconnects
+   * @param {boolean} params.exclusive - if the queue should be deleted when the channel is closed
    * @param {object} args - optional custom queue arguments
    * @return {Promise<{queueName: string, messages: number, consumers: number}, AMQPError>} fulfilled when confirmed by the server
    */
@@ -460,8 +473,8 @@ export default class AMQPChannel {
    * Delete a queue
    * @param {string} name - name of the queue, if empty it will delete the last declared queue
    * @param {object} params
-   * @param {bool} params.ifUnused - only delete if the queue doesn't have any consumers
-   * @param {bool} params.ifEmpty - only delete if the queue is empty
+   * @param {boolean} params.ifUnused - only delete if the queue doesn't have any consumers
+   * @param {boolean} params.ifEmpty - only delete if the queue is empty
    * @return {Promise<{messageCount: number}, AMQPError>}
    */
   queueDelete(name = "", { ifUnused = false, ifEmpty = false } = {}) {
@@ -570,10 +583,10 @@ export default class AMQPChannel {
    * @param {string} name - name of the exchange
    * @param {string} type - type of exchange (direct, fanout, topic, header, or a custom type)
    * @param {object} param
-   * @param {bool} param.passive - if the exchange name doesn't exists the channel will be closed with an error, fulfilled if the exchange name does exists
-   * @param {bool} param.durable - if the exchange should survive server restarts
-   * @param {bool} param.autoDelete - if the exchange should be deleted when the last binding from it is deleted
-   * @param {bool} param.internal - if exchange is internal to the server. Client's can't publish to internal exchanges.
+   * @param {boolean} param.passive - if the exchange name doesn't exists the channel will be closed with an error, fulfilled if the exchange name does exists
+   * @param {boolean} param.durable - if the exchange should survive server restarts
+   * @param {boolean} param.autoDelete - if the exchange should be deleted when the last binding from it is deleted
+   * @param {boolean} param.internal - if exchange is internal to the server. Client's can't publish to internal exchanges.
    * @param {object} args - optional arguments
    * @return {Promise<, AMQPError>} Fulfilled when the exchange is created or if it already exists
    */
@@ -606,7 +619,7 @@ export default class AMQPChannel {
    * Delete an exchange
    * @param {string} name - name of the exchange
    * @param {object} param
-   * @param {bool} param.ifUnused - only delete if the exchange doesn't have any bindings
+   * @param {boolean} param.ifUnused - only delete if the exchange doesn't have any bindings
    * @return {Promise<, AMQPError>} Fulfilled when the exchange is deleted or if it's already deleted
    */
   exchangeDelete(name, { ifUnused = false } = {}) {
@@ -791,8 +804,8 @@ export default class AMQPChannel {
    * Will fulfill one or more (if multiple) Unconfirmed Publishes.
    * @ignore
    * @param {number} deliveryTag
-   * @param {bool} multiple - true if all unconfirmed publishes up to this deliveryTag should be resolved or just this one
-   * @param {bool} nack - true if negative confirm, hence reject the unconfirmed publish(es)
+   * @param {boolean} multiple - true if all unconfirmed publishes up to this deliveryTag should be resolved or just this one
+   * @param {boolean} nack - true if negative confirm, hence reject the unconfirmed publish(es)
    */
   publishConfirmed(deliveryTag, multiple, nack) {
     // is queueMicrotask() needed here?

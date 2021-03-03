@@ -33,6 +33,25 @@ export default class AMQPQueue {
     })
   }
 
+  /**
+   * Publish a message directly to the queue
+   * @param {String|Uint8array} body - the data to be published, can be a string or an uint8array
+   * @param {object} properties - publish properties
+   * @param {string} properties.contentType - mime type, eg. application/json
+   * @param {string} properties.contentEncoding - eg. gzip
+   * @param {object} properties.headers - custom headers, can also be used for routing with header exchanges
+   * @param {number} properties.deliveryMode - 1 for transient, 2 for persisent
+   * @param {number} properties.priority - between 0 and 255
+   * @param {string} properties.correlationId - for RPC requests
+   * @param {string} properties.replyTo - for RPC requests
+   * @param {string} properties.expiration - number in milliseconds, as string
+   * @param {string} properties.messageId
+   * @param {Date} properties.timestamp - the time the message was generated
+   * @param {string} properties.type
+   * @param {string} properties.userId
+   * @param {string} properties.appId
+   * @return {Promise<number, AMQPError>} - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
+   */
   publish(body, properties) {
     return new Promise((resolve, reject) => {
       this.channel.basicPublish("", this.name, body, properties)
@@ -42,6 +61,11 @@ export default class AMQPQueue {
   }
 
   /**
+   * Subscribe to the queue
+   * @param {object} params
+   * @param {boolean} params.noAck - automatically acknowledge messages when received
+   * @param {boolean} params.exclusive - be the exclusive consumer of the queue
+   * @param {function(AMQPMessage)} callback - Function to be called for each received message
    * @return {Promise<AMQPConsumer, AMQPError>}
    */
   subscribe({noAck = true, exclusive = false} = {}, callback) {

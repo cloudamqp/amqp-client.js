@@ -362,6 +362,12 @@
                       </a></li>
                       
                       <li><a
+                        href='#amqpqueuepublish'
+                        class='regular pre-open'>
+                        #publish
+                      </a></li>
+                      
+                      <li><a
                         href='#amqpqueuesubscribe'
                         class='regular pre-open'>
                         #subscribe
@@ -457,7 +463,7 @@
   <p>Base class for AMQPClients.
 Implements everything except how to connect, send data and close the socket</p>
 
-    <div class='pre p1 fill-light mt0'>new AMQPBaseClient(vhost: any, username: any, password: any, name: any, platform: any)</div>
+    <div class='pre p1 fill-light mt0'>new AMQPBaseClient(vhost: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, username: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, password: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, name: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, platform: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</div>
   
   
 
@@ -474,7 +480,7 @@ Implements everything except how to connect, send data and close the socket</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>vhost</span> <code class='quiet'>(any)</code>
+            <span class='code bold'>vhost</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
 	    
           </div>
           
@@ -482,7 +488,7 @@ Implements everything except how to connect, send data and close the socket</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>username</span> <code class='quiet'>(any)</code>
+            <span class='code bold'>username</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
 	    
           </div>
           
@@ -490,7 +496,7 @@ Implements everything except how to connect, send data and close the socket</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>password</span> <code class='quiet'>(any)</code>
+            <span class='code bold'>password</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
 	    
           </div>
           
@@ -498,16 +504,18 @@ Implements everything except how to connect, send data and close the socket</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>name</span> <code class='quiet'>(any)</code>
-	    
+            <span class='code bold'>name</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    name of the connection, set in client properties
+
           </div>
           
         </div>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>platform</span> <code class='quiet'>(any)</code>
-	    
+            <span class='code bold'>platform</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    used in client properties
+
           </div>
           
         </div>
@@ -1148,7 +1156,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
             <tbody class='mt1'>
               
                 <tr>
-  <td class='break-word'><span class='code bold'>param.noAck</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>param.noAck</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>true</code>)
   </td>
@@ -1266,7 +1274,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>param.noAck</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>param.noAck</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>true</code>)
   </td>
@@ -1277,7 +1285,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>param.exclusive</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>param.exclusive</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>false</code>)
   </td>
@@ -1430,7 +1438,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
 
   <p>Acknowledge a delivered message</p>
 
-    <div class='pre p1 fill-light mt0'>basicAck(deliveryTag: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, multiple: bool)</div>
+    <div class='pre p1 fill-light mt0'>basicAck(deliveryTag: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, multiple: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
   
   
 
@@ -1456,7 +1464,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>multiple</span> <code class='quiet'>(bool
+            <span class='code bold'>multiple</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>
             = <code>false</code>)</code>
 	    batch confirm all messages up to this delivery tag
 
@@ -1503,7 +1511,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
 
   <p>Acknowledge a delivered message</p>
 
-    <div class='pre p1 fill-light mt0'>basicNack(deliveryTag: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, requeue: bool, multiple: bool)</div>
+    <div class='pre p1 fill-light mt0'>basicNack(deliveryTag: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, requeue: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>, multiple: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
   
   
 
@@ -1529,7 +1537,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>requeue</span> <code class='quiet'>(bool
+            <span class='code bold'>requeue</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>
             = <code>false</code>)</code>
 	    if the message should be requeued or removed
 
@@ -1539,7 +1547,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>multiple</span> <code class='quiet'>(bool
+            <span class='code bold'>multiple</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>
             = <code>false</code>)</code>
 	    batch confirm all messages up to this delivery tag
 
@@ -1586,7 +1594,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
 
   <p>Acknowledge a delivered message</p>
 
-    <div class='pre p1 fill-light mt0'>basicReject(deliveryTag: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, requeue: bool)</div>
+    <div class='pre p1 fill-light mt0'>basicReject(deliveryTag: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, requeue: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
   
   
 
@@ -1612,7 +1620,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>requeue</span> <code class='quiet'>(bool
+            <span class='code bold'>requeue</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>
             = <code>false</code>)</code>
 	    if the message should be requeued or removed
 
@@ -1659,7 +1667,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
 
   <p>Tell the server to redeliver all unacknowledged messages again, or reject and requeue them.</p>
 
-    <div class='pre p1 fill-light mt0'>basicRecover(requeue: bool)</div>
+    <div class='pre p1 fill-light mt0'>basicRecover(requeue: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
   
   
 
@@ -1676,7 +1684,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>requeue</span> <code class='quiet'>(bool
+            <span class='code bold'>requeue</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>
             = <code>false</code>)</code>
 	    if the message should be requeued or redeliviered to this channel
 
@@ -1723,7 +1731,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
 
   <p>Publish a message</p>
 
-    <div class='pre p1 fill-light mt0'>basicPublish(exchange: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, routingKey: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, data: (<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">uint8array</a>), properties: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>, mandatory: bool?, immediate: bool?): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="#amqperror">AMQPError</a>></div>
+    <div class='pre p1 fill-light mt0'>basicPublish(exchange: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, routingKey: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, data: (<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">uint8array</a>), properties: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>, mandatory: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?, immediate: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="#amqperror">AMQPError</a>></div>
   
   
 
@@ -1772,11 +1780,140 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
 
           </div>
           
+          <table class='mt1 mb2 fixed-table h5 col-12'>
+            <colgroup>
+              <col width='30%' />
+              <col width='70%' />
+            </colgroup>
+            <thead>
+              <tr class='bold fill-light'>
+                <th>Name</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody class='mt1'>
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.contentType</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span>mime type, eg. application/json
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.contentEncoding</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span>eg. gzip
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.headers</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>
+  </td>
+  <td class='break-word'><span>custom headers, can also be used for routing with header exchanges
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.deliveryMode</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>
+  </td>
+  <td class='break-word'><span>1 for transient, 2 for persisent
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.priority</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>
+  </td>
+  <td class='break-word'><span>between 0 and 255
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.correlationId</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span>for RPC requests
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.replyTo</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span>for RPC requests
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.expiration</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span>number in milliseconds, as string
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.messageId</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span></span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.timestamp</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Date">Date</a></code>
+  </td>
+  <td class='break-word'><span>the time the message was generated
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.type</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span></span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.userId</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span></span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.appId</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span></span></td>
+</tr>
+
+
+              
+            </tbody>
+          </table>
+          
         </div>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>mandatory</span> <code class='quiet'>(bool?)</code>
+            <span class='code bold'>mandatory</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
 	    if the message should be returned if there's no queue to be delivered to
 
           </div>
@@ -1785,7 +1922,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>immediate</span> <code class='quiet'>(bool?)</code>
+            <span class='code bold'>immediate</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
 	    if the message should be returned if it can't be delivered to a consumer immediately (not supported in RabbitMQ)
 
           </div>
@@ -1841,7 +1978,7 @@ return {Promise&#x3C;AMQPChannel, AMQPError>} channel</p>
 Recommended to set as each unacknowledge message will be store in memory of the client.
 The server won't deliver more messages than the limit until messages are acknowledged.</p>
 
-    <div class='pre p1 fill-light mt0'>basicQos(prefetchCount: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, prefetchSize: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, global: bool)</div>
+    <div class='pre p1 fill-light mt0'>basicQos(prefetchCount: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, prefetchSize: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, global: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
   
   
 
@@ -1877,7 +2014,7 @@ The server won't deliver more messages than the limit until messages are acknowl
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>global</span> <code class='quiet'>(bool
+            <span class='code bold'>global</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>
             = <code>false</code>)</code>
 	    if the prefetch is limited to the channel, or if false to each consumer
 
@@ -1925,7 +2062,7 @@ The server won't deliver more messages than the limit until messages are acknowl
   <p>Enable or disable flow. Disabling flow will stop the server from delivering messages to consumers.
 Not supported in RabbitMQ</p>
 
-    <div class='pre p1 fill-light mt0'>basicFlow(active: bool)</div>
+    <div class='pre p1 fill-light mt0'>basicFlow(active: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
   
   
 
@@ -1942,7 +2079,7 @@ Not supported in RabbitMQ</p>
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>active</span> <code class='quiet'>(bool
+            <span class='code bold'>active</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>
             = <code>true</code>)</code>
 	    
           </div>
@@ -2083,7 +2220,7 @@ Not supported in RabbitMQ</p>
             <tbody class='mt1'>
               
                 <tr>
-  <td class='break-word'><span class='code bold'>params.passive</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>params.passive</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>false</code>)
   </td>
@@ -2094,7 +2231,7 @@ Not supported in RabbitMQ</p>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>params.durable</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>params.durable</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>name!==&quot;&quot;</code>)
   </td>
@@ -2105,7 +2242,7 @@ Not supported in RabbitMQ</p>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>params.autoDelete</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>params.autoDelete</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>name===&quot;&quot;</code>)
   </td>
@@ -2116,7 +2253,7 @@ Not supported in RabbitMQ</p>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>params.exclusive</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>params.exclusive</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>name===&quot;&quot;</code>)
   </td>
@@ -2234,7 +2371,7 @@ Not supported in RabbitMQ</p>
             <tbody class='mt1'>
               
                 <tr>
-  <td class='break-word'><span class='code bold'>params.ifUnused</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>params.ifUnused</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>false</code>)
   </td>
@@ -2245,7 +2382,7 @@ Not supported in RabbitMQ</p>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>params.ifEmpty</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>params.ifEmpty</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>false</code>)
   </td>
@@ -2630,7 +2767,7 @@ Not supported in RabbitMQ</p>
             <tbody class='mt1'>
               
                 <tr>
-  <td class='break-word'><span class='code bold'>param.passive</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>param.passive</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>false</code>)
   </td>
@@ -2641,7 +2778,7 @@ Not supported in RabbitMQ</p>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>param.durable</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>param.durable</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>true</code>)
   </td>
@@ -2652,7 +2789,7 @@ Not supported in RabbitMQ</p>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>param.autoDelete</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>param.autoDelete</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>false</code>)
   </td>
@@ -2663,7 +2800,7 @@ Not supported in RabbitMQ</p>
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>param.internal</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>param.internal</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>false</code>)
   </td>
@@ -2772,7 +2909,7 @@ Not supported in RabbitMQ</p>
             <tbody class='mt1'>
               
                 <tr>
-  <td class='break-word'><span class='code bold'>param.ifUnused</span> <code class='quiet'>bool</code>
+  <td class='break-word'><span class='code bold'>param.ifUnused</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>false</code>)
   </td>
@@ -4055,11 +4192,11 @@ Note that any unacked messages are still unacked as they belong to the channel a
       </div>
     </div>
   
-    <div class='border-bottom' id='amqpqueuesubscribe'>
+    <div class='border-bottom' id='amqpqueuepublish'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>subscribe($0, callback)</span>
+            <span class='code strong strong truncate'>publish(body, properties)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -4067,8 +4204,9 @@ Note that any unacked messages are still unacked as they belong to the channel a
 
   
 
-  
-    <div class='pre p1 fill-light mt0'>subscribe($0: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, callback: any): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="#amqpconsumer">AMQPConsumer</a>, <a href="#amqperror">AMQPError</a>></div>
+  <p>Publish a message directly to the queue</p>
+
+    <div class='pre p1 fill-light mt0'>publish(body: (<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">String</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8array</a>), properties: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="#amqperror">AMQPError</a>></div>
   
   
 
@@ -4085,7 +4223,216 @@ Note that any unacked messages are still unacked as they belong to the channel a
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>$0</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>
+            <span class='code bold'>body</span> <code class='quiet'>((<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">String</a> | <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8array</a>))</code>
+	    the data to be published, can be a string or an uint8array
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>properties</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>)</code>
+	    publish properties
+
+          </div>
+          
+          <table class='mt1 mb2 fixed-table h5 col-12'>
+            <colgroup>
+              <col width='30%' />
+              <col width='70%' />
+            </colgroup>
+            <thead>
+              <tr class='bold fill-light'>
+                <th>Name</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody class='mt1'>
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.contentType</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span>mime type, eg. application/json
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.contentEncoding</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span>eg. gzip
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.headers</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></code>
+  </td>
+  <td class='break-word'><span>custom headers, can also be used for routing with header exchanges
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.deliveryMode</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>
+  </td>
+  <td class='break-word'><span>1 for transient, 2 for persisent
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.priority</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>
+  </td>
+  <td class='break-word'><span>between 0 and 255
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.correlationId</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span>for RPC requests
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.replyTo</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span>for RPC requests
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.expiration</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span>number in milliseconds, as string
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.messageId</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span></span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.timestamp</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Date">Date</a></code>
+  </td>
+  <td class='break-word'><span>the time the message was generated
+</span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.type</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span></span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.userId</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span></span></td>
+</tr>
+
+
+              
+                <tr>
+  <td class='break-word'><span class='code bold'>properties.appId</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></code>
+  </td>
+  <td class='break-word'><span></span></td>
+</tr>
+
+
+              
+            </tbody>
+          </table>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="#amqperror">AMQPError</a>></code>:
+        fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='amqpqueuesubscribe'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>subscribe(params, callback)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Subscribe to the queue</p>
+
+    <div class='pre p1 fill-light mt0'>subscribe(params: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>, callback: function (<a href="#amqpmessage">AMQPMessage</a>)): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;<a href="#amqpconsumer">AMQPConsumer</a>, <a href="#amqperror">AMQPError</a>></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>params</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>
             = <code>{}</code>)</code>
 	    
           </div>
@@ -4104,21 +4451,23 @@ Note that any unacked messages are still unacked as they belong to the channel a
             <tbody class='mt1'>
               
                 <tr>
-  <td class='break-word'><span class='code bold'>$0.noAck</span> <code class='quiet'>any</code>
+  <td class='break-word'><span class='code bold'>params.noAck</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>true</code>)
   </td>
-  <td class='break-word'><span></span></td>
+  <td class='break-word'><span>automatically acknowledge messages when received
+</span></td>
 </tr>
 
 
               
                 <tr>
-  <td class='break-word'><span class='code bold'>$0.exclusive</span> <code class='quiet'>any</code>
+  <td class='break-word'><span class='code bold'>params.exclusive</span> <code class='quiet'><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>
   
     (default <code>false</code>)
   </td>
-  <td class='break-word'><span></span></td>
+  <td class='break-word'><span>be the exclusive consumer of the queue
+</span></td>
 </tr>
 
 
@@ -4130,8 +4479,9 @@ Note that any unacked messages are still unacked as they belong to the channel a
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>callback</span> <code class='quiet'>(any)</code>
-	    
+            <span class='code bold'>callback</span> <code class='quiet'>(function (<a href="#amqpmessage">AMQPMessage</a>))</code>
+	    Function to be called for each received message
+
           </div>
           
         </div>
