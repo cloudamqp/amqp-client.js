@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "name": "AMQPChannel#close",
+    "filePath": "src/amqp-channel.mjs",
+    "lines": [
+      {
+        "lineNumber": 134,
+        "line": "  /**"
+      },
+      {
+        "lineNumber": 135,
+        "line": "   * Close the channel gracefully"
+      },
+      {
+        "lineNumber": 136,
+        "line": "   * @param {{code: number, reason: string}}"
+      },
+      {
+        "lineNumber": 137,
+        "line": "   */"
+      },
+      {
+        "lineNumber": 138,
+        "line": "  close({ code = 200, reason = \"\" } = {}) {"
+      }
+    ],
+    "codeParams": [
+      "*"
+    ],
+    "docParams": []
+  }
+]

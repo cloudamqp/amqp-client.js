@@ -43,7 +43,11 @@
 </nav>
 
 <div class="content" data-ice="content"><h1 data-ice="title">src/amqp-view.mjs</h1>
-<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">export default class AMQPView extends DataView {
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">/**
+ * An extended DataView, with AMQP protocol specific methods
+ * Only used internally
+ */
+export default class AMQPView extends DataView {
   getUint64(byteOffset, littleEndian) {
     // split 64-bit number into two 32-bit (4-byte) parts
     const left =  this.getUint32(byteOffset, littleEndian)

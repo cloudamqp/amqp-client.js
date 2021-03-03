@@ -43,13 +43,13 @@
 </nav>
 
 <div class="content" data-ice="content"><div class="header-notice">
-  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import AMQPChannel from &apos;<span><a href="file/src/amqp-channel.mjs.html#lineNumber10">@cloudamqp/amqp-client/src/amqp-channel.mjs</a></span>&apos;</code></pre></div>
+  <div data-ice="importPath" class="import-path"><pre class="prettyprint"><code data-ice="importPathCode">import AMQPChannel from &apos;<span><a href="file/src/amqp-channel.mjs.html#lineNumber9">@cloudamqp/amqp-client/src/amqp-channel.mjs</a></span>&apos;</code></pre></div>
   <span data-ice="access">public</span>
   <span data-ice="kind">class</span>
   
   
   
-  <span data-ice="source">| <span><a href="file/src/amqp-channel.mjs.html#lineNumber10">source</a></span></span>
+  <span data-ice="source">| <span><a href="file/src/amqp-channel.mjs.html#lineNumber9">source</a></span></span>
 </div>
 
 <div class="self-detail detail">
@@ -69,8 +69,7 @@
 
   
   
-  <div class="description" data-ice="description"><p>Represents an AMQP Channel
-Almost all actions in AMQP are performed on a Channel</p>
+  <div class="description" data-ice="description"><p>Represents an AMQP Channel. Almost all actions in AMQP are performed on a Channel.</p>
 </div>
   
 
@@ -103,7 +102,7 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-constructor-constructor">constructor</a></span></span><span class="code" data-ice="signature">(the: <span><a href="class/src/amqp-base-client.mjs~AMQPBaseClient.html">AMQPBaseClient</a></span>, id: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>)</span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-constructor-constructor">constructor</a></span></span><span class="code" data-ice="signature">(connection: <span><a href="class/src/amqp-base-client.mjs~AMQPBaseClient.html">AMQPBaseClient</a></span>, id: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>)</span>
         </p>
       </div>
       <div>
@@ -397,13 +396,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicAck">basicAck</a></span></span><span class="code" data-ice="signature">(deliveryTag: <span>*</span>, multiple: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicAck">basicAck</a></span></span><span class="code" data-ice="signature">(deliveryTag: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, multiple: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Acknowledge a delivered message</p>
+</div>
       </div>
     </td>
     <td>
@@ -425,13 +425,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicCancel">basicCancel</a></span></span><span class="code" data-ice="signature">(tag: <span>*</span>): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicCancel">basicCancel</a></span></span><span class="code" data-ice="signature">(tag: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="class/src/amqp-channel.mjs~AMQPChannel.html">AMQPChannel</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Cancel/stop a consumer</p>
+</div>
       </div>
     </td>
     <td>
@@ -453,13 +454,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicConsume">basicConsume</a></span></span><span class="code" data-ice="signature">(queue: <span>*</span>, objectPattern1: {&quot;tag&quot;: <span>*</span>, &quot;noAck&quot;: <span>*</span>, &quot;exclusive&quot;: <span>*</span>, &quot;args&quot;: <span>*</span>}, callback: <span>*</span>): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicConsume">basicConsume</a></span></span><span class="code" data-ice="signature">(queue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, param: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>, callback: <span><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function">function</a></span><span>(message: <span><a href="class/src/amqp-message.mjs~AMQPMessage.html">AMQPMessage</a></span>)</span></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="class/src/amqp-consumer.mjs~AMQPConsumer.html">AMQPConsumer</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Consume from a queue.</p>
+</div>
       </div>
     </td>
     <td>
@@ -481,13 +483,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicGet">basicGet</a></span></span><span class="code" data-ice="signature">(queue: <span>*</span>, objectPattern1: {&quot;noAck&quot;: <span>*</span>}): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicGet">basicGet</a></span></span><span class="code" data-ice="signature">(queue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, param: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="class/src/amqp-message.mjs~AMQPMessage.html">AMQPMessage</a></span>|<span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/null">null</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Synchronously receive a message from a queue</p>
+</div>
       </div>
     </td>
     <td>
@@ -509,13 +512,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicNack">basicNack</a></span></span><span class="code" data-ice="signature">(deliveryTag: <span>*</span>, requeue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>, multiple: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicNack">basicNack</a></span></span><span class="code" data-ice="signature">(deliveryTag: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, requeue: <span>bool</span>, multiple: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Acknowledge a delivered message</p>
+</div>
       </div>
     </td>
     <td>
@@ -537,13 +541,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicPublish">basicPublish</a></span></span><span class="code" data-ice="signature">(exchange: <span>*</span>, routingkey: <span>*</span>, data: <span>*</span>, properties: <span>*</span>, mandatory: <span>*</span>, immediate: <span>*</span>): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicPublish">basicPublish</a></span></span><span class="code" data-ice="signature">(exchange: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, routingKey: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, data: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span> | <span>uint8array</span>, properties: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>, mandatory: <span>bool</span>, immediate: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Publish a message</p>
+</div>
       </div>
     </td>
     <td>
@@ -565,13 +570,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicQos">basicQos</a></span></span><span class="code" data-ice="signature">(prefetchCount: <span>*</span>, prefetchSize: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, global: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicQos">basicQos</a></span></span><span class="code" data-ice="signature">(prefetchCount: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, prefetchSize: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, global: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Set prefetch limit.</p>
+</div>
       </div>
     </td>
     <td>
@@ -593,13 +599,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicRecover">basicRecover</a></span></span><span class="code" data-ice="signature">(requeue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicRecover">basicRecover</a></span></span><span class="code" data-ice="signature">(requeue: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Tell the server to redeliver all unacknowledged messages again, or reject and requeue them.</p>
+</div>
       </div>
     </td>
     <td>
@@ -621,13 +628,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicReject">basicReject</a></span></span><span class="code" data-ice="signature">(deliveryTag: <span>*</span>, requeue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-basicReject">basicReject</a></span></span><span class="code" data-ice="signature">(deliveryTag: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, requeue: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Acknowledge a delivered message</p>
+</div>
       </div>
     </td>
     <td>
@@ -649,7 +657,7 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-close">close</a></span></span><span class="code" data-ice="signature">(objectPattern: {&quot;code&quot;: <span>*</span>, &quot;reason&quot;: <span>*</span>}): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-close">close</a></span></span><span class="code" data-ice="signature">(): <span>*</span></span>
         </p>
       </div>
       <div>
@@ -678,13 +686,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-confirmSelect">confirmSelect</a></span></span><span class="code" data-ice="signature">(): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-confirmSelect">confirmSelect</a></span></span><span class="code" data-ice="signature">(): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Enable publish confirm.</p>
+</div>
       </div>
     </td>
     <td>
@@ -763,13 +772,14 @@ Almost all actions in AMQP are performed on a Channel</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-exchangeDeclare">exchangeDeclare</a></span></span><span class="code" data-ice="signature">(name: <span>*</span>, type: <span>*</span>, objectPattern2: {&quot;passive&quot;: <span>*</span>, &quot;durable&quot;: <span>*</span>, &quot;autoDelete&quot;: <span>*</span>, &quot;internal&quot;: <span>*</span>}, args: {}): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-exchangeDeclare">exchangeDeclare</a></span></span><span class="code" data-ice="signature">(name: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, type: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, param: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>, args: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Declare an exchange</p>
+</div>
       </div>
     </td>
     <td>
@@ -1049,13 +1059,14 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-queueDeclare">queueDeclare</a></span></span><span class="code" data-ice="signature">(name: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, objectPattern1: {&quot;passive&quot;: <span>*</span>, &quot;durable&quot;: <span>*</span>, &quot;autoDelete&quot;: <span>*</span>, &quot;exclusive&quot;: <span>*</span>}, args: {}): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-queueDeclare">queueDeclare</a></span></span><span class="code" data-ice="signature">(name: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, param: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>, args: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><{queuename: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, messages: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, consumers: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>}, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</{queuename:></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Declare a queue</p>
+</div>
       </div>
     </td>
     <td>
@@ -1077,13 +1088,14 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-queueDelete">queueDelete</a></span></span><span class="code" data-ice="signature">(name: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, objectPattern1: {&quot;ifUnused&quot;: <span>*</span>, &quot;ifEmpty&quot;: <span>*</span>}): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-queueDelete">queueDelete</a></span></span><span class="code" data-ice="signature">(name: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, param: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><{messagecount: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>}, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</{messagecount:></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Delete a queue</p>
+</div>
       </div>
     </td>
     <td>
@@ -1105,13 +1117,14 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-queuePurge">queuePurge</a></span></span><span class="code" data-ice="signature">(queue: <span>*</span>): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-queuePurge">queuePurge</a></span></span><span class="code" data-ice="signature">(queue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Purge a queue</p>
+</div>
       </div>
     </td>
     <td>
@@ -1133,13 +1146,14 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
           
           
           
-          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-queueUnbind">queueUnbind</a></span></span><span class="code" data-ice="signature">(queue: <span>*</span>, exchange: <span>*</span>, routingKey: <span>*</span>, args: {}): <span>*</span></span>
+          <span class="code" data-ice="name"><span><a href="class/src/amqp-channel.mjs~AMQPChannel.html#instance-method-queueUnbind">queueUnbind</a></span></span><span class="code" data-ice="signature">(queue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, exchange: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, routingKey: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, args: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span></span>
         </p>
       </div>
       <div>
         
         
-        
+        <div data-ice="description"><p>Unbind a queue from an exchange</p>
+</div>
       </div>
     </td>
     <td>
@@ -1436,11 +1450,11 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">constructor</span><span class="code" data-ice="signature">(the: <span><a href="class/src/amqp-base-client.mjs~AMQPBaseClient.html">AMQPBaseClient</a></span>, id: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>)</span>
+    <span class="code" data-ice="name">constructor</span><span class="code" data-ice="signature">(connection: <span><a href="class/src/amqp-base-client.mjs~AMQPBaseClient.html">AMQPBaseClient</a></span>, id: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>)</span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber15">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber14">source</a></span></span>
     </span>
   </h3>
 
@@ -1460,10 +1474,10 @@ All consumers will be marked as closed</p>
     <tbody>
     
     <tr data-ice="property" data-depth="0">
-      <td data-ice="name" class="code" data-depth="0">the</td>
+      <td data-ice="name" class="code" data-depth="0">connection</td>
       <td data-ice="type" class="code"><span><a href="class/src/amqp-base-client.mjs~AMQPBaseClient.html">AMQPBaseClient</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"><p>connection this channel belongs to</p>
+      <td data-ice="description"><p>the connection this channel belongs to</p>
 </td>
     </tr>
 <tr data-ice="property" data-depth="0">
@@ -1510,7 +1524,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber21">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber20">source</a></span></span>
     </span>
   </h3>
 
@@ -1553,7 +1567,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber16">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber15">source</a></span></span>
     </span>
   </h3>
 
@@ -1596,7 +1610,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber18">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber17">source</a></span></span>
     </span>
   </h3>
 
@@ -1639,7 +1653,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber117">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber116">source</a></span></span>
     </span>
   </h3>
 
@@ -1682,7 +1696,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber120">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber119">source</a></span></span>
     </span>
   </h3>
 
@@ -1725,7 +1739,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber17">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber16">source</a></span></span>
     </span>
   </h3>
 
@@ -1768,7 +1782,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber19">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber18">source</a></span></span>
     </span>
   </h3>
 
@@ -1811,7 +1825,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber123">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber122">source</a></span></span>
     </span>
   </h3>
 
@@ -1854,7 +1868,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber20">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber19">source</a></span></span>
     </span>
   </h3>
 
@@ -1896,18 +1910,19 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">basicAck</span><span class="code" data-ice="signature">(deliveryTag: <span>*</span>, multiple: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>): <span>*</span></span>
+    <span class="code" data-ice="name">basicAck</span><span class="code" data-ice="signature">(deliveryTag: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, multiple: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber402">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber472">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Acknowledge a delivered message</p>
+</div>
 
   
 
@@ -1921,16 +1936,18 @@ All consumers will be marked as closed</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">deliveryTag</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>tag of the message</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">multiple</td>
-      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span></td>
+      <td data-ice="type" class="code"><span>bool</span></td>
       <td data-ice="appendix"><ul><li>optional</li>
 <li>default: false</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>batch confirm all messages up to this delivery tag</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -1942,7 +1959,7 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></td>
           
         </tr>
       </tbody>
@@ -1974,18 +1991,19 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">basicCancel</span><span class="code" data-ice="signature">(tag: <span>*</span>): <span>*</span></span>
+    <span class="code" data-ice="name">basicCancel</span><span class="code" data-ice="signature">(tag: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="class/src/amqp-channel.mjs~AMQPChannel.html">AMQPChannel</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber377">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber441">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Cancel/stop a consumer</p>
+</div>
 
   
 
@@ -1999,9 +2017,10 @@ All consumers will be marked as closed</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">tag</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>consumer tag</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -2013,7 +2032,7 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="class/src/amqp-channel.mjs~AMQPChannel.html">AMQPChannel</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</td>
           
         </tr>
       </tbody>
@@ -2045,18 +2064,19 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">basicConsume</span><span class="code" data-ice="signature">(queue: <span>*</span>, objectPattern1: {&quot;tag&quot;: <span>*</span>, &quot;noAck&quot;: <span>*</span>, &quot;exclusive&quot;: <span>*</span>, &quot;args&quot;: <span>*</span>}, callback: <span>*</span>): <span>*</span></span>
+    <span class="code" data-ice="name">basicConsume</span><span class="code" data-ice="signature">(queue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, param: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>, callback: <span><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function">function</a></span><span>(message: <span><a href="class/src/amqp-message.mjs~AMQPMessage.html">AMQPMessage</a></span>)</span></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="class/src/amqp-consumer.mjs~AMQPConsumer.html">AMQPConsumer</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber344">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber403">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Consume from a queue. Messages will be delivered asynchronously.</p>
+</div>
 
   
 
@@ -2070,22 +2090,55 @@ All consumers will be marked as closed</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">queue</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>name of the queue to poll</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="0">
+      <td data-ice="name" class="code" data-depth="0">param</td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span></td>
       <td data-ice="appendix"></td>
       <td data-ice="description"></td>
     </tr>
-<tr data-ice="property" data-depth="0">
-      <td data-ice="name" class="code" data-depth="0">objectPattern1</td>
-      <td data-ice="type" class="code">{&quot;tag&quot;: <span>*</span>, &quot;noAck&quot;: <span>*</span>, &quot;exclusive&quot;: <span>*</span>, &quot;args&quot;: <span>*</span>}</td>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.tag</td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
+      <td data-ice="appendix"><ul><li>optional</li>
+<li>default: &quot;&quot;</li></ul></td>
+      <td data-ice="description"><p>tag of the consumer, will be server generated if left empty</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.noAck</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"><ul><li>optional</li>
+<li>default: true</li></ul></td>
+      <td data-ice="description"><p>if messages are removed from the server upon delivery, or have to be acknowledged</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.exclusive</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"><ul><li>optional</li>
+<li>default: false</li></ul></td>
+      <td data-ice="description"><p>if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.args</td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span></td>
       <td data-ice="appendix"><ul><li>optional</li>
 <li>default: {}</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>custom arguments</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">callback</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function">function</a></span><span>(message: <span><a href="class/src/amqp-message.mjs~AMQPMessage.html">AMQPMessage</a></span>)</span></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>will be called for each message delivered to this consumer</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -2097,7 +2150,7 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="class/src/amqp-consumer.mjs~AMQPConsumer.html">AMQPConsumer</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</td>
           
         </tr>
       </tbody>
@@ -2129,18 +2182,19 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">basicGet</span><span class="code" data-ice="signature">(queue: <span>*</span>, objectPattern1: {&quot;noAck&quot;: <span>*</span>}): <span>*</span></span>
+    <span class="code" data-ice="name">basicGet</span><span class="code" data-ice="signature">(queue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, param: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="class/src/amqp-message.mjs~AMQPMessage.html">AMQPMessage</a></span>|<span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/null">null</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber327">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber375">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Synchronously receive a message from a queue</p>
+</div>
 
   
 
@@ -2154,16 +2208,24 @@ All consumers will be marked as closed</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">queue</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>name of the queue to poll</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="0">
+      <td data-ice="name" class="code" data-depth="0">param</td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span></td>
       <td data-ice="appendix"></td>
       <td data-ice="description"></td>
     </tr>
-<tr data-ice="property" data-depth="0">
-      <td data-ice="name" class="code" data-depth="0">objectPattern1</td>
-      <td data-ice="type" class="code">{&quot;noAck&quot;: <span>*</span>}</td>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.noAck</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
       <td data-ice="appendix"><ul><li>optional</li>
-<li>default: {}</li></ul></td>
-      <td data-ice="description"></td>
+<li>default: true</li></ul></td>
+      <td data-ice="description"><p>if message is removed from the server upon delivery, or have to be acknowledged</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -2175,8 +2237,9 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
-          
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="class/src/amqp-message.mjs~AMQPMessage.html">AMQPMessage</a></span>|<span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/null">null</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</td>
+          <td class="return-desc" data-ice="returnDescription"><p>returns null if the queue is empty otherwise a single message</p>
+</td>
         </tr>
       </tbody>
     </table>
@@ -2207,18 +2270,19 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">basicNack</span><span class="code" data-ice="signature">(deliveryTag: <span>*</span>, requeue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>, multiple: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>): <span>*</span></span>
+    <span class="code" data-ice="name">basicNack</span><span class="code" data-ice="signature">(deliveryTag: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, requeue: <span>bool</span>, multiple: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber432">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber515">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Acknowledge a delivered message</p>
+</div>
 
   
 
@@ -2232,23 +2296,26 @@ All consumers will be marked as closed</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">deliveryTag</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>tag of the message</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">requeue</td>
-      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span></td>
+      <td data-ice="type" class="code"><span>bool</span></td>
       <td data-ice="appendix"><ul><li>optional</li>
 <li>default: false</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>if the message should be requeued or removed</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">multiple</td>
-      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span></td>
+      <td data-ice="type" class="code"><span>bool</span></td>
       <td data-ice="appendix"><ul><li>optional</li>
 <li>default: false</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>batch confirm all messages up to this delivery tag</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -2260,7 +2327,7 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></td>
           
         </tr>
       </tbody>
@@ -2292,18 +2359,19 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">basicPublish</span><span class="code" data-ice="signature">(exchange: <span>*</span>, routingkey: <span>*</span>, data: <span>*</span>, properties: <span>*</span>, mandatory: <span>*</span>, immediate: <span>*</span>): <span>*</span></span>
+    <span class="code" data-ice="name">basicPublish</span><span class="code" data-ice="signature">(exchange: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, routingKey: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, data: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span> | <span>uint8array</span>, properties: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>, mandatory: <span>bool</span>, immediate: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber464">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber562">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Publish a message</p>
+</div>
 
   
 
@@ -2317,39 +2385,45 @@ All consumers will be marked as closed</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">exchange</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>the exchange to publish to, the exchange must exists</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
-      <td data-ice="name" class="code" data-depth="0">routingkey</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="name" class="code" data-depth="0">routingKey</td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>routing key</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">data</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span> | <span>uint8array</span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>the data to be published, can be a string or an uint8array</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">properties</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>publish properties</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">mandatory</td>
-      <td data-ice="type" class="code"><span>*</span></td>
-      <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"><ul><li>optional</li></ul></td>
+      <td data-ice="description"><p>if the message should be returned if there&apos;s no queue to be delivered to</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">immediate</td>
-      <td data-ice="type" class="code"><span>*</span></td>
-      <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"><ul><li>optional</li></ul></td>
+      <td data-ice="description"><p>if the message should be returned if it can&apos;t be delivered to a consumer immediately (not supported in RabbitMQ)</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -2361,8 +2435,9 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
-          
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span>&lt;<span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</td>
+          <td class="return-desc" data-ice="returnDescription"><p>fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server</p>
+</td>
         </tr>
       </tbody>
     </table>
@@ -2393,18 +2468,21 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">basicQos</span><span class="code" data-ice="signature">(prefetchCount: <span>*</span>, prefetchSize: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, global: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>): <span>*</span></span>
+    <span class="code" data-ice="name">basicQos</span><span class="code" data-ice="signature">(prefetchCount: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, prefetchSize: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, global: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber311">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber352">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Set prefetch limit.
+Recommended to set as each unacknowledge message will be store in memory of the client.
+The server won&apos;t deliver more messages than the limit until messages are acknowledged.</p>
+</div>
 
   
 
@@ -2418,23 +2496,24 @@ All consumers will be marked as closed</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">prefetchCount</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>number of messages to limit to</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">prefetchSize</td>
       <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span></td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: 0</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>number of bytes to limit to (not supported by RabbitMQ)</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">global</td>
-      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span></td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: false</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>if the prefetch is limited to the channel, or if false to each consumer</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -2446,7 +2525,7 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></td>
           
         </tr>
       </tbody>
@@ -2478,18 +2557,19 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">basicRecover</span><span class="code" data-ice="signature">(requeue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>): <span>*</span></span>
+    <span class="code" data-ice="name">basicRecover</span><span class="code" data-ice="signature">(requeue: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber450">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber538">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Tell the server to redeliver all unacknowledged messages again, or reject and requeue them.</p>
+</div>
 
   
 
@@ -2503,10 +2583,11 @@ All consumers will be marked as closed</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">requeue</td>
-      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span></td>
+      <td data-ice="type" class="code"><span>bool</span></td>
       <td data-ice="appendix"><ul><li>optional</li>
 <li>default: false</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>if the message should be requeued or redeliviered to this channel</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -2518,7 +2599,7 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></td>
           
         </tr>
       </tbody>
@@ -2550,18 +2631,19 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">basicReject</span><span class="code" data-ice="signature">(deliveryTag: <span>*</span>, requeue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span>): <span>*</span></span>
+    <span class="code" data-ice="name">basicReject</span><span class="code" data-ice="signature">(deliveryTag: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, requeue: <span>bool</span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber417">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber493">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Acknowledge a delivered message</p>
+</div>
 
   
 
@@ -2575,16 +2657,18 @@ All consumers will be marked as closed</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">deliveryTag</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>tag of the message</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">requeue</td>
-      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></span></td>
+      <td data-ice="type" class="code"><span>bool</span></td>
       <td data-ice="appendix"><ul><li>optional</li>
 <li>default: false</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>if the message should be requeued or removed</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -2596,7 +2680,7 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></td>
           
         </tr>
       </tbody>
@@ -2628,7 +2712,7 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">close</span><span class="code" data-ice="signature">(objectPattern: {&quot;code&quot;: <span>*</span>, &quot;reason&quot;: <span>*</span>}): <span>*</span></span>
+    <span class="code" data-ice="name">close</span><span class="code" data-ice="signature">(): <span>*</span></span>
     <span class="right-info">
       
       
@@ -2644,24 +2728,7 @@ All consumers will be marked as closed</p>
 
   
 
-  <div data-ice="properties"><div data-ice="properties">
-  <h4 data-ice="title">Params:</h4>
-  <table class="params">
-    <thead>
-    <tr><td>Name</td><td>Type</td><td>Attribute</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-    
-    <tr data-ice="property" data-depth="0">
-      <td data-ice="name" class="code" data-depth="0">objectPattern</td>
-      <td data-ice="type" class="code">{&quot;code&quot;: <span>*</span>, &quot;reason&quot;: <span>*</span>}</td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: {}</li></ul></td>
-      <td data-ice="description"></td>
-    </tr>
-</tbody>
-  </table>
-</div>
+  <div data-ice="properties">
 </div>
 
   <div class="return-params" data-ice="returnParams">
@@ -2701,18 +2768,19 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">confirmSelect</span><span class="code" data-ice="signature">(): <span>*</span></span>
+    <span class="code" data-ice="name">confirmSelect</span><span class="code" data-ice="signature">(): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber558">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber660">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Enable publish confirm. The server will then confirm each publish with an Ack or Nack when the message is enqueued.</p>
+</div>
 
   
 
@@ -2724,7 +2792,7 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></td>
           
         </tr>
       </tbody>
@@ -2833,7 +2901,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber617">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber731">source</a></span></span>
     </span>
   </h3>
 
@@ -2920,18 +2988,19 @@ All consumers will be marked as closed</p>
     
     
     
-    <span class="code" data-ice="name">exchangeDeclare</span><span class="code" data-ice="signature">(name: <span>*</span>, type: <span>*</span>, objectPattern2: {&quot;passive&quot;: <span>*</span>, &quot;durable&quot;: <span>*</span>, &quot;autoDelete&quot;: <span>*</span>, &quot;internal&quot;: <span>*</span>}, args: {}): <span>*</span></span>
+    <span class="code" data-ice="name">exchangeDeclare</span><span class="code" data-ice="signature">(name: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, type: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, param: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>, args: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber572">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber686">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Declare an exchange</p>
+</div>
 
   
 
@@ -2945,29 +3014,58 @@ All consumers will be marked as closed</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">name</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>name of the exchange</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">type</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>type of exchange (direct, fanout, topic, header, or a custom type)</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="0">
+      <td data-ice="name" class="code" data-depth="0">param</td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span></td>
       <td data-ice="appendix"></td>
       <td data-ice="description"></td>
     </tr>
-<tr data-ice="property" data-depth="0">
-      <td data-ice="name" class="code" data-depth="0">objectPattern2</td>
-      <td data-ice="type" class="code">{&quot;passive&quot;: <span>*</span>, &quot;durable&quot;: <span>*</span>, &quot;autoDelete&quot;: <span>*</span>, &quot;internal&quot;: <span>*</span>}</td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: {}</li></ul></td>
-      <td data-ice="description"></td>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.passive</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>if the exchange name doesn&apos;t exists the channel will be closed with an error, fulfilled if the exchange name does exists</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.durable</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>if the exchange should survive server restarts</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.autoDelete</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>if the exchange should be deleted when the last binding from it is deleted</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.internal</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>if exchange is internal to the server. Client&apos;s can&apos;t publish to internal exchanges.</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">args</td>
-      <td data-ice="type" class="code">{}</td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: {}</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>optional arguments</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -2979,8 +3077,9 @@ All consumers will be marked as closed</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
-          
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a>&gt;</,></td>
+          <td class="return-desc" data-ice="returnDescription"><p>Fulfilled when the exchange is created or if it already exists</p>
+</td>
         </tr>
       </tbody>
     </table>
@@ -3015,7 +3114,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber597">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber711">source</a></span></span>
     </span>
   </h3>
 
@@ -3093,7 +3192,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber637">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber751">source</a></span></span>
     </span>
   </h3>
 
@@ -3257,7 +3356,7 @@ Not supported in RabbitMQ</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber115">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber114">source</a></span></span>
     </span>
   </h3>
 
@@ -3317,7 +3416,7 @@ Not supported in RabbitMQ</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber132">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber131">source</a></span></span>
     </span>
   </h3>
 
@@ -3377,7 +3476,7 @@ Not supported in RabbitMQ</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber690">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber804">source</a></span></span>
     </span>
   </h3>
 
@@ -3448,7 +3547,7 @@ Not supported in RabbitMQ</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber94">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber93">source</a></span></span>
     </span>
   </h3>
 
@@ -3523,7 +3622,7 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber682">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber796">source</a></span></span>
     </span>
   </h3>
 
@@ -3700,18 +3799,19 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     
     
     
-    <span class="code" data-ice="name">queueDeclare</span><span class="code" data-ice="signature">(name: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, objectPattern1: {&quot;passive&quot;: <span>*</span>, &quot;durable&quot;: <span>*</span>, &quot;autoDelete&quot;: <span>*</span>, &quot;exclusive&quot;: <span>*</span>}, args: {}): <span>*</span></span>
+    <span class="code" data-ice="name">queueDeclare</span><span class="code" data-ice="signature">(name: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, param: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>, args: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><{queuename: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, messages: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, consumers: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>}, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</{queuename:></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber264">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber288">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Declare a queue</p>
+</div>
 
   
 
@@ -3726,23 +3826,50 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">name</td>
       <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: </li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>name of the queue, if empty the server will generate a name</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
-      <td data-ice="name" class="code" data-depth="0">objectPattern1</td>
-      <td data-ice="type" class="code">{&quot;passive&quot;: <span>*</span>, &quot;durable&quot;: <span>*</span>, &quot;autoDelete&quot;: <span>*</span>, &quot;exclusive&quot;: <span>*</span>}</td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: {}</li></ul></td>
+      <td data-ice="name" class="code" data-depth="0">param</td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span></td>
+      <td data-ice="appendix"></td>
       <td data-ice="description"></td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.passive</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>if the queue name doesn&apos;t exists the channel will be closed with an error, fulfilled if the queue name does exists</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.durable</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>if the queue should survive server restarts</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.autoDelete</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>if the queue should be deleted when the last consumer of the queue disconnects</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.exclusive</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>if the queue should be deleted when the channel is closed</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">args</td>
-      <td data-ice="type" class="code">{}</td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: {}</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>optional custom queue arguments</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -3754,8 +3881,9 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
-          
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><{queuename: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, messages: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>, consumers: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></span>}, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</{queuename:></td>
+          <td class="return-desc" data-ice="returnDescription"><p>fulfilled when confirmed by the server</p>
+</td>
         </tr>
       </tbody>
     </table>
@@ -3786,18 +3914,19 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     
     
     
-    <span class="code" data-ice="name">queueDelete</span><span class="code" data-ice="signature">(name: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, objectPattern1: {&quot;ifUnused&quot;: <span>*</span>, &quot;ifEmpty&quot;: <span>*</span>}): <span>*</span></span>
+    <span class="code" data-ice="name">queueDelete</span><span class="code" data-ice="signature">(name: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, param: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><{messagecount: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>}, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</{messagecount:></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber289">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber321">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Delete a queue</p>
+</div>
 
   
 
@@ -3812,16 +3941,29 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">name</td>
       <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: </li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>name of the queue, if empty it will delete the last declared queue</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
-      <td data-ice="name" class="code" data-depth="0">objectPattern1</td>
-      <td data-ice="type" class="code">{&quot;ifUnused&quot;: <span>*</span>, &quot;ifEmpty&quot;: <span>*</span>}</td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: {}</li></ul></td>
+      <td data-ice="name" class="code" data-depth="0">param</td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span></td>
+      <td data-ice="appendix"></td>
       <td data-ice="description"></td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.ifUnused</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>only delete if the queue doesn&apos;t have any consumers</p>
+</td>
+    </tr>
+<tr data-ice="property" data-depth="1">
+      <td data-ice="name" class="code" data-depth="1">param.ifEmpty</td>
+      <td data-ice="type" class="code"><span>bool</span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>only delete if the queue is empty</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -3833,7 +3975,7 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span><{messagecount: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>}, <span><a href="class/src/amqp-error.mjs~AMQPError.html">AMQPError</a></span>&gt;</{messagecount:></td>
           
         </tr>
       </tbody>
@@ -3865,18 +4007,19 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     
     
     
-    <span class="code" data-ice="name">queuePurge</span><span class="code" data-ice="signature">(queue: <span>*</span>): <span>*</span></span>
+    <span class="code" data-ice="name">queuePurge</span><span class="code" data-ice="signature">(queue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber246">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber259">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Purge a queue</p>
+</div>
 
   
 
@@ -3890,9 +4033,10 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">queue</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>name of the queue</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -3904,8 +4048,9 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
-          
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span></td>
+          <td class="return-desc" data-ice="returnDescription"><p>fulfilled when confirmed by the server</p>
+</td>
         </tr>
       </tbody>
     </table>
@@ -3936,18 +4081,19 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     
     
     
-    <span class="code" data-ice="name">queueUnbind</span><span class="code" data-ice="signature">(queue: <span>*</span>, exchange: <span>*</span>, routingKey: <span>*</span>, args: {}): <span>*</span></span>
+    <span class="code" data-ice="name">queueUnbind</span><span class="code" data-ice="signature">(queue: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, exchange: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, routingKey: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span>, args: <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span>): <span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span></span>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber227">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber235">source</a></span></span>
     </span>
   </h3>
 
   
   
   
-  
+  <div data-ice="description"><p>Unbind a queue from an exchange</p>
+</div>
 
   
 
@@ -3961,28 +4107,31 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     
     <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">queue</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>name of the queue</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">exchange</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>name of the exchange</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">routingKey</td>
-      <td data-ice="type" class="code"><span>*</span></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a></span></td>
       <td data-ice="appendix"></td>
-      <td data-ice="description"></td>
+      <td data-ice="description"><p>key that was bound</p>
+</td>
     </tr>
 <tr data-ice="property" data-depth="0">
       <td data-ice="name" class="code" data-depth="0">args</td>
-      <td data-ice="type" class="code">{}</td>
-      <td data-ice="appendix"><ul><li>optional</li>
-<li>default: {}</li></ul></td>
-      <td data-ice="description"></td>
+      <td data-ice="type" class="code"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a></span></td>
+      <td data-ice="appendix"></td>
+      <td data-ice="description"><p>arguments, e.g. for header exchanges</p>
+</td>
     </tr>
 </tbody>
   </table>
@@ -3994,8 +4143,9 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <table>
       <tbody>
         <tr>
-          <td class="return-type code" data-ice="returnType"><span>*</span></td>
-          
+          <td class="return-type code" data-ice="returnType"><span><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a></span></td>
+          <td class="return-desc" data-ice="returnDescription"><p>fulfilled when confirmed by the server</p>
+</td>
         </tr>
       </tbody>
     </table>
@@ -4030,7 +4180,7 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber39">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber38">source</a></span></span>
     </span>
   </h3>
 
@@ -4103,7 +4253,7 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber28">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber27">source</a></span></span>
     </span>
   </h3>
 
@@ -4176,7 +4326,7 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber661">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber775">source</a></span></span>
     </span>
   </h3>
 
@@ -4231,7 +4381,7 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber669">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber783">source</a></span></span>
     </span>
   </h3>
 
@@ -4302,7 +4452,7 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber665">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber779">source</a></span></span>
     </span>
   </h3>
 
@@ -4357,7 +4507,7 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber657">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber771">source</a></span></span>
     </span>
   </h3>
 
@@ -4414,7 +4564,7 @@ Will full fill one or more (if multiple) Unconfirmed Publishes</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber68">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber67">source</a></span></span>
     </span>
   </h3>
 
@@ -4480,7 +4630,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber83">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber82">source</a></span></span>
     </span>
   </h3>
 
@@ -4536,7 +4686,7 @@ All consumers will be marked as closed</p>
     <span class="right-info">
       
       
-      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber52">source</a></span></span>
+      <span data-ice="source"><span><a href="file/src/amqp-channel.mjs.html#lineNumber51">source</a></span></span>
     </span>
   </h3>
 
