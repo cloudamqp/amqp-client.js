@@ -8,7 +8,7 @@ AMQP 0-9-1 client both for Node.js and browsers (using WebSocket). [API document
 npm install @cloudamqp/amqp-client --save
 ```
 
-For web browsers a [rolled up](https://www.rollupjs.org/) version is available in `dist/`.
+For web browsers a [rolled up](https://www.rollupjs.org/) version is available in [dist/](dist/).
 
 ## Example usage
 
