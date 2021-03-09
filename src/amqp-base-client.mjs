@@ -3,7 +3,7 @@ import AMQPError from './amqp-error.mjs'
 import AMQPMessage from './amqp-message.mjs'
 import AMQPView from './amqp-view.mjs'
 
-const VERSION = '1.1.2'
+const VERSION = '1.1.3'
 
 /**
  * Base class for AMQPClients.

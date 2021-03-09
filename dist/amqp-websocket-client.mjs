@@ -940,19 +940,14 @@ class AMQPChannel {
     }
   }
   deliver(message) {
-    return new Promise((resolve, reject) => {
+    queueMicrotask(() => {
       const consumer = this.consumers[message.consumerTag];
       if (consumer) {
-        try {
-          consumer.onMessage(message);
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
+        consumer.onMessage(message);
       } else {
-        reject(new AMQPError(`Consumer ${message.consumerTag} on channel ${this.id} doesn't exists`, this.connection));
+        throw(new AMQPError(`Consumer ${message.consumerTag} on channel ${this.id} doesn't exists`, this.connection))
       }
-    })
+    });
   }
 }
 
@@ -978,7 +973,7 @@ class AMQPMessage {
   }
 }
 
-const VERSION = '1.1.2';
+const VERSION = '1.1.3';
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
     this.vhost = vhost;
