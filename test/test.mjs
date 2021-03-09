@@ -15,7 +15,6 @@ test('can publish and consume', t => {
       .then((conn) => conn.channel())
       .then((ch) => ch.queue(""))
       .then((q) => q.publish("hello world"))
-      .then((q) => q.bind("amq.fanout"))
       .then((q) => q.subscribe({noAck: false}, (msg) => {
         msg.ack()
         resolve(msg)
@@ -145,19 +144,25 @@ test('can handle nacks on confirm channel', async t => {
   t.is(error.message, "Message rejected")
 })
 
-test('can declare an exchange', async t => {
+test('throws on invalid exchange type', async t => {
   const amqp = new AMQPClient("amqp://localhost")
   const conn = await amqp.connect()
   let ch = await conn.channel()
   const name = "test" + Math.random()
   let err = await t.throwsAsync(ch.exchangeDeclare(name, "none"))
-  t.regex(err.message, /Unknown exchange type/)
-  ch = await conn.channel()
+  t.regex(err.message, /invalid exchange type/)
+})
+
+test('can declare an exchange', async t => {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const name = "test" + Math.random()
   await ch.confirmSelect()
   await ch.exchangeDeclare(name, "fanout")
   await t.notThrowsAsync(ch.basicPublish(name, "rk", "body"))
   await ch.exchangeDelete(name)
-  err = await t.throwsAsync(ch.basicPublish(name, "rk", "body"))
+  const err = await t.throwsAsync(ch.basicPublish(name, "rk", "body"))
   t.regex(err.message, /NOT_FOUND/)
 })
 
@@ -183,7 +188,7 @@ test('exchange to exchange bind/unbind', async t => {
   await ch.exchangeDelete(name1, "fanout")
 })
 
-test('can change flow state of channel', async t => {
+test.skip('can change flow state of channel', async t => {
   const amqp = new AMQPClient("amqp://localhost")
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -206,13 +211,21 @@ test('basic get', async t => {
   t.is(msg.bodyToString(), "foobar")
 })
 
-/*
 test('transactions', async t => {
   const amqp = new AMQPClient("amqp://localhost")
   const conn = await amqp.connect()
   const ch = await conn.channel()
+  const q = await ch.queue()
   await ch.txSelect()
+  await q.publish("foobar")
+  const msg1 = await ch.basicGet(q.name)
+  t.is(msg1, null)
   await ch.txCommit()
+  const msg2 = await ch.basicGet(q.name)
+  t.is(msg2.bodyToString(), "foobar")
+
+  await q.publish("foobar")
   await ch.txRollback()
+  const msg3 = await ch.basicGet(q.name)
+  t.is(msg3, null)
 })
-*/
