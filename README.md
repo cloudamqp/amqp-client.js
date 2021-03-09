@@ -2,9 +2,9 @@
 
 AMQP 0-9-1 client both for Node.js and browsers (using WebSocket). [API documentation](https://cloudamqp.github.io/amqp-client.js/).
 
-This library Promise based and hence works very well with async/await. It's secure by default, for instance, publishes aren't fulfilled until either the data has been send on the wire (so that back propagation is respected), or if the channel has Publish Confirms enabled, it isn't fulfilled until the server has acknowledged that the message has been enqueued.
+This library is Promise-based and hence works very well with async/await. It's secure by default, for instance, publishes aren't fulfilled until either the data has been sent on the wire (so that back propagation is respected), or if the channel has Publish Confirms enabled, it isn't fulfilled until the server has acknowledged that the message has been enqueued.
 
-The library was developed so make it easy for developers who already are familiar with AMQP to write browser apps that communicates directly with an AMQP server over WebSocket.
+The library was developed so to make it easy for developers who already are familiar with AMQP to write browser apps that communicates directly with an AMQP server over WebSocket.
 
 The library is developed and supported by [CloudAMQP](https://www.cloudamqp.com), the largest hosted RabbitMQ provider in the world.
 
@@ -34,7 +34,7 @@ async function run() {
       await consumer.cancel()
     })
     await q.publish("Hello World", {deliveryMode: 2})
-    await consumer.wait() // will block until consumer is cancled or throw an error if server closed channel/connection
+    await consumer.wait() // will block until consumer is canceled or throw an error if server closed channel/connection
     await conn.close()
   } catch (e) {
     console.error("ERROR", e)
