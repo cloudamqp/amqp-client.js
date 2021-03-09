@@ -849,17 +849,12 @@ export default class AMQPChannel {
    * @return {Promise} Fulfilled when the message is processed
    */
   deliver(message) {
-    return new Promise((resolve, reject) => {
+    queueMicrotask(() => {
       const consumer = this.consumers[message.consumerTag]
       if (consumer) {
-        try {
-          consumer.onMessage(message)
-          resolve()
-        } catch (err) {
-          reject(err)
-        }
+        consumer.onMessage(message)
       } else {
-        reject(new AMQPError(`Consumer ${message.consumerTag} on channel ${this.id} doesn't exists`, this.connection))
+        throw(new AMQPError(`Consumer ${message.consumerTag} on channel ${this.id} doesn't exists`, this.connection))
       }
     })
   }
