@@ -30,7 +30,7 @@ async function run() {
     const ch = await conn.channel()
     const q = await ch.queue()
     const consumer = await q.subscribe({noAck: true}, async (msg) => {
-      console.log(msg.bodyString())
+      console.log(msg.bodyToString())
       await consumer.cancel()
     })
     await q.publish("Hello World", {deliveryMode: 2})
@@ -71,7 +71,7 @@ Using AMQP over WebSockets in a browser:
           await q.bind("amq.fanout")
           const consumer = await q.subscribe({noAck: false}, (msg) => {
             console.log(msg)
-            textarea.value += msg.bodyString() + "\n"
+            textarea.value += msg.bodyToString() + "\n"
             msg.ack()
           })
         } catch (err) {
