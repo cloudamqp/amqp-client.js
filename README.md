@@ -76,6 +76,7 @@ Using AMQP over WebSockets in a browser:
           })
         } catch (err) {
           console.error("Error", err, "reconnecting in 1s")
+          disablePublish()
           setTimeout(start, 1000)
         }
       }
@@ -87,10 +88,15 @@ Using AMQP over WebSockets in a browser:
             await ch.basicPublish("amq.fanout", "", input.value, { contentType: "text/plain" })
           } catch (err) {
             console.error("Error", err, "reconnecting in 1s")
+            disablePublish()
             setTimeout(start, 1000)
           }
           input.value = ""
         }
+      }
+
+      function disablePublish() {
+        document.forms[0].onsubmit = (e) => { alert("Disconnected, waiting to be reconnected") }
       }
 
       start()
