@@ -21,7 +21,7 @@ For web browsers a [rolled up](https://www.rollupjs.org/) version is available i
 Using AMQP in Node.js:
 
 ```javascript
-import AMQPClient from 'amqp-client'
+import AMQPClient from '@cloudamqp/amqp-client'
 
 async function run() {
   try {

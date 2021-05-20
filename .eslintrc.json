@@ -3,12 +3,21 @@
       "es2020": true,
       "browser": true
     },
-    "extends": "eslint:recommended",
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
     "parserOptions": {
       "ecmaVersion": 2020,
       "sourceType": "module"
     },
     "rules": {
-        "no-console": "off"
-    }
+      "no-console": "off",
+      "semi": ["error", "never"],
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "error"
+    },
+    "parser": "@typescript-eslint/parser",
+    "plugins": ["@typescript-eslint"]
 }

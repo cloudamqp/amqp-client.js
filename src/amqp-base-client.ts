@@ -1,21 +1,43 @@
-import AMQPChannel from './amqp-channel.mjs'
-import AMQPError from './amqp-error.mjs'
-import AMQPMessage from './amqp-message.mjs'
-import AMQPView from './amqp-view.mjs'
+import AMQPChannel from './amqp-channel.js'
+import AMQPError from './amqp-error.js'
+import AMQPMessage from './amqp-message.js'
+import AMQPView from './amqp-view.js'
 
 const VERSION = '1.1.3'
 
 /**
  * Base class for AMQPClients.
  * Implements everything except how to connect, send data and close the socket
- * @param {string} vhost
- * @param {string} username
- * @param {string} password
- * @param {string} name - name of the connection, set in client properties
- * @param {string} platform - used in client properties
+ * @param vhost
+ * @param username
+ * @param password
+ * @param name - name of the connection, set in client properties
+ * @param platform - used in client properties
  */
-export default class AMQPBaseClient {
-  constructor(vhost, username, password, name, platform) {
+export default abstract class AMQPBaseClient {
+  vhost: string
+  username: string
+  password: string
+  name: string
+  platform: string
+  channels: AMQPChannel[]
+  closed: boolean
+  channelMax = 0
+  frameMax = 0
+  heartbeat = 0
+  blocked: string | null
+
+  closePromise: [
+    resolve: (value: string) => void,
+    reject: (value?: any) => void
+  ]
+  connectPromise : [
+    resolve: (value: AMQPBaseClient | PromiseLike<AMQPBaseClient>) => void,
+    reject: (value?: any) => void
+  ]
+  rejectPromise: (value?: any) => void
+
+  constructor(vhost: string, username: string, password: string, name: string, platform: string) {
     this.vhost = vhost
     this.username = username
     Object.defineProperty(this, 'password', {
@@ -31,11 +53,13 @@ export default class AMQPBaseClient {
   /**
    * Open a channel
    * Optionally an existing or non existing channel id can be specified
-   * return {Promise<AMQPChannel, AMQPError>} channel
+   * @returns channel
    */
-  channel(id) {
+  channel(id?: number): Promise<AMQPChannel> {
     if (this.closed) return this.rejectClosed()
-    if (id > 0 && this.channels[id]) return this.channels[id]
+    if (id > 0 && this.channels[id]) {
+      return new Promise((resolve, ) => resolve(this.channels[id]))
+    }
     // Store channels in an array, set position to null when channel is closed
     // Look for first null value or add one the end
     if (!id)
@@ -53,7 +77,7 @@ export default class AMQPBaseClient {
     channelOpen.setUint16(j, 10); j += 2 // method: open
     channelOpen.setUint8(j, 0); j += 1 // reserved1
     channelOpen.setUint8(j, 206); j += 1 // frame end byte
-    return new Promise((resolve, reject) => {
+    return new Promise<AMQPChannel>((resolve, reject) => {
       this.send(new Uint8Array(channelOpen.buffer, 0, 13))
         .then(() => channel.promises.push([resolve, reject]))
         .catch(reject)
@@ -62,11 +86,11 @@ export default class AMQPBaseClient {
 
   /**
    * Gracefully close the AMQP connection
-   * @param {object} params
-   * @param {number} params.code - Close code
-   * @param {string} params.reason - Reason for closing the connection
+   * @param params
+   * @param params.code - Close code
+   * @param params.reason - Reason for closing the connection
    */
-  close({ code = 200, reason = "" } = {}) {
+  close({ code = 200, reason = "" } = {}): Promise<string> {
     if (this.closed) return this.rejectClosed()
     this.closed = true
     let j = 0
@@ -82,44 +106,25 @@ export default class AMQPBaseClient {
     frame.setUint16(j, 0); j += 2 // failing-method-id
     frame.setUint8(j, 206); j += 1 // frame end byte
     frame.setUint32(3, j - 8) // update frameSize
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       this.send(new Uint8Array(frame.buffer, 0, j))
         .then(() => this.closePromise = [resolve, reject])
         .catch(reject)
     })
   }
 
-  /**
-   * @abstract
-   * @private
-   */
-  connect() {
-    throw "Abstract method not implemented"
-  }
 
-  /**
-   * @abstract
-   * @private
-   */
-  send() {
-    throw "Abstract method not implemented"
-  }
+  abstract connect() : Promise<AMQPBaseClient>
 
-  /**
-   * @abstract
-   * @private
-   */
-  closeSocket() {
-    throw "Abstract method not implemented"
-  }
+  abstract send(bytes: Uint8Array): Promise<any>
 
-  /** @private */
-  rejectClosed() {
+  abstract closeSocket(): void
+
+  private rejectClosed() {
     return Promise.reject(new AMQPError("Connection closed", this))
   }
 
-  /** @private */
-  rejectConnect(err) {
+  private rejectConnect(err) {
     if (this.connectPromise) {
       const [, reject] = this.connectPromise
       delete this.connectPromise
@@ -131,10 +136,10 @@ export default class AMQPBaseClient {
 
   /**
    * Parse and act on frames in an AMQPView
-   * @param {AMQPView} view over a ArrayBuffer
+   * @param view over a ArrayBuffer
    * @ignore
    */
-  parseFrames(view) {
+  parseFrames(view: AMQPView): void {
     // Can possibly be multiple AMQP frames in a single WS frame
     for (let i = 0; i < view.byteLength;) {
       let j = 0 // position in outgoing frame
@@ -253,11 +258,11 @@ export default class AMQPBaseClient {
                   break
                 }
                 case 51: { // closeOk
-                  this.channels.forEach((ch) => ch.setClosed())
+                  this.channels.forEach((ch) => ch.setClosed(""))
                   this.channels = []
                   const [resolve, ] = this.closePromise
                   delete this.closePromise
-                  resolve()
+                  resolve("")
                   this.closeSocket()
                   break
                 }
@@ -321,9 +326,9 @@ export default class AMQPBaseClient {
                 case 41: { // closeOk
                   const channel = this.channels[channelId]
                   if (channel) {
-                    channel.setClosed()
+                    channel.setClosed("")
                     delete this.channels[channelId]
-                    channel.resolvePromise()
+                    channel.resolvePromise("")
                   } else {
                     this.rejectPromise(`channel ${channelId} already closed`)
                   }
@@ -339,22 +344,22 @@ export default class AMQPBaseClient {
               switch (methodId) {
                 case 11: { // declareOk
                   const channel = this.channels[channelId]
-                  channel.resolvePromise()
+                  channel.resolvePromise("")
                   break
                 }
                 case 21: { // deleteOk
                   const channel = this.channels[channelId]
-                  channel.resolvePromise()
+                  channel.resolvePromise("")
                   break
                 }
                 case 31: { // bindOk
                   const channel = this.channels[channelId]
-                  channel.resolvePromise()
+                  channel.resolvePromise("")
                   break
                 }
                 case 51: { // unbindOk
                   const channel = this.channels[channelId]
-                  channel.resolvePromise()
+                  channel.resolvePromise("")
                   break
                 }
                 default:
@@ -375,7 +380,7 @@ export default class AMQPBaseClient {
                 }
                 case 21: { // bindOk
                   const channel = this.channels[channelId]
-                  channel.resolvePromise()
+                  channel.resolvePromise("")
                   break
                 }
                 case 31: { // purgeOk
@@ -392,7 +397,7 @@ export default class AMQPBaseClient {
                 }
                 case 51: { // unbindOk
                   const channel = this.channels[channelId]
-                  channel.resolvePromise()
+                  channel.resolvePromise("")
                   break
                 }
                 default:
@@ -405,7 +410,7 @@ export default class AMQPBaseClient {
               switch (methodId) {
                 case 11: { // qosOk
                   const channel = this.channels[channelId]
-                  channel.resolvePromise()
+                  channel.resolvePromise("")
                   break
                 }
                 case 21: { // consumeOk
@@ -435,6 +440,7 @@ export default class AMQPBaseClient {
                     replyText: text,
                     exchange: exchange,
                     routingKey: routingKey,
+                    body: new Uint8Array()
                   }
                   break
                 }
@@ -497,7 +503,7 @@ export default class AMQPBaseClient {
                 }
                 case 111: { // recoverOk
                   const channel = this.channels[channelId]
-                  channel.resolvePromise()
+                  channel.resolvePromise("")
                   break
                 }
                 case 120: { // confirm nack
@@ -522,7 +528,7 @@ export default class AMQPBaseClient {
                 case 11: { // selectOk
                   const channel = this.channels[channelId]
                   channel.confirmId = 0
-                  channel.resolvePromise()
+                  channel.resolvePromise("")
                   break
                 }
                 default:
@@ -537,7 +543,7 @@ export default class AMQPBaseClient {
                 case 21: // commitOk
                 case 31: { // rollbackOk
                   const channel = this.channels[channelId]
-                  channel.resolvePromise()
+                  channel.resolvePromise("")
                   break
                 }
                 default:
@@ -585,7 +591,7 @@ export default class AMQPBaseClient {
           message.bodyPos += frameSize
           i += frameSize
           if (message.bodyPos === message.bodySize)
-            channel.onMessageReady(message)
+              channel.onMessageReady(message)
           break
         }
         case 8: { // heartbeat
@@ -603,8 +609,12 @@ export default class AMQPBaseClient {
           i += frameSize
       }
       const frameEnd = view.getUint8(i); i += 1
-      if (frameEnd != 206)
+      if (frameEnd != 206){
+        console.log(view.byteOffset)
+        console.log(i)
+        console.log(view.byteLength)
         console.error("Invalid frame end", frameEnd)
+      }
     }
   }
 }

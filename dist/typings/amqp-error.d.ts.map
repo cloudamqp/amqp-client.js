@@ -1,0 +1,1 @@
+{"version":3,"file":"amqp-error.d.ts","sourceRoot":"","sources":["../../src/amqp-error.ts"],"names":[],"mappings":"AAAA,OAAO,cAAc,MAAM,uBAAuB,CAAA;AAElD;;;;;;GAMG;AACH,MAAM,CAAC,OAAO,OAAO,SAAU,SAAQ,KAAK;IAC1C,UAAU,EAAE,cAAc,CAAA;gBACd,OAAO,EAAE,MAAM,EAAE,UAAU,EAAE,cAAc;CAKxD"}

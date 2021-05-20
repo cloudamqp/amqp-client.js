@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "allowJs": false,
+    "target": "ES2020",
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "ES2020",
+		"moduleResolution": "node",
+    "alwaysStrict": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+		"declarationMap": true,
+    "declarationDir": "./dist/typings"
+  },
+  "include": ["./src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+  ]
+}

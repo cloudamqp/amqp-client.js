@@ -1,26 +1,37 @@
-import AMQPError from './amqp-error.mjs'
+import AMQPChannel from './amqp-channel.js'
+import AMQPError from './amqp-error.js'
+import AMQPMessage from './amqp-message.js'
 
 /**
  * A consumer, subscribed to a queue
  */
 export default class AMQPConsumer {
+  channel: AMQPChannel
+  tag: string
+  onMessage: (message: AMQPMessage) => void
+  private closed: boolean
+  private closedError: string
+  private resolveWait: (value: any) => void
+  private rejectWait: (value: any) => void
+  private timeoutId: NodeJS.Timeout
   /**
-   * @param {AMQPChannel} channel - the consumer is created on
-   * @param {string} tag - consumer tag
-   * @param {function(message: AMQPMessage)} onMessage - callback executed when a message arrive
+   * @param channel - the consumer is created on
+   * @param tag - consumer tag
+   * @param onMessage - callback executed when a message arrive
    */
-  constructor(channel, tag, onMessage) {
+  constructor(channel: AMQPChannel, tag: string, onMessage: (message: AMQPMessage) => void) {
     this.channel = channel
     this.tag = tag
     this.onMessage = onMessage
+    this.closed = false
   }
 
   /**
    * Wait for the consumer to finish.
-   * @param {number} [timeout] wait for this many milliseconds and then return regardless
-   * @return {Promise<, AMQPError>} - Fulfilled when the consumer/channel/connection is closed by the client. Rejected if the timeout is hit.
+   * @param timeout wait for this many milliseconds and then return regardless
+   * @return  - Fulfilled when the consumer/channel/connection is closed by the client. Rejected if the timeout is hit.
    */
-  wait(timeout) {
+  wait(timeout?: number): Promise<any> {
     if (this.closedError) return Promise.reject(this.closedError)
     if (this.closed) return Promise.resolve()
     return new Promise((resolve, reject) => {
@@ -37,18 +48,18 @@ export default class AMQPConsumer {
    * Cancel/abort/stop the consumer. No more messages will be deliviered to the consumer.
    * Note that any unacked messages are still unacked as they belong to the channel and not the consumer.
    */
-  cancel() {
+  cancel(): Promise<AMQPChannel> {
     return this.channel.basicCancel(this.tag)
   }
 
-  setClosed(err) {
+  setClosed(err: any): void {
     this.closed = true
     this.closedError = err
     clearTimeout(this.timeoutId)
     if (err) {
       if (this.rejectWait) this.rejectWait(err)
     } else {
-      if (this.resolveWait) this.resolveWait()
+      if (this.resolveWait) this.resolveWait("")
     }
   }
 }

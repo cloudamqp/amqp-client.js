@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [12.x, 14.x, 15.x]
+        node-version: [12.x, 14.x, 15.x, 16.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -24,4 +24,6 @@ jobs:
     - name: Install RabbitMQ
       run: sudo apt-get install -qq rabbitmq-server
     - run: npm install
+    - run: npm run lint
+    - run: npm run build
     - run: npm test
