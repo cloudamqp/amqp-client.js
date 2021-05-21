@@ -27,7 +27,7 @@ export default class AMQPQueue {
    */
   unbind(exchange, routingkey, args = {}) {
     return new Promise((resolve, reject) => {
-      this.channel.queueUnind(this.name, exchange, routingkey, args)
+      this.channel.queueUnbind(this.name, exchange, routingkey, args)
         .then(() => resolve(this))
         .catch(reject)
     })
