@@ -2,3 +2,4 @@ examples/
 node_modules/
 package-lock.json
 premaster.txt
+dist/
