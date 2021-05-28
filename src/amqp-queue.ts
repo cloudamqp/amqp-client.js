@@ -11,7 +11,7 @@ import AMQPProperties from "./protocol/amqp-properties.js"
  * @property {AMQPChannel} channel
  * @property {string} name
  */
-export default class AMQPQueue {
+export class AMQPQueue {
   readonly channel: AMQPChannel
   readonly name: string
   constructor(channel: AMQPChannel, name: string) {
@@ -100,3 +100,5 @@ export default class AMQPQueue {
     return this.channel.basicGet(this.name, { noAck })
   }
 }
+
+export default AMQPQueue

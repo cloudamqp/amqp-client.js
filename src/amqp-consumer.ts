@@ -5,7 +5,7 @@ import AMQPMessage from './amqp-message.js'
 /**
  * A consumer, subscribed to a queue
  */
-export default class AMQPConsumer {
+export class AMQPConsumer {
   channel: AMQPChannel
   tag: string
   onMessage: (message: AMQPMessage) => void
@@ -63,3 +63,5 @@ export default class AMQPConsumer {
     }
   }
 }
+
+export default AMQPConsumer

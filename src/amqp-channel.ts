@@ -12,7 +12,7 @@ import AMQPProperties from './protocol/amqp-properties.js'
  * @param connection - The connection this channel belongs to
  * @param id - ID of the channel
  */
-export default class AMQPChannel {
+export class AMQPChannel {
   connection: AMQPBaseClient
   id: number
   consumers: Record<string|number, AMQPConsumer>
@@ -874,3 +874,5 @@ export default class AMQPChannel {
     })
   }
 }
+
+export default AMQPChannel

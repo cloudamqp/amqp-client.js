@@ -10,7 +10,7 @@ import * as process from 'process'
  * AMQP 0-9-1 client over TCP socket.
  * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
  */
-export default class AMQPClient extends AMQPBaseClient {
+export class AMQPClient extends AMQPBaseClient {
   private tls: boolean
   private host: string
   private port: number
@@ -116,3 +116,5 @@ export default class AMQPClient extends AMQPBaseClient {
     return socket
   }
 }
+
+export default AMQPClient

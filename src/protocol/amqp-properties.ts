@@ -1,5 +1,5 @@
 /** AMQPMessage properties. */
-export default interface AMQPProperties {
+export interface AMQPProperties {
 
   contentType?: string
   /**
@@ -44,3 +44,5 @@ export default interface AMQPProperties {
   /** */
   appId?: string
 }
+
+export default AMQPProperties

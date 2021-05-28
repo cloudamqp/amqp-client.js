@@ -36,7 +36,7 @@ export interface AMQPReturnMessage {
  * @property {AMQPProperties} properties - The properties the message was published with.
  *
  */
-export default class AMQPMessage{
+export class AMQPMessage{
   private channel: AMQPChannel
   deliveryTag: number
   redelivered: boolean
@@ -81,3 +81,5 @@ export default class AMQPMessage{
     return this.channel.basicReject(this.deliveryTag, requeue)
   }
 }
+
+export default AMQPMessage

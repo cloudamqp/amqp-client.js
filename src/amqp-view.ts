@@ -4,7 +4,7 @@ import AMQPProperties from "./protocol/amqp-properties.js"
  * An extended DataView, with AMQP protocol specific methods
  * @ignore
  */
-export default class AMQPView extends DataView {
+export class AMQPView extends DataView {
   getUint64(byteOffset: number, littleEndian = false): number {
     // split 64-bit number into two 32-bit (4-byte) parts
     const left =  this.getUint32(byteOffset, littleEndian)
@@ -352,3 +352,5 @@ export default class AMQPView extends DataView {
     return 1
   }
 }
+
+export default AMQPView

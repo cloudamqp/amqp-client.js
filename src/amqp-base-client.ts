@@ -14,7 +14,7 @@ const VERSION = '1.1.3'
  * @param name - name of the connection, set in client properties
  * @param platform - used in client properties
  */
-export default abstract class AMQPBaseClient {
+export abstract class AMQPBaseClient {
   vhost: string
   username: string
   password: string
@@ -618,3 +618,5 @@ export default abstract class AMQPBaseClient {
     }
   }
 }
+
+export default AMQPBaseClient

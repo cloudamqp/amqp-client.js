@@ -7,7 +7,7 @@ import AMQPBaseClient from "./amqp-base-client.js"
  * @property {AMQPBaseClient} connection
  * @property {string} message
  */
-export default class AMQPError extends Error {
+export class AMQPError extends Error {
   connection: AMQPBaseClient
   constructor(message: string, connection: AMQPBaseClient) {
     super(message)
@@ -15,3 +15,5 @@ export default class AMQPError extends Error {
     this.connection = connection
   }
 }
+
+export default AMQPError

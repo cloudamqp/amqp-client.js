@@ -9,7 +9,7 @@ import AMQPView from './amqp-view.js'
  * @param password, default 'guest'
  * @param name of the connection, no default
  */
-export default class AMQPWebSocketClient extends AMQPBaseClient {
+export class AMQPWebSocketClient extends AMQPBaseClient {
   url: string
   private socket: WebSocket
   constructor(url, vhost = "/", username = "guest", password = "guest", name = undefined) {
@@ -60,3 +60,5 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
     this.socket.close()
   }
 }
+
+export default AMQPWebSocketClient
