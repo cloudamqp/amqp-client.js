@@ -1,5 +1,7 @@
-import test from 'ava';
-import AMQPClient from '../src/amqp-socket-client.mjs';
+import test from 'ava'
+import AMQPConsumer from '../src/amqp-consumer'
+import AMQPMessage, { AMQPReturnMessage } from '../src/amqp-message'
+import AMQPClient from '../src/amqp-socket-client.js'
 
 test('can open a connection and a channel', t => {
   const amqp = new AMQPClient("amqp://")
@@ -8,37 +10,37 @@ test('can open a connection and a channel', t => {
     .then((ch) => t.is(ch.connection.channels.length, 2)) // 2 because channel 0 is counted
 })
 
-test('can publish and consume', t => {
+test('can publish and consume', async t => {
   const amqp = new AMQPClient("amqp://localhost")
-  return new Promise((resolve, reject) => {
+  const msg = await new Promise<AMQPMessage>((resolve, reject) => {
     amqp.connect()
-      .then((conn) => conn.channel())
-      .then((ch) => ch.queue(""))
-      .then((q) => q.publish("hello world"))
-      .then((q) => q.subscribe({noAck: false}, (msg) => {
-        msg.ack()
-        resolve(msg)
-      }))
-      .catch(reject)
-  }).then((result) => t.is(result.bodyString(), "hello world"))
+    .then((conn) => conn.channel())
+    .then((ch) => ch.queue(""))
+    .then((q) => q.publish("hello world"))
+    .then((q) => q.subscribe({noAck: false}, (msg) => {
+      msg.ack()
+      resolve(msg)
+    })).catch(err => reject(err))
+  })
+  t.is(msg.bodyString(), "hello world")
 })
 
-test('will throw an error', t => {
+test('will throw an error', async t => {
   const amqp = new AMQPClient("amqp://localhost")
-  return amqp.connect()
+  await amqp.connect()
     .then((conn) => conn.channel())
     .then((ch) => ch.queue("amq.foobar"))
     .catch((e) => t.regex(e.message, /ACCESS_REFUSED/))
 })
 
-test('can cancel a consumer', t => {
+test('can cancel a consumer', async t => {
   const amqp = new AMQPClient("amqp://localhost")
-  return amqp.connect()
+  await amqp.connect()
     .then((conn) => conn.channel())
     .then((ch) => ch.queue(""))
     .then((q) => q.subscribe({noAck: false}, console.log))
     .then((consumer) => consumer.cancel())
-    .then((channel) => t.deepEqual(channel.consumers, {}))
+    .then((channel) => t.deepEqual(channel.consumers, {} as Record<string|number, AMQPConsumer>))
 })
 
 test('can close a channel', async t => {
@@ -47,7 +49,7 @@ test('can close a channel', async t => {
   const ch = await conn.channel()
   await ch.close()
   const error = await t.throwsAsync(ch.close())
-  t.is(error.message, 'Channel is closed');
+  t.is(error.message, 'Channel is closed')
 })
 
 test('connection error raises everywhere', async t => {
@@ -58,7 +60,7 @@ test('connection error raises everywhere', async t => {
   try {
     await ch.close()
   } catch (err) {
-    t.is(err.message, 'Channel is closed');
+    t.is(err.message, 'Channel is closed')
   }
 })
 
@@ -67,6 +69,7 @@ test('consumer stops wait on cancel', async t => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   const consumer = await q.subscribe({}, () => { })
   await q.publish("foobar")
   await consumer.cancel()
@@ -79,6 +82,7 @@ test('consumer stops wait on channel error', async t => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   const consumer = await q.subscribe({}, () => { })
   // acking invalid delivery tag should close channel
   setTimeout(() => ch.basicAck(99999), 1)
@@ -126,7 +130,7 @@ test('can handle rejects', async t => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
 
-  const returned = new Promise((resolve) => ch.onReturn = resolve)
+  const returned = new Promise<AMQPReturnMessage>((resolve) => ch.onReturn = resolve)
   await ch.basicPublish("", "not-a-queue", "body", {}, true)
   const msg = await returned
   t.is(msg.replyCode, 312)
@@ -147,9 +151,9 @@ test('can handle nacks on confirm channel', async t => {
 test('throws on invalid exchange type', async t => {
   const amqp = new AMQPClient("amqp://localhost")
   const conn = await amqp.connect()
-  let ch = await conn.channel()
+  const ch = await conn.channel()
   const name = "test" + Math.random()
-  let err = await t.throwsAsync(ch.exchangeDeclare(name, "none"))
+  const err = await t.throwsAsync(ch.exchangeDeclare(name, "none"))
   t.regex(err.message, /invalid exchange type/)
 })
 
@@ -185,7 +189,7 @@ test('exchange to exchange bind/unbind', async t => {
   await ch.basicPublish(name1)
   const msg2 = await ch.basicGet(q.name)
   t.is(msg2, null)
-  await ch.exchangeDelete(name1, "fanout")
+  await ch.exchangeDelete(name1)
 })
 
 test.skip('can change flow state of channel', async t => {

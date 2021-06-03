@@ -1,15 +1,17 @@
-import AMQPBaseClient from './amqp-base-client.mjs'
-import AMQPView from './amqp-view.mjs'
+import AMQPBaseClient from './amqp-base-client.js'
+import AMQPView from './amqp-view.js'
 
-/** 
+/**
  * WebSocket client for AMQP 0-9-1 servers
- * @param {string} url to the websocket endpoint
- * @param {string} vhost, default '/'
- * @param {string} username, default 'guest'
- * @param {string} password, default 'guest'
- * @param {string} name of the connection, no default
+ * @param url to the websocket endpoint
+ * @param vhost, default '/'
+ * @param username, default 'guest'
+ * @param password, default 'guest'
+ * @param name of the connection, no default
  */
 export default class AMQPWebSocketClient extends AMQPBaseClient {
+  url: string
+  private socket: WebSocket
   constructor(url, vhost = "/", username = "guest", password = "guest", name = undefined) {
     super(vhost, username, password, name, window.navigator.userAgent)
     this.url = url
@@ -17,14 +19,14 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
 
   /**
    * Establish a AMQP connection over WebSocket
-   * @return {Promise} Promise to returns itself when successfully connected
+   * @return Promise to returns itself when successfully connected
    */
-  connect() {
+  connect(): Promise<AMQPWebSocketClient> {
     const socket = new WebSocket(this.url)
     this.socket = socket
     socket.binaryType = "arraybuffer"
     socket.onmessage = (event) => this.parseFrames(new AMQPView(event.data))
-    return new Promise((resolve, reject) => {
+    return new Promise<AMQPWebSocketClient>((resolve, reject) => {
       this.connectPromise = [resolve, reject]
       socket.onclose = reject
       socket.onerror = reject
@@ -37,14 +39,14 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
 
   /**
    * @ignore
-   * @param {Uint8array} bytes to send
-   * @return {Promise} fulfilled when the data is enqueued
+   * @param bytes to send
+   * @return fulfilled when the data is enqueued
    */
-  send(bytes) {
+  send(bytes: Uint8Array): Promise<any> {
     return new Promise((resolve, reject) => {
       try {
         this.socket.send(bytes)
-        resolve()
+        resolve("")
       } catch (err) {
         reject(err)
       }
