@@ -1,0 +1,5 @@
+{
+  "entryPoints": ["./src/"],
+  "out": "docs",
+  "exclude": "./src/amqp-view.ts"
+}
