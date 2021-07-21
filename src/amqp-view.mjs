@@ -331,10 +331,10 @@ export default class AMQPView extends DataView {
   }
 
   setByteArray(byteOffset, data) {
-    const len = this.setUint32(byteOffset, data.byteLength)
-    const view = new Uint8Array(this.buffer, byteOffset + 4, len)
+    this.setUint32(byteOffset, data.byteLength)
+    const view = new Uint8Array(this.buffer, byteOffset + 4, data.byteLength)
     view.set(data)
-    return data.bytelength + 4
+    return data.byteLength + 4
   }
 
   setFrameEnd(j) {
