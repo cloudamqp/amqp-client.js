@@ -229,3 +229,16 @@ test('transactions', async t => {
   const msg3 = await ch.basicGet(q.name)
   t.is(msg3, null)
 })
+
+test('can publish and consume msgs with large headers', async t => {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue()
+  await q.publish("a".repeat(4000), { headers: { long: Buffer.from("a".repeat(10000)) } })
+  await q.publish("a".repeat(8000), { headers: { long: "a".repeat(10000) } })
+  await q.publish("a".repeat(8000), { headers: { long: Array(1000).fill("a") } })
+  const consumer = await q.subscribe({ noAck: false }, async (msg) => { if (msg.deliveryTag === 3) await msg.cancelConsumer() })
+  const ok = await consumer.wait()
+  t.is(ok, undefined)
+})
