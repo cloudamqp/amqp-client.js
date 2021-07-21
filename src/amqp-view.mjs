@@ -316,9 +316,9 @@ export default class AMQPView extends DataView {
 
   setArray(byteOffset, array, littleEndian) {
     const start = byteOffset
-    byteOffset += 4 // bytelength
+    byteOffset += 4 // update the length later
     array.forEach((e) => {
-      byteOffset += this.setField(e)
+      byteOffset += this.setField(byteOffset, e, littleEndian)
     })
     this.setUint32(start, byteOffset - start - 4, littleEndian) // update length
     return byteOffset - start
