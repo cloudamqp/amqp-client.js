@@ -406,7 +406,7 @@ export default class AMQPChannel {
   basicFlow(active = true) {
     if (this.closed) return this.rejectClosed()
     let j = 0
-    const frame = new AMQPView(new ArrayBuffer(4096))
+    const frame = new AMQPView(new ArrayBuffer(13))
     frame.setUint8(j, 1); j += 1 // type: method
     frame.setUint16(j, this.id); j += 2 // channel: 1
     frame.setUint32(j, 5); j += 4 // frameSize
