@@ -20,7 +20,7 @@ class AMQPQueue {
   }
   unbind(exchange, routingkey, args = {}) {
     return new Promise((resolve, reject) => {
-      this.channel.queueUnind(this.name, exchange, routingkey, args)
+      this.channel.queueUnbind(this.name, exchange, routingkey, args)
         .then(() => resolve(this))
         .catch(reject);
     })
@@ -973,7 +973,7 @@ class AMQPMessage {
   }
 }
 
-const VERSION = '1.1.3';
+const VERSION = '1.1.4';
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
     this.vhost = vhost;
