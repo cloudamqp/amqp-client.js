@@ -349,7 +349,7 @@ class AMQPView extends DataView {
     const start = byteOffset;
     byteOffset += 4;
     array.forEach((e) => {
-      byteOffset += this.setField(e);
+      byteOffset += this.setField(byteOffset, e, littleEndian);
     });
     this.setUint32(start, byteOffset - start - 4, littleEndian);
     return byteOffset - start
@@ -360,10 +360,10 @@ class AMQPView extends DataView {
     return [v, len + 4]
   }
   setByteArray(byteOffset, data) {
-    const len = this.setUint32(byteOffset, data.byteLength);
-    const view = new Uint8Array(this.buffer, byteOffset + 4, len);
+    this.setUint32(byteOffset, data.byteLength);
+    const view = new Uint8Array(this.buffer, byteOffset + 4, data.byteLength);
     view.set(data);
-    return data.bytelength + 4
+    return data.byteLength + 4
   }
   setFrameEnd(j) {
     this.setUint32(3, j - 7);
@@ -504,8 +504,10 @@ class AMQPChannel {
     return new Promise((resolve, reject) => {
       this.sendRpc(frame, j).then((consumerTag) => {
         const consumer = this.consumers[consumerTag];
-        consumer.setClosed();
-        delete this.consumers[consumerTag];
+        if (consumer) {
+          consumer.setClosed();
+          delete this.consumers[consumerTag];
+        }
         resolve(this);
       }).catch(reject);
     })
@@ -584,7 +586,7 @@ class AMQPChannel {
     }
     const promises = [];
     let j = 0;
-    let buffer = new AMQPView(new ArrayBuffer(4096));
+    let buffer = new AMQPView(new ArrayBuffer(16384));
     buffer.setUint8(j, 1); j += 1;
     buffer.setUint16(j, this.id); j += 2;
     j += 4;
@@ -613,13 +615,13 @@ class AMQPChannel {
     if (data.byteLength === 0) {
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j));
       promises.push(p);
-    } else if (j >= 4096 - 8) {
+    } else if (j >= 16384 - 8) {
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j));
       promises.push(p);
       j = 0;
     }
     for (let bodyPos = 0; bodyPos < data.byteLength;) {
-      const frameSize = Math.min(data.byteLength - bodyPos, 4096 - 8 - j);
+      const frameSize = Math.min(data.byteLength - bodyPos, 16384 - 8 - j);
       const dataSlice = new Uint8Array(data.buffer, bodyPos, frameSize);
       if (j === 0)
         buffer = new AMQPView(new ArrayBuffer(frameSize + 8));
@@ -665,7 +667,7 @@ class AMQPChannel {
   basicFlow(active = true) {
     if (this.closed) return this.rejectClosed()
     let j = 0;
-    const frame = new AMQPView(new ArrayBuffer(4096));
+    const frame = new AMQPView(new ArrayBuffer(13));
     frame.setUint8(j, 1); j += 1;
     frame.setUint16(j, this.id); j += 2;
     frame.setUint32(j, 5); j += 4;
@@ -971,9 +973,12 @@ class AMQPMessage {
   reject(requeue = false) {
     return this.channel.basicReject(this.deliveryTag, requeue)
   }
+  cancelConsumer() {
+    return this.channel.basicCancel(this.consumerTag)
+  }
 }
 
-const VERSION = '1.1.4';
+const VERSION = '1.1.5';
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
     this.vhost = vhost;
