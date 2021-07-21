@@ -59,7 +59,8 @@ export default class AMQPClient extends AMQPBaseClient {
               frameSize = buf.readInt32BE(bufPos + 3) + 8
 
             const leftOfFrame = frameSize - framePos
-            const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + leftOfFrame)
+            const copyBytes = Math.min(leftOfFrame, nread - bufPos)
+            const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes)
             framePos += copied
             bufPos += copied
             if (framePos === frameSize) {
@@ -100,7 +101,8 @@ export default class AMQPClient extends AMQPBaseClient {
           frameSize = buf.readInt32BE(bufPos + 3) + 8
 
         const leftOfFrame = frameSize - framePos
-        const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + leftOfFrame)
+        const copyBytes = Math.min(leftOfFrame, buf.byteLength - bufPos)
+        const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes)
         framePos += copied
         bufPos += copied
         if (framePos === frameSize) {
