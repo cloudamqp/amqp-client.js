@@ -1106,7 +1106,7 @@ class AMQPBaseClient {
                   const frameMax = view.getUint32(i); i += 4;
                   const heartbeat = view.getUint16(i); i += 2;
                   this.channelMax = channelMax;
-                  this.frameMax = Math.min(4096, frameMax);
+                  this.frameMax = Math.min(16384, frameMax);
                   this.heartbeat = Math.min(0, heartbeat);
                   const tuneOk = new AMQPView(new ArrayBuffer(20));
                   tuneOk.setUint8(j, 1); j += 1;

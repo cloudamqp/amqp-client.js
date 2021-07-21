@@ -42,14 +42,14 @@ export default class AMQPClient extends AMQPBaseClient {
   connectPlain() {
     let framePos = 0
     let frameSize = 0
-    const frameBuffer = new Uint8Array(4096)
+    const frameBuffer = new Uint8Array(16384)
     const self = this
     const socket = net.connect({
       host: this.host,
       port: this.port,
       onread: {
         // Reuses a 4KiB Buffer for every read from the socket.
-        buffer: Buffer.alloc(4096),
+        buffer: Buffer.alloc(16384),
         callback: function(nread, buf) {
           // Find frame boundaries and only pass a single frame at a time
           let bufPos = 0
@@ -90,7 +90,7 @@ export default class AMQPClient extends AMQPBaseClient {
     })
     let framePos = 0
     let frameSize = 0
-    const frameBuffer = new Uint8Array(4096)
+    const frameBuffer = new Uint8Array(16384)
     socket.on('data', (buf) => {
       // Find frame boundaries and only pass a single frame at a time
       let bufPos = 0
