@@ -161,8 +161,10 @@ export default class AMQPChannel {
     return new Promise((resolve, reject) => {
       this.sendRpc(frame, j).then((consumerTag) => {
         const consumer = this.consumers[consumerTag]
-        consumer.setClosed()
-        delete this.consumers[consumerTag]
+        if (consumer) {
+          consumer.setClosed()
+          delete this.consumers[consumerTag]
+        }
         resolve(this)
       }).catch(reject)
     })
