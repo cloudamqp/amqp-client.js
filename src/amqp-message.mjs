@@ -36,4 +36,9 @@ export default class AMQPMessage {
   reject(requeue = false) {
     return this.channel.basicReject(this.deliveryTag, requeue)
   }
+
+  /** Cancel the consumer the message arrived to **/
+  cancelConsumer() {
+    return this.channel.basicCancel(this.consumerTag)
+  }
 }
