@@ -1,6 +1,22 @@
 import test from 'ava';
 import AMQPClient from '../src/amqp-socket-client.mjs';
 
+test('can parse the url correctly', t => {
+  const username = 'user_name'
+  const password = 'passwd'
+  const hostname = 'localhost'
+  const port = '5672'
+  const vhost = 'my_host'
+  const name = 'test'
+  const client = new AMQPClient(`amqp://${username}:${password}@${hostname}:${port}/${vhost}?name=${name}`);
+  t.is(client.username, username);
+  t.is(client.password, password);
+  t.is(client.host, hostname);
+  t.is(client.port, port);
+  t.is(client.vhost, vhost);
+  t.is(client.name, name);
+})
+
 test('can open a connection and a channel', t => {
   const amqp = new AMQPClient("amqp://")
   return amqp.connect()
