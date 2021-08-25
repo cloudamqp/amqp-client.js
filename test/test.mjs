@@ -12,7 +12,7 @@ test('can parse the url correctly', t => {
   t.is(client.username, username);
   t.is(client.password, password);
   t.is(client.host, hostname);
-  t.is(client.port + '', port);
+  t.is(client.port, port);
   t.is(client.vhost, vhost);
   t.is(client.name, name);
 })
