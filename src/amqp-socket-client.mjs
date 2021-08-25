@@ -20,8 +20,8 @@ export default class AMQPClient extends AMQPBaseClient {
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
     super(vhost, username, password, name, platform)
     this.tls = u.protocol === "amqps:"
-    this.host = u.host || "localhost"
-    this.port = u.port || this.tls ? 5671 : 5672
+    this.host = u.hostname || "localhost"
+    this.port = u.port || (this.tls ? 5671 : 5672)
   }
 
   /**
