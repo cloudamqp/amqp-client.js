@@ -61,6 +61,7 @@ export default class AMQPClient extends AMQPBaseClient {
             const leftOfFrame = frameSize - framePos
             const copyBytes = Math.min(leftOfFrame, nread - bufPos)
             const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes)
+            if (copied === 0) throw "Copied 0 bytes, please report this bug"
             framePos += copied
             bufPos += copied
             if (framePos === frameSize) {
@@ -103,6 +104,7 @@ export default class AMQPClient extends AMQPBaseClient {
         const leftOfFrame = frameSize - framePos
         const copyBytes = Math.min(leftOfFrame, buf.byteLength - bufPos)
         const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes)
+        if (copied === 0) throw "Copied 0 bytes, please report this bug"
         framePos += copied
         bufPos += copied
         if (framePos === frameSize) {
