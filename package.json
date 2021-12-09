@@ -16,10 +16,7 @@
     "src/",
     "dist/"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/cloudamqp/amqp-client.js.git"
-  },
+  "repository": "github:cloudamqp/amqp-client.js",
   "keywords": [
     "amqp",
     "rabbitmq"
