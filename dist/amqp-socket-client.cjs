@@ -991,7 +991,7 @@ class AMQPMessage {
   }
 }
 
-const VERSION = '1.1.7';
+const VERSION = '1.1.8';
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
     this.vhost = vhost;
