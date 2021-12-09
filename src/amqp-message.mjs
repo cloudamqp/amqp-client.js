@@ -1,8 +1,12 @@
 /**
  * AMQP message
  * @param {AMQPChannel} channel - Channel this message was delivered on
+ * @property {string} exchange - The exchange the message was published to
+ * @property {string} routingKey - The routing key the message was published with
+ * @property {object} properties - Message metadata
+ * @property {number} bodySize - Byte size of the body
  * @property {Uint8array} body - The raw message body
- * @property {Uint8array} deliveryTag - The deliveryTag of this message
+ * @property {number} deliveryTag - The deliveryTag of this message
  */
 export default class AMQPMessage {
   constructor(channel) {

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset='utf-8'>
-  <title>@cloudamqp/amqp-client 1.1.6 | Documentation</title>
+  <title>@cloudamqp/amqp-client 1.1.8 | Documentation</title>
   <meta name='description' content='AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)'>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link href='assets/bass.css' rel='stylesheet'>
@@ -15,7 +15,7 @@
       <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
         <div class='py1 px2'>
           <h3 class='mb0 no-anchor'>@cloudamqp/amqp-client</h3>
-          <div class='mb1'><code>1.1.6</code></div>
+          <div class='mb1'><code>1.1.8</code></div>
           <input
             placeholder='Filter'
             id='filter-input'
@@ -3799,6 +3799,34 @@ Note that any unacked messages are still unacked as they belong to the channel a
     <div>
       
         <div class='space-bottom0'>
+          <span class='code bold'>exchange</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+          : The exchange the message was published to
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>routingKey</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+          : The routing key the message was published with
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>properties</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">object</a>)</code>
+          : Message metadata
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>bodySize</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Byte size of the body
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
           <span class='code bold'>body</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8array</a>)</code>
           : The raw message body
 
@@ -3806,7 +3834,7 @@ Note that any unacked messages are still unacked as they belong to the channel a
         </div>
       
         <div class='space-bottom0'>
-          <span class='code bold'>deliveryTag</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8array</a>)</code>
+          <span class='code bold'>deliveryTag</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
           : The deliveryTag of this message
 
           
