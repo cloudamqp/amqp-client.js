@@ -991,7 +991,7 @@ class AMQPMessage {
   }
 }
 
-const VERSION = '1.1.6';
+const VERSION = '1.1.7';
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
     this.vhost = vhost;
@@ -1545,8 +1545,8 @@ class AMQPClient extends AMQPBaseClient {
     const platform = `${process__default["default"].release.name} ${process__default["default"].version} ${process__default["default"].platform} ${process__default["default"].arch}`;
     super(vhost, username, password, name, platform);
     this.tls = u.protocol === "amqps:";
-    this.host = u.host || "localhost";
-    this.port = u.port || this.tls ? 5671 : 5672;
+    this.host = u.hostname || "localhost";
+    this.port = u.port || (this.tls ? 5671 : 5672);
   }
   connect() {
     const socket = this.tls ? this.connectTLS() : this.connectPlain();
