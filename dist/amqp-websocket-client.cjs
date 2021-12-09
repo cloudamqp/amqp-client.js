@@ -1,3 +1,5 @@
+'use strict';
+
 class AMQPError extends Error {
   constructor(message, connection) {
     super(message);
@@ -978,7 +980,7 @@ class AMQPMessage {
   }
 }
 
-const VERSION = '1.1.6';
+const VERSION = '1.1.5';
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
     this.vhost = vhost;
@@ -1557,4 +1559,4 @@ class AMQPWebSocketClient extends AMQPBaseClient {
   }
 }
 
-export { AMQPWebSocketClient as default };
+module.exports = AMQPWebSocketClient;

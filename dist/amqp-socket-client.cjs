@@ -1,3 +1,16 @@
+'use strict';
+
+var buffer = require('buffer');
+var net = require('net');
+var tls = require('tls');
+var process = require('process');
+
+function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
+
+var net__default = /*#__PURE__*/_interopDefaultLegacy(net);
+var tls__default = /*#__PURE__*/_interopDefaultLegacy(tls);
+var process__default = /*#__PURE__*/_interopDefaultLegacy(process);
+
 class AMQPError extends Error {
   constructor(message, connection) {
     super(message);
@@ -978,7 +991,7 @@ class AMQPMessage {
   }
 }
 
-const VERSION = '1.1.6';
+const VERSION = '1.1.5';
 class AMQPBaseClient {
   constructor(vhost, username, password, name, platform) {
     this.vhost = vhost;
@@ -1522,39 +1535,107 @@ class AMQPBaseClient {
   }
 }
 
-class AMQPWebSocketClient extends AMQPBaseClient {
-  constructor(url, vhost = "/", username = "guest", password = "guest", name = undefined) {
-    super(vhost, username, password, name, window.navigator.userAgent);
-    this.url = url;
+class AMQPClient extends AMQPBaseClient {
+  constructor(url) {
+    const u = new URL(url);
+    const vhost = decodeURIComponent(u.pathname.slice(1)) || "/";
+    const username = u.username || "guest";
+    const password = u.password || "guest";
+    const name = u.searchParams.get("name");
+    const platform = `${process__default["default"].release.name} ${process__default["default"].version} ${process__default["default"].platform} ${process__default["default"].arch}`;
+    super(vhost, username, password, name, platform);
+    this.tls = u.protocol === "amqps:";
+    this.host = u.host || "localhost";
+    this.port = u.port || this.tls ? 5671 : 5672;
   }
   connect() {
-    const socket = new WebSocket(this.url);
-    this.socket = socket;
-    socket.binaryType = "arraybuffer";
-    socket.onmessage = (event) => this.parseFrames(new AMQPView(event.data));
+    const socket = this.tls ? this.connectTLS() : this.connectPlain();
+    Object.defineProperty(this, 'socket', {
+      value: socket,
+      enumerable: false
+    });
     return new Promise((resolve, reject) => {
+      this.socket.on('error', (err) => reject(new AMQPError(err, this)));
       this.connectPromise = [resolve, reject];
-      socket.onclose = reject;
-      socket.onerror = reject;
-      socket.onopen = () => {
-        const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]);
-        socket.send(amqpstart);
-      };
     })
+  }
+  connectPlain() {
+    let framePos = 0;
+    let frameSize = 0;
+    const frameBuffer = new Uint8Array(16384);
+    const self = this;
+    const socket = net__default["default"].connect({
+      host: this.host,
+      port: this.port,
+      onread: {
+        buffer: buffer.Buffer.alloc(16384),
+        callback: function(nread, buf) {
+          let bufPos = 0;
+          while (bufPos < nread) {
+            if (frameSize === 0)
+              frameSize = buf.readInt32BE(bufPos + 3) + 8;
+            const leftOfFrame = frameSize - framePos;
+            const copyBytes = Math.min(leftOfFrame, nread - bufPos);
+            const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes);
+            if (copied === 0) throw "Copied 0 bytes, please report this bug"
+            framePos += copied;
+            bufPos += copied;
+            if (framePos === frameSize) {
+              const view = new AMQPView(frameBuffer.buffer, 0, frameSize);
+              self.parseFrames(view);
+              frameSize = framePos = 0;
+            }
+          }
+        }
+      }
+    });
+    socket.on('connect', () => {
+      const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]);
+      this.send(amqpstart);
+    });
+    return socket
+  }
+  connectTLS() {
+    const socket = tls__default["default"].connect({
+      host: this.host,
+      port: this.port,
+      servername: this.host,
+    });
+    socket.on('secureConnect', () => {
+      const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]);
+      this.send(amqpstart);
+    });
+    let framePos = 0;
+    let frameSize = 0;
+    const frameBuffer = new Uint8Array(16384);
+    socket.on('data', (buf) => {
+      let bufPos = 0;
+      while (bufPos < buf.byteLength) {
+        if (frameSize === 0)
+          frameSize = buf.readInt32BE(bufPos + 3) + 8;
+        const leftOfFrame = frameSize - framePos;
+        const copyBytes = Math.min(leftOfFrame, buf.byteLength - bufPos);
+        const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes);
+        if (copied === 0) throw "Copied 0 bytes, please report this bug"
+        framePos += copied;
+        bufPos += copied;
+        if (framePos === frameSize) {
+          const view = new AMQPView(frameBuffer.buffer, 0, frameSize);
+          this.parseFrames(view);
+          frameSize = framePos = 0;
+        }
+      }
+    });
+    return socket
   }
   send(bytes) {
     return new Promise((resolve, reject) => {
-      try {
-        this.socket.send(bytes);
-        resolve();
-      } catch (err) {
-        reject(err);
-      }
+      this.socket.write(bytes, '', (err) => err ? reject(err) : resolve());
     })
   }
   closeSocket() {
-    this.socket.close();
+    this.socket.end();
   }
 }
 
-export { AMQPWebSocketClient as default };
+module.exports = AMQPClient;
