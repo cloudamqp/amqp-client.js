@@ -4,6 +4,7 @@
   "version": "1.1.8",
   "description": "AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)",
   "main": "src/amqp-socket-client.mjs",
+  "types": "dist/amqp-socket-client.d.mts",
   "exports": {
     "require": "./dist/amqp-socket-client.cjs",
     "import": "./src/amqp-socket-client.mjs"
@@ -13,7 +14,7 @@
     "docs": "documentation build src/** -f html -o docs",
     "test": "ava && eslint",
     "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.mjs && git add src/amqp-base-client.mjs",
-    "build": "rollup -c",
+    "build": "rollup -c && tsc",
     "preversion": "npm test",
     "version": "npm run build && git add -A dist"
   },
@@ -39,6 +40,7 @@
     "esdoc-standard-plugin": "^1.0.0",
     "eslint": "^7.20.0",
     "rollup": "^2.39.1",
-    "rollup-plugin-cleanup": "^3.2.1"
+    "rollup-plugin-cleanup": "^3.2.1",
+    "typescript": "^4.5.3"
   }
 }

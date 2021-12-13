@@ -1,4 +1,6 @@
 import AMQPError from './amqp-error.mjs'
+import AMQPChannel from './amqp-channel.mjs'
+import AMQPMessage from './amqp-message.mjs'
 
 /**
  * A consumer, subscribed to a queue
@@ -7,7 +9,7 @@ export default class AMQPConsumer {
   /**
    * @param {AMQPChannel} channel - the consumer is created on
    * @param {string} tag - consumer tag
-   * @param {function(message: AMQPMessage)} onMessage - callback executed when a message arrive
+   * @param {function(AMQPMessage) : void} onMessage - callback executed when a message arrive
    */
   constructor(channel, tag, onMessage) {
     this.channel = channel
@@ -18,7 +20,7 @@ export default class AMQPConsumer {
   /**
    * Wait for the consumer to finish.
    * @param {number} [timeout] wait for this many milliseconds and then return regardless
-   * @return {Promise<, AMQPError>} - Fulfilled when the consumer/channel/connection is closed by the client. Rejected if the timeout is hit.
+   * @return {Promise<void>} - Fulfilled when the consumer/channel/connection is closed by the client. Rejected if the timeout is hit.
    */
   wait(timeout) {
     if (this.closedError) return Promise.reject(this.closedError)
@@ -41,10 +43,14 @@ export default class AMQPConsumer {
     return this.channel.basicCancel(this.tag)
   }
 
+  /**
+   * @ignore
+   * @param {Error} [err] - why the consumer was closed
+   */
   setClosed(err) {
     this.closed = true
     this.closedError = err
-    clearTimeout(this.timeoutId)
+    if (this.timeoutId) clearTimeout(this.timeoutId)
     if (err) {
       if (this.rejectWait) this.rejectWait(err)
     } else {

@@ -5,7 +5,7 @@ test('can parse the url correctly', t => {
   const username = 'user_name'
   const password = 'passwd'
   const hostname = 'localhost'
-  const port = '5672'
+  const port = 5672
   const vhost = 'my_host'
   const name = 'test'
   const client = new AMQPClient(`amqp://${username}:${password}@${hostname}:${port}/${vhost}?name=${name}`);
@@ -28,10 +28,10 @@ test('can publish and consume', t => {
   const amqp = new AMQPClient("amqp://localhost")
   return new Promise((resolve, reject) => {
     amqp.connect()
-      .then((conn) => conn.channel())
-      .then((ch) => ch.queue(""))
-      .then((q) => q.publish("hello world"))
-      .then((q) => q.subscribe({noAck: false}, (msg) => {
+      .then(conn => conn.channel())
+      .then(ch => ch.queue(""))
+      .then(q => q.publish("hello world"))
+      .then(q => q.subscribe({noAck: false}, msg => {
         msg.ack()
         resolve(msg)
       }))
