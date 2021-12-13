@@ -30,8 +30,8 @@ export default class AMQPBaseClient {
 
   /**
    * Open a channel
-   * Optionally an existing or non existing channel id can be specified
-   * return {Promise<AMQPChannel, AMQPError>} channel
+   * @param {number} [id] - An existing or non existing specific channel
+   * @return {Promise<AMQPChannel, AMQPError>} channel
    */
   channel(id) {
     if (this.closed) return this.rejectClosed()
