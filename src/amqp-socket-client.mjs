@@ -8,9 +8,11 @@ import process from 'process'
 
 /**
  * AMQP 0-9-1 client over TCP socket.
- * @param {string} url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
  */
 export default class AMQPClient extends AMQPBaseClient {
+  /**
+   * @param {string} url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
+   */
   constructor(url) {
     const u = new URL(url)
     const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
@@ -21,11 +23,14 @@ export default class AMQPClient extends AMQPBaseClient {
     super(vhost, username, password, name, platform)
     this.tls = u.protocol === "amqps:"
     this.host = u.hostname || "localhost"
-    this.port = u.port || (this.tls ? 5671 : 5672)
+    this.port = parseInt(u.port) || (this.tls ? 5671 : 5672)
+    /** @type {net.Socket?} */
+    this.socket = null
   }
 
   /**
    * Try establish a connection
+   * @return {Promise<AMQPBaseClient>}
    */
   connect() {
     const socket = this.tls ? this.connectTLS() : this.connectPlain()
@@ -34,11 +39,12 @@ export default class AMQPClient extends AMQPBaseClient {
       enumerable: false // hide it from console.log etc.
     })
     return new Promise((resolve, reject) => {
-      this.socket.on('error', (err) => reject(new AMQPError(err, this)))
-      this.connectPromise = [resolve, reject]
+      socket.on('error', (err) => reject(new AMQPError(err.message, this)))
+      this.connectPromise = /** @type {[function(AMQPBaseClient) : void, function(Error) : void]} */ ([resolve, reject])
     })
   }
 
+  /** @private */
   connectPlain() {
     let framePos = 0
     let frameSize = 0
@@ -48,18 +54,17 @@ export default class AMQPClient extends AMQPBaseClient {
       host: this.host,
       port: this.port,
       onread: {
-        // Reuses a 4KiB Buffer for every read from the socket.
         buffer: Buffer.alloc(16384),
-        callback: function(nread, buf) {
+        callback: function(/** @type {number} */ bytesWritten, /** @type {Buffer} */ buf) {
           // Find frame boundaries and only pass a single frame at a time
           let bufPos = 0
-          while (bufPos < nread) {
+          while (bufPos < bytesWritten) {
             // read frame size of next frame
             if (frameSize === 0)
               frameSize = buf.readInt32BE(bufPos + 3) + 8
 
             const leftOfFrame = frameSize - framePos
-            const copyBytes = Math.min(leftOfFrame, nread - bufPos)
+            const copyBytes = Math.min(leftOfFrame, bytesWritten - bufPos)
             const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes)
             if (copied === 0) throw "Copied 0 bytes, please report this bug"
             framePos += copied
@@ -70,60 +75,69 @@ export default class AMQPClient extends AMQPBaseClient {
               frameSize = framePos = 0
             }
           }
+          return true
         }
       }
-    })
-    socket.on('connect', () => {
-      const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])
-      this.send(amqpstart)
-    })
+    }, () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])))
     return socket
   }
 
+  /** @private */
   connectTLS() {
-    const socket = tls.connect({
-      host: this.host,
-      port: this.port,
-      servername: this.host, // SNI
-    })
-    socket.on('secureConnect', () => {
-      const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])
-      this.send(amqpstart)
-    })
     let framePos = 0
     let frameSize = 0
     const frameBuffer = new Uint8Array(16384)
-    socket.on('data', (buf) => {
-      // Find frame boundaries and only pass a single frame at a time
-      let bufPos = 0
-      while (bufPos < buf.byteLength) {
-        // read frame size of next frame
-        if (frameSize === 0)
-          frameSize = buf.readInt32BE(bufPos + 3) + 8
+    const self = this
+    const options = {
+      servername: this.host, // SNI
+      onread: {
+        buffer: Buffer.alloc(16384),
+        callback: (/** @type {number} */ bytesWritten, /** @type {Buffer} */ buf) => {
+          // Find frame boundaries and only pass a single frame at a time
+          let bufPos = 0
+          while (bufPos < bytesWritten) {
+            // read frame size of next frame
+            if (frameSize === 0)
+              frameSize = buf.readInt32BE(bufPos + 3) + 8
 
-        const leftOfFrame = frameSize - framePos
-        const copyBytes = Math.min(leftOfFrame, buf.byteLength - bufPos)
-        const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes)
-        if (copied === 0) throw "Copied 0 bytes, please report this bug"
-        framePos += copied
-        bufPos += copied
-        if (framePos === frameSize) {
-          const view = new AMQPView(frameBuffer.buffer, 0, frameSize)
-          this.parseFrames(view)
-          frameSize = framePos = 0
+            const leftOfFrame = frameSize - framePos
+            const copyBytes = Math.min(leftOfFrame, bytesWritten - bufPos)
+            const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes)
+            if (copied === 0) throw "Copied 0 bytes, please report this bug"
+            framePos += copied
+            bufPos += copied
+            if (framePos === frameSize) {
+              const view = new AMQPView(frameBuffer.buffer, 0, frameSize)
+              self.parseFrames(view)
+              frameSize = framePos = 0
+            }
+          }
+          return true
         }
       }
-    })
+    }
+    const socket = tls.connect(this.port, this.host, options, () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])))
     return socket
   }
 
+  /**
+   * @ignore
+   * @param {Uint8Array} bytes to send
+   * @return {Promise<void>} fulfilled when the data is enqueued
+   */
   send(bytes) {
     return new Promise((resolve, reject) => {
-      this.socket.write(bytes, '', (err) => err ? reject(err) : resolve())
+      if (this.socket)
+        this.socket.write(bytes, undefined, (err) => err ? reject(err) : resolve())
+      else
+        reject("Socket not connected")
     })
   }
 
+  /**
+   * @protected
+   */
   closeSocket() {
-    this.socket.end()
+    if(this.socket) this.socket.end()
   }
 }
