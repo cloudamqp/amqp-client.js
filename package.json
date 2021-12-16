@@ -15,11 +15,12 @@
   },
   "scripts": {
     "docs": "documentation build src/** -f html -o docs",
-    "test": "ava && eslint",
+    "lint": "eslint",
+    "test": "ava",
     "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.mjs && git add src/amqp-base-client.mjs",
     "build": "rollup -c && tsc",
     "preversion": "npm test",
-    "version": "npm run build && git add -A dist"
+    "version": "npm run build"
   },
   "files": [
     "src/",
