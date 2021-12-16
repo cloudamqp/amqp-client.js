@@ -33,7 +33,7 @@ export default class AMQPClient extends AMQPBaseClient {
    * @return {Promise<AMQPBaseClient>}
    */
   connect() {
-    const socket = this.tls ? this.connectTLS() : this.connectPlain()
+    const socket = this.connectSocket()
     Object.defineProperty(this, 'socket', {
       value: socket,
       enumerable: false // hide it from console.log etc.
@@ -44,51 +44,17 @@ export default class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  /** @private */
-  connectPlain() {
-    let framePos = 0
-    let frameSize = 0
-    const frameBuffer = new Uint8Array(16384)
-    const self = this
-    const socket = net.connect({
-      host: this.host,
-      port: this.port,
-      onread: {
-        buffer: Buffer.alloc(16384),
-        callback: function(/** @type {number} */ bytesWritten, /** @type {Buffer} */ buf) {
-          // Find frame boundaries and only pass a single frame at a time
-          let bufPos = 0
-          while (bufPos < bytesWritten) {
-            // read frame size of next frame
-            if (frameSize === 0)
-              frameSize = buf.readInt32BE(bufPos + 3) + 8
-
-            const leftOfFrame = frameSize - framePos
-            const copyBytes = Math.min(leftOfFrame, bytesWritten - bufPos)
-            const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes)
-            if (copied === 0) throw "Copied 0 bytes, please report this bug"
-            framePos += copied
-            bufPos += copied
-            if (framePos === frameSize) {
-              const view = new AMQPView(frameBuffer.buffer, 0, frameSize)
-              self.parseFrames(view)
-              frameSize = framePos = 0
-            }
-          }
-          return true
-        }
-      }
-    }, () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])))
-    return socket
-  }
-
-  /** @private */
-  connectTLS() {
+  /**
+    * @private
+    */
+  connectSocket() {
     let framePos = 0
     let frameSize = 0
     const frameBuffer = new Uint8Array(16384)
     const self = this
     const options = {
+      host: this.host,
+      port: this.port,
       servername: this.host, // SNI
       onread: {
         buffer: Buffer.alloc(16384),
@@ -116,8 +82,10 @@ export default class AMQPClient extends AMQPBaseClient {
         }
       }
     }
-    const socket = tls.connect(this.port, this.host, options, () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])))
-    return socket
+    if (this.tls)
+      return tls.connect(options, () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])))
+    else
+      return net.connect(options, () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])))
   }
 
   /**
