@@ -10,6 +10,9 @@
     "import": "./src/amqp-socket-client.mjs"
   },
   "browser": "dist/amqp-websocket-client.mjs",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "scripts": {
     "docs": "documentation build src/** -f html -o docs",
     "test": "ava && eslint",
