@@ -37,4 +37,4 @@ jobs:
     - run: npm test
       env:
         AMQP_URL: ${{ secrets.AMQP_URL }}
-    - run: npm lint
+    - run: npm run lint
