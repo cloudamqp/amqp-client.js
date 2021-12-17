@@ -3,6 +3,8 @@
  * @ignore
  */
 export default class AMQPView extends DataView {
+  static decoder = new TextDecoder()
+
   /**
    * @param {number} byteOffset
    * @param {boolean} [littleEndian]
@@ -57,8 +59,7 @@ export default class AMQPView extends DataView {
     const len = this.getUint8(byteOffset)
     byteOffset += 1
     const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
-    const decoder = new TextDecoder()
-    return [decoder.decode(view), len + 1]
+    return [AMQPView.decoder.decode(view), len + 1]
   }
 
   /**
@@ -85,8 +86,7 @@ export default class AMQPView extends DataView {
     const len = this.getUint32(byteOffset, littleEndian)
     byteOffset += 4
     const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
-    const decoder = new TextDecoder()
-    return [decoder.decode(view), len + 4]
+    return [AMQPView.decoder.decode(view), len + 4]
   }
 
   /**
