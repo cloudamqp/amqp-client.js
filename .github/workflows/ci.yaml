@@ -36,5 +36,5 @@ jobs:
     - run: npm install
     - run: npm test
       env:
-        AMQP_URL: ${{ secrets.NPM_TOKEN }}
+        AMQP_URL: ${{ secrets.AMQP_URL }}
     - run: npm lint
