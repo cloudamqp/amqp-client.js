@@ -35,4 +35,6 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm install
     - run: npm test
+      env:
+        AMQP_URL: ${{ secrets.NPM_TOKEN }}
     - run: npm lint
