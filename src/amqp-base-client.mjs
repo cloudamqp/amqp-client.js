@@ -595,7 +595,7 @@ export default class AMQPBaseClient {
           }
           const message = channel.delivery || channel.getMessage || channel.returned
           if (message && message.body) {
-            const bodyPart = new Uint8Array(view.buffer, i, frameSize)
+            const bodyPart = new Uint8Array(view.buffer, view.byteOffset + i, frameSize)
             message.body.set(bodyPart, message.bodyPos)
             message.bodyPos += frameSize
             i += frameSize

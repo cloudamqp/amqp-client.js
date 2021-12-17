@@ -56,7 +56,7 @@ export default class AMQPView extends DataView {
   getShortString(byteOffset) {
     const len = this.getUint8(byteOffset)
     byteOffset += 1
-    const view = new Uint8Array(this.buffer, byteOffset, len)
+    const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
     const decoder = new TextDecoder()
     return [decoder.decode(view), len + 1]
   }
@@ -71,7 +71,7 @@ export default class AMQPView extends DataView {
     const utf8 = encoder.encode(string)
     this.setUint8(byteOffset, utf8.byteLength)
     byteOffset += 1
-    const view = new Uint8Array(this.buffer, byteOffset)
+    const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset)
     view.set(utf8)
     return utf8.byteLength + 1
   }
@@ -84,7 +84,7 @@ export default class AMQPView extends DataView {
   getLongString(byteOffset, littleEndian) {
     const len = this.getUint32(byteOffset, littleEndian)
     byteOffset += 4
-    const view = new Uint8Array(this.buffer, byteOffset, len)
+    const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
     const decoder = new TextDecoder()
     return [decoder.decode(view), len + 4]
   }
@@ -100,7 +100,7 @@ export default class AMQPView extends DataView {
     const utf8 = encoder.encode(string)
     this.setUint32(byteOffset, utf8.byteLength, littleEndian)
     byteOffset += 4
-    const view = new Uint8Array(this.buffer, byteOffset)
+    const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset)
     view.set(utf8)
     return utf8.byteLength + 4
   }
@@ -430,8 +430,8 @@ export default class AMQPView extends DataView {
    * @return {[Uint8Array, number]} data and length
    */
   getByteArray(byteOffset, littleEndian) {
-    const len = this.getUint32(byteOffset, littleEndian)
-    const v = new Uint8Array(this.buffer, byteOffset + 4, len)
+    const len = this.getUint32(byteOffset, littleEndian); byteOffset += 4
+    const v = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
     return [v, len + 4]
   }
 
@@ -442,8 +442,8 @@ export default class AMQPView extends DataView {
    * @return {number} bytes written
    */
   setByteArray(byteOffset, data, littleEndian) {
-    this.setUint32(byteOffset, data.byteLength, littleEndian)
-    const view = new Uint8Array(this.buffer, byteOffset + 4, data.byteLength)
+    this.setUint32(byteOffset, data.byteLength, littleEndian); byteOffset += 4
+    const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, data.byteLength)
     view.set(data)
     return data.byteLength + 4
   }
