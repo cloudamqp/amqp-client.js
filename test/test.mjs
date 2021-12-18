@@ -54,7 +54,7 @@ test('can cancel a consumer', t => {
     .then((ch) => ch.queue(""))
     .then((q) => q.subscribe({noAck: false}, console.log))
     .then((consumer) => consumer.cancel())
-    .then((channel) => t.deepEqual(channel.consumers, {}))
+    .then((channel) => t.is(channel.consumers.size, 0))
 })
 
 test('can close a channel', async t => {
