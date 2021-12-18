@@ -451,11 +451,11 @@ export default class AMQPBaseClient {
                   break
                 }
                 case 60: { // deliver
-                  const [ consumerTag, consumerTagLen ] = view.getShortString(i); i += consumerTagLen
+                  const [consumerTag, consumerTagLen] = view.getShortString(i); i += consumerTagLen
                   const deliveryTag = view.getUint64(i); i += 8
                   const redelivered = view.getUint8(i) === 1; i += 1
-                  const [ exchange, exchangeLen ]= view.getShortString(i); i += exchangeLen
-                  const [ routingKey, routingKeyLen ]= view.getShortString(i); i += routingKeyLen
+                  const [exchange, exchangeLen] = view.getShortString(i); i += exchangeLen
+                  const [routingKey, routingKeyLen] = view.getShortString(i); i += routingKeyLen
                   const channel = this.channels[channelId]
                   if (!channel) {
                     console.warn("Cannot deliver to closed channel", channelId)
@@ -565,24 +565,25 @@ export default class AMQPBaseClient {
           break
         }
         case 2: { // header
-          i += 2 // ignoring class id
-          i += 2 // ignoring weight
-          const bodySize = view.getUint64(i); i += 8
-          const [properties, propLen] = view.getProperties(i); i += propLen
-
           const channel = this.channels[channelId]
           if (!channel) {
             console.warn("Cannot deliver to closed channel", channelId)
+            i += frameSize
             break
           }
+
+          i += 4 // ignoring class id and weight
+          const bodySize = view.getUint64(i); i += 8
+          const [properties, propLen] = view.getProperties(i); i += propLen
           const message = channel.delivery || channel.getMessage || channel.returned
           if (message) {
             message.bodySize = bodySize
             message.properties = properties
             message.body = new Uint8Array(bodySize)
-            message.bodyPos = 0 // if body is split over multiple frames
             if (bodySize === 0)
               channel.onMessageReady(message)
+          } else {
+            console.warn("Header frame but no message")
           }
           break
         }
