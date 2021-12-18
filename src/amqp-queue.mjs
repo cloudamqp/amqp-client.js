@@ -79,13 +79,15 @@ export default class AMQPQueue {
   /**
    * Subscribe to the queue
    * @param {object} params
-   * @param {boolean} [params.noAck=true] - automatically acknowledge messages when received
-   * @param {boolean} [params.exclusive=false] - be the exclusive consumer of the queue
+   * @param {boolean} [params.noAck=true] - if messages are removed from the server upon delivery, or have to be acknowledged
+   * @param {boolean} [params.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
+   * @param {string} [params.tag=""] - tag of the consumer, will be server generated if left empty
+   * @param {object} [params.args={}] - custom arguments
    * @param {function(AMQPMessage) : void} callback - Function to be called for each received message
    * @return {Promise<AMQPConsumer>}
    */
-  subscribe({noAck = true, exclusive = false} = {}, callback) {
-    return this.channel.basicConsume(this.name, {noAck, exclusive}, callback)
+  subscribe({noAck = true, exclusive = false, tag = "", args = {}} = {}, callback) {
+    return this.channel.basicConsume(this.name, {noAck, exclusive, tag, args}, callback)
   }
 
   /**
