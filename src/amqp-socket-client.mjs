@@ -50,14 +50,14 @@ export default class AMQPClient extends AMQPBaseClient {
   connectSocket() {
     let framePos = 0
     let frameSize = 0
-    const frameBuffer = new Uint8Array(16384)
+    const frameBuffer = Buffer.allocUnsafe(16 * 1024)
     const self = this
     const options = {
       host: this.host,
       port: this.port,
       servername: this.host, // SNI
       onread: {
-        buffer: Buffer.alloc(16384),
+        buffer: Buffer.allocUnsafe(128 * 1024),
         callback: (/** @type {number} */ bytesWritten, /** @type {Buffer} */ buf) => {
           // Find frame boundaries and only pass a single frame at a time
           let bufPos = 0
