@@ -16,7 +16,7 @@ export default class AMQPChannel {
   constructor(connection, id) {
     this.connection = connection
     this.id = id
-    this.consumers = /** @type {Object.<string, AMQPConsumer>} */ ({})
+    this.consumers = new Map()
     this.promises = /** @type {[function(any) : void, function(Error|undefined) : void][]} */ ([])
     this.unconfirmedPublishes = /** @type {[number, function(number) : void, function(Error|undefined) : void][]} */ ([])
     this.closed = false
@@ -141,7 +141,7 @@ export default class AMQPChannel {
     return new Promise((resolve, reject) => {
       this.sendRpc(frame, j).then((consumerTag) =>  {
         const consumer = new AMQPConsumer(this, consumerTag, callback)
-        this.consumers[consumerTag] = consumer
+        this.consumers.set(consumerTag, consumer)
         resolve(consumer)
       }).catch(reject)
     })
@@ -169,10 +169,10 @@ export default class AMQPChannel {
 
     return new Promise((resolve, reject) => {
       this.sendRpc(frame, j).then((consumerTag) => {
-        const consumer = this.consumers[consumerTag]
+        const consumer = this.consumers.get(consumerTag)
         if (consumer) {
           consumer.setClosed()
-          delete this.consumers[consumerTag]
+          this.consumers.delete(consumerTag)
         }
         resolve(this)
       }).catch(reject)
@@ -810,8 +810,8 @@ export default class AMQPChannel {
   setClosed(err) {
     if (!this.closed) {
       this.closed = true
-      Object.values(this.consumers).forEach((consumer) => consumer.setClosed(err))
-      this.consumers = {}
+      this.consumers.forEach((consumer) => consumer.setClosed(err))
+      this.consumers.clear()
       // Empty and reject all RPC promises
       while(this.rejectPromise(err)) { 1 }
       this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
@@ -877,7 +877,7 @@ export default class AMQPChannel {
    */
   deliver(message) {
     queueMicrotask(() => {
-      const consumer = this.consumers[message.consumerTag]
+      const consumer = this.consumers.get(message.consumerTag)
       if (consumer) {
         consumer.onMessage(message)
       } else {
