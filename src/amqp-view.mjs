@@ -106,9 +106,26 @@ export default class AMQPView extends DataView {
   }
 
   /**
+   * @typedef {object} AMQPProperties - Message properties
+   * @property {string=} contentType
+   * @property {string=} contentEncoding
+   * @property {object=} headers
+   * @property {number=} deliveryMode
+   * @property {number=} priority
+   * @property {string=} correlationId
+   * @property {string=} replyTo
+   * @property {string=} expiration
+   * @property {string=} messageId
+   * @property {Date=} timestamp
+   * @property {string=} type
+   * @property {string=} userId
+   * @property {string=} appId
+   */
+
+  /**
    * @param {number} byteOffset
    * @param {boolean} [littleEndian]
-   * @return {[object, number]}
+   * @return {[AMQPProperties, number]}
    */
   getProperties(byteOffset, littleEndian) {
     let j = byteOffset
@@ -169,20 +186,7 @@ export default class AMQPView extends DataView {
 
   /**
    * @param {number} byteOffset
-   * @param {object} properties
-   * @param {string} [properties.contentType]
-   * @param {string} [properties.contentEncoding]
-   * @param {object} [properties.headers]
-   * @param {number} [properties.deliveryMode]
-   * @param {number} [properties.priority]
-   * @param {string} [properties.correlationId]
-   * @param {string} [properties.replyTo]
-   * @param {string} [properties.expiration]
-   * @param {string} [properties.messageId]
-   * @param {Date}   [properties.timestamp]
-   * @param {string} [properties.type]
-   * @param {string} [properties.userId]
-   * @param {string} [properties.appId]
+   * @param {AMQPProperties} properties
    * @param {boolean} [littleEndian]
    * @return {number} bytes written
    */
