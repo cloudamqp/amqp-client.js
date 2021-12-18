@@ -1,3 +1,5 @@
+import AMQPProperties from './amqp-properties.mjs'
+
 /**
  * An extended DataView, with AMQP protocol specific methods
  * @ignore
@@ -108,12 +110,12 @@ export default class AMQPView extends DataView {
   /**
    * @param {number} byteOffset
    * @param {boolean} [littleEndian]
-   * @return {[object, number]}
+   * @return {[AMQPProperties, number]}
    */
   getProperties(byteOffset, littleEndian) {
     let j = byteOffset
     const flags = this.getUint16(j, littleEndian); j += 2
-    const props = {}
+    const props = new AMQPProperties()
     if ((flags & 0x8000) > 0) {
       const [contentType, len] = this.getShortString(j); j += len
       props.contentType = contentType
