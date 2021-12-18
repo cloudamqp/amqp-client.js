@@ -50,7 +50,7 @@ export default class AMQPClient extends AMQPBaseClient {
   connectSocket() {
     let framePos = 0
     let frameSize = 0
-    const frameBuffer = Buffer.allocUnsafe(16 * 1024)
+    const frameBuffer = Buffer.allocUnsafe(16384)
     const self = this
     const options = {
       host: this.host,
@@ -59,17 +59,44 @@ export default class AMQPClient extends AMQPBaseClient {
       onread: {
         buffer: Buffer.allocUnsafe(128 * 1024),
         callback: (/** @type {number} */ bytesWritten, /** @type {Buffer} */ buf) => {
-          // Find frame boundaries and only pass a single frame at a time
+          // A socket read can contain 0 or more frames, so find frame boundries
           let bufPos = 0
           while (bufPos < bytesWritten) {
             // read frame size of next frame
-            if (frameSize === 0)
+            if (frameSize === 0) {
+              // first 7 bytes of a frame was split over two reads
+              if (framePos !== 0) {
+                const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + 7 - framePos)
+                if (copied === 0) throw `Copied 0 bytes framePos=${framePos} bufPos=${bufPos} bytesWritten=${bytesWritten}`
+                framePos += copied
+                bufPos += copied
+                frameSize = frameBuffer.readInt32BE(3) + 8
+                continue
+              }
+              // frame header is split over reads, copy to frameBuffer
+              if (bufPos + 3 + 4 > bytesWritten) {
+                const copied = buf.copy(frameBuffer, framePos, bufPos, bytesWritten)
+                if (copied === 0) throw `Copied 0 bytes framePos=${framePos} bufPos=${bufPos} bytesWritten=${bytesWritten}`
+                framePos += copied
+                break
+              }
+
               frameSize = buf.readInt32BE(bufPos + 3) + 8
+
+              // avoid copying if the whole frame is in the read buffer
+              if (bytesWritten - bufPos >= frameSize) {
+                const view = new AMQPView(buf.buffer, buf.byteOffset + bufPos, frameSize)
+                self.parseFrames(view)
+                bufPos += frameSize
+                framePos = frameSize = 0
+                continue
+              }
+            }
 
             const leftOfFrame = frameSize - framePos
             const copyBytes = Math.min(leftOfFrame, bytesWritten - bufPos)
             const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes)
-            if (copied === 0) throw "Copied 0 bytes, please report this bug"
+            if (copied === 0) throw `Copied 0 bytes, please report this bug, frameSize=${frameSize} framePos=${framePos} bufPos=${bufPos} copyBytes=${copyBytes} bytesWritten=${bytesWritten}`
             framePos += copied
             bufPos += copied
             if (framePos === frameSize) {
