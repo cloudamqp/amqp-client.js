@@ -606,13 +606,8 @@ export default class AMQPBaseClient {
           break
         }
         case 8: { // heartbeat
-          const heartbeat = new AMQPView(new ArrayBuffer(8))
-          heartbeat.setUint8(j, 1); j += 1 // type: method
-          heartbeat.setUint16(j, 0); j += 2 // channel: 0
-          heartbeat.setUint32(j, 0); j += 4 // frameSize
-          heartbeat.setUint8(j, 206); j += 1 // frame end byte
-          this.send(new Uint8Array(heartbeat.buffer, 0, j))
-            .catch(err => console.warn("Error while sending heartbeat", err))
+          const heartbeat = new Uint8Array([1, 0, 0, 0, 0, 0, 0, 206])
+          this.send(heartbeat).catch(err => console.warn("Error while sending heartbeat", err))
           break
         }
         default:
