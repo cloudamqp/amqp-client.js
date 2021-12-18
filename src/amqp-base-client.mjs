@@ -249,7 +249,7 @@ export default class AMQPBaseClient {
                   const msg = `connection closed: ${text} (${code})`
                   const err = new AMQPError(msg, this)
                   this.channels.forEach((ch) => ch.setClosed(err))
-                  this.channels = []
+                  this.channels = [new AMQPChannel(this, 0)]
 
                   const closeOk = new AMQPView(new ArrayBuffer(12))
                   closeOk.setUint8(j, 1); j += 1 // type: method
@@ -265,7 +265,7 @@ export default class AMQPBaseClient {
                 }
                 case 51: { // closeOk
                   this.channels.forEach((ch) => ch.setClosed())
-                  this.channels = []
+                  this.channels = [new AMQPChannel(this, 0)]
                   const promise = this.closePromise
                   if (promise) {
                     const [resolve, ] = promise
