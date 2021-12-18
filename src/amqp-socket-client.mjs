@@ -64,13 +64,13 @@ export default class AMQPClient extends AMQPBaseClient {
           while (bufPos < bytesWritten) {
             // read frame size of next frame
             if (frameSize === 0) {
-              // first 7 bytes of a frame was split over two reads
+              // first 7 bytes of a frame was split over two reads, this reads the second part
               if (framePos !== 0) {
                 const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + 7 - framePos)
                 if (copied === 0) throw `Copied 0 bytes framePos=${framePos} bufPos=${bufPos} bytesWritten=${bytesWritten}`
+                frameSize = frameBuffer.readInt32BE(bufPos + 3) + 8
                 framePos += copied
                 bufPos += copied
-                frameSize = frameBuffer.readInt32BE(3) + 8
                 continue
               }
               // frame header is split over reads, copy to frameBuffer
@@ -88,7 +88,7 @@ export default class AMQPClient extends AMQPBaseClient {
                 const view = new AMQPView(buf.buffer, buf.byteOffset + bufPos, frameSize)
                 self.parseFrames(view)
                 bufPos += frameSize
-                framePos = frameSize = 0
+                frameSize = 0
                 continue
               }
             }
