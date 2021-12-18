@@ -1,4 +1,4 @@
-import AMQPChannel from './amqp-channel.mjs'
+import AMQPChannel from './amqp-channel'
 
 /**
  * AMQP message
@@ -16,23 +16,24 @@ import AMQPChannel from './amqp-channel.mjs'
  * @property {string} replyText - Error message on why message was returned
  */
 export default class AMQPMessage {
+  channel: AMQPChannel
+  exchange = ""
+  routingKey = ""
+  properties = {}
+  bodySize = 0
+  body?: Uint8Array
+  bodyPos = 0
+  deliveryTag = 0
+  consumerTag = ""
+  redelivered = false
+  messageCount?: number
+  replyCode?: number
+  replyText?: string
   /**
    * @param {AMQPChannel} channel - Channel this message was delivered on
    */
-  constructor(channel) {
+  constructor(channel: AMQPChannel) {
     this.channel = channel
-    this.exchange = ""
-    this.routingKey = ""
-    this.properties = {}
-    this.bodySize = 0
-    this.body = /** @type {Uint8Array|undefined} */ (undefined)
-    this.bodyPos = 0
-    this.deliveryTag = 0
-    this.consumerTag = ""
-    this.redelivered = false
-    this.messageCount = undefined
-    this.replyCode = 0
-    this.replyText = ""
   }
 
   /**

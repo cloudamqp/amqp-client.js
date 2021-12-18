@@ -38,13 +38,16 @@
   },
   "homepage": "https://github.com/cloudamqp/amqp-client.js#readme",
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.7.0",
+    "@typescript-eslint/parser": "^5.7.0",
     "ava": "^3.15.0",
     "documentation": "^13.1.1",
     "esdoc": "^1.1.0",
     "esdoc-standard-plugin": "^1.0.0",
-    "eslint": "^7.20.0",
+    "eslint": "^7.32.0",
     "rollup": "^2.39.1",
     "rollup-plugin-cleanup": "^3.2.1",
-    "typescript": "^4.5.3"
+    "typedoc": "^0.22.10",
+    "typescript": "^4.5.4"
   }
 }

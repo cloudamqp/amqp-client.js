@@ -1,5 +1,5 @@
-import AMQPBaseClient from './amqp-base-client.mjs'
-import AMQPView from './amqp-view.mjs'
+import AMQPBaseClient from './amqp-base-client'
+import AMQPView from './amqp-view'
 
 /** 
  * WebSocket client for AMQP 0-9-1 servers
@@ -10,6 +10,8 @@ import AMQPView from './amqp-view.mjs'
  * @param {string} name of the connection, no default
  */
 export default class AMQPWebSocketClient extends AMQPBaseClient {
+  url: string
+  socket?: WebSocket
 
 /** 
  * @param {string} url to the websocket endpoint
@@ -18,17 +20,16 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
  * @param {string} [password='guest']
  * @param {string?} [name] of the connection, no default
  */
-  constructor(url, vhost = "/", username = "guest", password = "guest", name = null) {
+  constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string) {
     super(vhost, username, password, name, window.navigator.userAgent)
     this.url = url
-    this.socket = /** @type {WebSocket?} */ null
   }
 
   /**
    * Establish a AMQP connection over WebSocket
    * @return {Promise<AMQPBaseClient>} Promise to returns itself when successfully connected
    */
-  connect() {
+  override connect(): Promise<AMQPBaseClient> {
     const socket = new WebSocket(this.url)
     this.socket = socket
     socket.binaryType = "arraybuffer"
@@ -49,7 +50,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
    * @param {Uint8Array} bytes to send
    * @return {Promise<void>} fulfilled when the data is enqueued
    */
-  send(bytes) {
+  override send(bytes: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.socket) {
         try {
@@ -67,7 +68,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
   /**
    * @protected
    */
-  closeSocket() {
+  override closeSocket() {
     if (this.socket) this.socket.close()
   }
 }

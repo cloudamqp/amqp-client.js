@@ -1,36 +1,42 @@
-import AMQPError from './amqp-error.mjs'
-import AMQPQueue from './amqp-queue.mjs'
-import AMQPView from './amqp-view.mjs'
-import AMQPConsumer from './amqp-consumer.mjs'
-import AMQPMessage from './amqp-message.mjs'
-import AMQPBaseClient from './amqp-base-client.mjs'
+import AMQPError from './amqp-error'
+import AMQPQueue from './amqp-queue'
+import AMQPView from './amqp-view'
+import AMQPConsumer from './amqp-consumer'
+import AMQPMessage from './amqp-message'
+import AMQPBaseClient from './amqp-base-client'
+import { AMQPProperties } from './amqp-properties'
 
 /**
  * Represents an AMQP Channel. Almost all actions in AMQP are performed on a Channel.
  */
 export default class AMQPChannel {
+  connection: AMQPBaseClient
+  id: number
+  consumers = new Map<String, AMQPConsumer>()
+  promises: [(arg0: any) => void, (err?: Error) => void][]
+  unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][]
+  closed = false
+  confirmId = 0
+  delivery?: AMQPMessage
+  getMessage?: AMQPMessage
+  returned?: AMQPMessage
   /**
    * @param {AMQPBaseClient} connection - The connection this channel belongs to
    * @param {number} id - ID of the channel
    */
-  constructor(connection, id) {
+  constructor(connection: AMQPBaseClient, id: number) {
     this.connection = connection
     this.id = id
     this.consumers = new Map()
-    this.promises = /** @type {[function(any) : void, function(Error|undefined) : void][]} */ ([])
-    this.unconfirmedPublishes = /** @type {[number, function(number) : void, function(Error|undefined) : void][]} */ ([])
-    this.closed = false
-    this.confirmId = 0
-    this.delivery = /** @type {AMQPMessage?} */ (null)
-    this.getMessage = /** @type {AMQPMessage?} */ (null)
-    this.returned = /** @type {AMQPMessage?} */ (null)
+    this.promises = []
+    this.unconfirmedPublishes = []
   }
 
   /**
    * Declare a queue and return a AMQPQueue object.
    * @return {Promise<AMQPQueue>} Convient wrapper around a Queue object
    */
-  queue(name = "", props = {}, args = {}) {
+  queue(name = "", props = {}, args = {}): Promise<AMQPQueue> {
     return new Promise((resolve, reject) => {
       this.queueDeclare(name, props, args)
         .then(({name}) => resolve(new AMQPQueue(this, name)))
@@ -42,7 +48,7 @@ export default class AMQPChannel {
    * Alias for basicQos
    * @param {number} prefetchCount - max inflight messages
    */
-  prefetch(prefetchCount) {
+  prefetch(prefetchCount: number) {
     return this.basicQos(prefetchCount)
   }
 
@@ -50,7 +56,7 @@ export default class AMQPChannel {
    * Default handler for Returned messages
    * @param {AMQPMessage} message
    */
-  onReturn(message) {
+  onReturn(message: AMQPMessage) {
     console.error("Message returned from server", message)
   }
 
@@ -86,7 +92,7 @@ export default class AMQPChannel {
    * @param {boolean} [param.noAck=true] - if message is removed from the server upon delivery, or have to be acknowledged
    * @return {Promise<AMQPMessage?>} - returns null if the queue is empty otherwise a single message
    */
-  basicGet(queue, { noAck = true } = {}) {
+  basicGet(queue: string, { noAck = true } = {}): Promise<AMQPMessage|undefined> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
@@ -114,7 +120,7 @@ export default class AMQPChannel {
    * @param {function(AMQPMessage) : void} callback - will be called for each message delivered to this consumer
    * @return {Promise<AMQPConsumer>}
    */
-  basicConsume(queue, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback) {
+  basicConsume(queue: string, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback: (msg: AMQPMessage) => void) {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const noWait = false
@@ -152,7 +158,7 @@ export default class AMQPChannel {
    * @param {string} tag - consumer tag
    * @return {Promise<AMQPChannel>}
    */
-  basicCancel(tag) {
+  basicCancel(tag: string) {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
@@ -185,7 +191,7 @@ export default class AMQPChannel {
    * @param {boolean} [multiple=false] - batch confirm all messages up to this delivery tag
    * @return {Promise<void>}
    */
-  basicAck(deliveryTag, multiple = false) {
+  basicAck(deliveryTag: number, multiple = false) {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(21))
@@ -207,7 +213,7 @@ export default class AMQPChannel {
    * @param {boolean} [multiple=false] - batch confirm all messages up to this delivery tag
    * @return {Promise<void>}
    */
-  basicNack(deliveryTag, requeue = false, multiple = false) {
+  basicNack(deliveryTag: number, requeue = false, multiple = false) {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(21))
@@ -231,7 +237,7 @@ export default class AMQPChannel {
    * @param {boolean} [requeue=false] - if the message should be requeued or removed
    * @return {Promise<void>}
    */
-  basicReject(deliveryTag, requeue = false) {
+  basicReject(deliveryTag: number, requeue = false) {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(21))
@@ -288,7 +294,7 @@ export default class AMQPChannel {
    * @param {boolean} [immediate] - if the message should be returned if it can't be delivered to a consumer immediately (not supported in RabbitMQ)
    * @return {Promise<number>} - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
-  basicPublish(exchange, routingKey, data, properties, mandatory, immediate) {
+  basicPublish(exchange: string, routingKey: string, data: string|Uint8Array|ArrayBuffer, properties: AMQPProperties = {}, mandatory = false, immediate = false) {
     if (this.closed) return this.rejectClosed()
     if (this.connection.blocked)
       return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))
@@ -308,8 +314,7 @@ export default class AMQPChannel {
       body = encoder.encode(json)
     }
 
-    /** @type {Promise<any>[]} */
-    const promises = []
+    const promises = new Array<Promise<any>>()
     let j = 0
     let buffer = new AMQPView(new ArrayBuffer(16384))
     buffer.setUint8(j, 1); j += 1 // type: method
@@ -394,7 +399,7 @@ export default class AMQPChannel {
    * @param {boolean} global - if the prefetch is limited to the channel, or if false to each consumer
    * @return {Promise<void>}
    */
-  basicQos(prefetchCount, prefetchSize = 0, global = false) {
+  basicQos(prefetchCount: number, prefetchSize = 0, global = false) {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(19))
@@ -522,7 +527,7 @@ export default class AMQPChannel {
    * @param {object} args - optional arguments, e.g. for header exchanges
    * @return {Promise<void>} fulfilled when confirmed by the server
    */
-  queueBind(queue, exchange, routingKey, args = {}) {
+  queueBind(queue: string, exchange: string, routingKey: string, args = {}) {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
@@ -551,7 +556,7 @@ export default class AMQPChannel {
    * @param {object} args - arguments, e.g. for header exchanges
    * @return {Promise<void>} fulfilled when confirmed by the server
    */
-  queueUnbind(queue, exchange, routingKey, args = {}) {
+  queueUnbind(queue: string, exchange: string, routingKey: string, args = {}) {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const unbind = new AMQPView(new ArrayBuffer(4096))
@@ -575,7 +580,7 @@ export default class AMQPChannel {
    * @param {string} queue - name of the queue
    * @return {Promise<void>} fulfilled when confirmed by the server
    */
-  queuePurge(queue) {
+  queuePurge(queue: string) {
     if (this.closed) return this.rejectClosed()
     const noWait = true
     let j = 0
@@ -605,7 +610,7 @@ export default class AMQPChannel {
    * @param {object} args - optional arguments
    * @return {Promise<void>} Fulfilled when the exchange is created or if it already exists
    */
-  exchangeDeclare(name, type, { passive = false, durable = true, autoDelete = false, internal = false } = {}, args = {}) {
+  exchangeDeclare(name: string, type: string, { passive = false, durable = true, autoDelete = false, internal = false } = {}, args = {}) {
     const noWait = false
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(4096))
@@ -637,7 +642,7 @@ export default class AMQPChannel {
    * @param {boolean} [param.ifUnused=false] - only delete if the exchange doesn't have any bindings
    * @return {Promise<void>} Fulfilled when the exchange is deleted or if it's already deleted
    */
-  exchangeDelete(name, { ifUnused = false } = {}) {
+  exchangeDelete(name: string, { ifUnused = false } = {}) {
     const noWait = false
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
@@ -665,7 +670,7 @@ export default class AMQPChannel {
    * @param {object} args - optional arguments, e.g. for header exchanges
    * @return {Promise<void>} fulfilled when confirmed by the server
    */
-  exchangeBind(destination, source, routingKey = "", args = {}) {
+  exchangeBind(destination: string, source: string, routingKey = "", args = {}) {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const bind = new AMQPView(new ArrayBuffer(4096))
@@ -693,7 +698,7 @@ export default class AMQPChannel {
    * @param {object} args - arguments, e.g. for header exchanges
    * @return {Promise<void>} fulfilled when confirmed by the server
    */
-  exchangeUnbind(destination, source, routingKey = "", args = {}) {
+  exchangeUnbind(destination: string, source: string, routingKey = "", args = {}) {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const unbind = new AMQPView(new ArrayBuffer(4096))
@@ -739,7 +744,7 @@ export default class AMQPChannel {
    * @private
    * @param {number} methodId
    */
-  txMethod(methodId) {
+  txMethod(methodId: number) {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(12))
@@ -758,7 +763,7 @@ export default class AMQPChannel {
    * @param {any} [value]
    * @return {boolean} true if a promise was resolved, otherwise false
    */
-  resolvePromise(value) {
+  resolvePromise(value?: any) {
     const promise  = this.promises.shift()
     if (promise) {
       const [resolve, ] = promise
@@ -774,7 +779,7 @@ export default class AMQPChannel {
    * @param {Error} [err]
    * @return {boolean} true if a promise was rejected, otherwise false
    */
-  rejectPromise(err) {
+  rejectPromise(err?: Error) {
     const promise  = this.promises.shift()
     if (promise) {
       const [, reject] = promise
@@ -791,7 +796,7 @@ export default class AMQPChannel {
    * @param {number} frameSize - bytes the frame actually is
    * @return {Promise<any>}
    */
-  sendRpc(frame, frameSize) {
+  sendRpc(frame: AMQPView, frameSize: number): Promise<any> {
     return new Promise((resolve, reject) => {
       this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
         .then(() => this.promises.push([resolve, reject]))
@@ -807,7 +812,7 @@ export default class AMQPChannel {
    * @ignore
    * @param {Error} [err] - why the channel was closed
    */
-  setClosed(err) {
+  setClosed(err?: Error) {
     if (!this.closed) {
       this.closed = true
       this.consumers.forEach((consumer) => consumer.setClosed(err))
@@ -834,7 +839,7 @@ export default class AMQPChannel {
    * @param {boolean} multiple - true if all unconfirmed publishes up to this deliveryTag should be resolved or just this one
    * @param {boolean} nack - true if negative confirm, hence reject the unconfirmed publish(es)
    */
-  publishConfirmed(deliveryTag, multiple, nack) {
+  publishConfirmed(deliveryTag: number, multiple: boolean, nack: boolean) {
     // is queueMicrotask() needed here?
     const idx = this.unconfirmedPublishes.findIndex(([tag,]) => tag === deliveryTag)
     if (idx !== -1) {
@@ -857,15 +862,15 @@ export default class AMQPChannel {
    * @ignore
    * @param {AMQPMessage} message
    */
-  onMessageReady(message) {
+  onMessageReady(message: AMQPMessage) {
     if (this.delivery) {
-      this.delivery = null
+      this.delivery = undefined
       this.deliver(message)
     } else if (this.getMessage) {
-      this.getMessage = null
+      this.getMessage = undefined
       this.resolvePromise(message)
     } else {
-      this.returned = null
+      this.returned = undefined
       this.onReturn(message)
     }
   }
@@ -875,7 +880,7 @@ export default class AMQPChannel {
    * @ignore
    * @param {AMQPMessage} message
    */
-  deliver(message) {
+  deliver(message: AMQPMessage) {
     queueMicrotask(() => {
       const consumer = this.consumers.get(message.consumerTag)
       if (consumer) {
