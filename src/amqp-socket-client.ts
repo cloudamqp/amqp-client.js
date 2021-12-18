@@ -1,6 +1,6 @@
-import AMQPBaseClient from './amqp-base-client.mjs'
-import AMQPError from './amqp-error.mjs'
-import AMQPView from './amqp-view.mjs'
+import AMQPBaseClient from './amqp-base-client'
+import AMQPError from './amqp-error'
+import AMQPView from './amqp-view'
 import { Buffer } from 'buffer'
 import net from 'net'
 import tls from 'tls'
@@ -10,29 +10,31 @@ import process from 'process'
  * AMQP 0-9-1 client over TCP socket.
  */
 export default class AMQPClient extends AMQPBaseClient {
+  tls : boolean
+  host : string
+  port : number
+  socket?: net.Socket
   /**
    * @param {string} url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
    */
-  constructor(url) {
+  constructor(url: string) {
     const u = new URL(url)
     const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
     const username = u.username || "guest"
     const password = u.password || "guest"
-    const name = u.searchParams.get("name")
+    const name = u.searchParams.get("name") || ""
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
     super(vhost, username, password, name, platform)
     this.tls = u.protocol === "amqps:"
     this.host = u.hostname || "localhost"
     this.port = parseInt(u.port) || (this.tls ? 5671 : 5672)
-    /** @type {net.Socket?} */
-    this.socket = null
   }
 
   /**
    * Try establish a connection
    * @return {Promise<AMQPBaseClient>}
    */
-  connect() {
+  override connect(): Promise<AMQPBaseClient> {
     const socket = this.connectSocket()
     Object.defineProperty(this, 'socket', {
       value: socket,
@@ -40,7 +42,7 @@ export default class AMQPClient extends AMQPBaseClient {
     })
     return new Promise((resolve, reject) => {
       socket.on('error', (err) => reject(new AMQPError(err.message, this)))
-      this.connectPromise = /** @type {[function(AMQPBaseClient) : void, function(Error) : void]} */ ([resolve, reject])
+      this.connectPromise = /** @type {} */ ([resolve, reject])
     })
   }
 
@@ -59,7 +61,7 @@ export default class AMQPClient extends AMQPBaseClient {
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
     const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)
-    conn.on('data', (buf) => {
+    conn.on('data', (buf: Buffer) => {
       // A socket read can contain 0 or more frames, so find frame boundries
       let bufPos = 0
       while (bufPos < buf.length) {
@@ -115,7 +117,7 @@ export default class AMQPClient extends AMQPBaseClient {
    * @param {Uint8Array} bytes to send
    * @return {Promise<void>} fulfilled when the data is enqueued
    */
-  send(bytes) {
+  override send(bytes: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.socket)
         this.socket.write(bytes, undefined, (err) => err ? reject(err) : resolve())
@@ -127,7 +129,7 @@ export default class AMQPClient extends AMQPBaseClient {
   /**
    * @protected
    */
-  closeSocket() {
+  override closeSocket() {
     if(this.socket) this.socket.end()
   }
 }

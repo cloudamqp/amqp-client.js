@@ -1,7 +1,7 @@
-import AMQPChannel from './amqp-channel.mjs'
-import AMQPError from './amqp-error.mjs'
-import AMQPMessage from './amqp-message.mjs'
-import AMQPView from './amqp-view.mjs'
+import AMQPChannel from './amqp-channel'
+import AMQPError from './amqp-error'
+import AMQPMessage from './amqp-message'
+import AMQPView from './amqp-view'
 
 const VERSION = '1.2.2'
 
@@ -9,7 +9,20 @@ const VERSION = '1.2.2'
  * Base class for AMQPClients.
  * Implements everything except how to connect, send data and close the socket
  */
-export default class AMQPBaseClient {
+export default abstract class AMQPBaseClient {
+  vhost: string
+  username: string
+  password: string
+  name?: string
+  platform?: string
+  channels: AMQPChannel[]
+  connectPromise?: [(conn: AMQPBaseClient) => void, (err: Error) => void]
+  closePromise?: [(value?: any) => void, (err: Error) => void]
+  closed = false
+  blocked?: string
+  channelMax = 0
+  frameMax = 16384
+  heartbeat = 0
   /**
    * @param {string} vhost
    * @param {string} username
@@ -17,7 +30,7 @@ export default class AMQPBaseClient {
    * @param {string?} name - name of the connection, set in client properties
    * @param {string} platform - used in client properties
    */
-  constructor(vhost, username, password, name, platform) {
+  constructor(vhost: string, username: string, password: string, name?: string, platform?: string) {
     this.vhost = vhost
     this.username = username
     this.password = ""
@@ -29,8 +42,6 @@ export default class AMQPBaseClient {
     this.platform = platform
     this.channels = [new AMQPChannel(this, 0)]
     this.closed = false
-    /** @type {[function(AMQPBaseClient) : void, function(Error) : void] | undefined} */
-    this.connectPromise = undefined
   }
 
   /**
@@ -38,7 +49,7 @@ export default class AMQPBaseClient {
    * @param {number} [id] - An existing or non existing specific channel
    * @return {Promise<AMQPChannel>} channel
    */
-  channel(id) {
+  channel(id: number): Promise<AMQPChannel> {
     if (this.closed) return this.rejectClosed()
     if (id && id > 0 && this.channels[id]) return Promise.resolve(this.channels[id])
     // Store channels in an array, set position to null when channel is closed
@@ -98,9 +109,7 @@ export default class AMQPBaseClient {
    * @abstract
    * @return {Promise<AMQPBaseClient>}
    */
-  connect() {
-    throw "Abstract method not implemented"
-  }
+  abstract connect(): Promise<AMQPBaseClient>
 
   /**
    * @abstract
@@ -108,17 +117,12 @@ export default class AMQPBaseClient {
    * @param {Uint8Array} bytes to send
    * @return {Promise<void>} fulfilled when the data is enqueued
    */
-  send(bytes) {
-    throw "Abstract method not implemented"
-  }
+  abstract send(bytes: Uint8Array): Promise<void>
 
   /**
-   * @abstract
    * @protected
    */
-  closeSocket() {
-    throw "Abstract method not implemented"
-  }
+  abstract closeSocket(): void
 
   /** @private */
   rejectClosed() {
@@ -128,7 +132,7 @@ export default class AMQPBaseClient {
   /** @private
    * @param {Error} err
    */
-  rejectConnect(err) {
+  rejectConnect(err: Error) {
     if (this.connectPromise) {
       const [, reject] = this.connectPromise
       delete this.connectPromise
@@ -143,7 +147,7 @@ export default class AMQPBaseClient {
    * @param {AMQPView} view over a ArrayBuffer
    * @ignore
    */
-  parseFrames(view) {
+  parseFrames(view: AMQPView) {
     // Can possibly be multiple AMQP frames in a single WS frame
     for (let i = 0; i < view.byteLength;) {
       let j = 0 // position in outgoing frame
@@ -281,7 +285,7 @@ export default class AMQPBaseClient {
                   break
                 }
                 case 61: { // unblocked
-                  this.blocked = null
+                  this.blocked = undefined
                   break
                 }
                 default:
