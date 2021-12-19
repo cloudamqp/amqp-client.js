@@ -1,7 +1,7 @@
-import AMQPChannel from './amqp-channel'
-import AMQPError from './amqp-error'
-import AMQPMessage from './amqp-message'
-import AMQPView from './amqp-view'
+import AMQPChannel from './amqp-channel.js'
+import AMQPError from './amqp-error.js'
+import AMQPMessage from './amqp-message.js'
+import AMQPView from './amqp-view.js'
 
 const VERSION = '1.2.2'
 

@@ -1,5 +1,5 @@
-import AMQPChannel from './amqp-channel'
-import { AMQPProperties } from './amqp-properties'
+import AMQPChannel from './amqp-channel.js'
+import { AMQPProperties } from './amqp-properties.js'
 
 /**
  * AMQP message
