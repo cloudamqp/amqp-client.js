@@ -1,11 +1,11 @@
-import { AMQPMessage } from './amqp-message'
-import { AMQPChannel } from './amqp-channel'
+import AMQPMessage from './amqp-message'
+import AMQPChannel from './amqp-channel'
 import { AMQPProperties } from './amqp-properties'
 
 /**
  * Convience class for queues
  */
-export class AMQPQueue {
+export default class AMQPQueue {
   channel: AMQPChannel
   name: string
   /**

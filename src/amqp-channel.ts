@@ -1,15 +1,15 @@
-import { AMQPError } from './amqp-error'
-import { AMQPView } from './amqp-view'
-import { AMQPQueue } from './amqp-queue'
-import { AMQPConsumer } from './amqp-consumer'
-import { AMQPMessage } from './amqp-message'
-import { AMQPBaseClient } from './amqp-base-client'
+import AMQPError from './amqp-error'
+import AMQPView from './amqp-view'
+import AMQPQueue from './amqp-queue'
+import AMQPConsumer from './amqp-consumer'
+import AMQPMessage from './amqp-message'
+import AMQPBaseClient from './amqp-base-client'
 import { AMQPProperties } from './amqp-properties'
 
 /**
  * Represents an AMQP Channel. Almost all actions in AMQP are performed on a Channel.
  */
-export class AMQPChannel {
+export default class AMQPChannel {
   connection: AMQPBaseClient
   id: number
   consumers = new Map<string, AMQPConsumer>()
