@@ -15,9 +15,9 @@ export class AMQPConsumer {
   rejectWait?: (err: Error) => void
   timeoutId?: ReturnType<typeof setTimeout>
   /**
-   * @param {AMQPChannel} channel - the consumer is created on
-   * @param {string} tag - consumer tag
-   * @param {function(AMQPMessage) : void} onMessage - callback executed when a message arrive
+   * @param channel - the consumer is created on
+   * @param tag - consumer tag
+   * @param onMessage - callback executed when a message arrive
    */
   constructor(channel: AMQPChannel, tag: string, onMessage: (msg: AMQPMessage) => void) {
     this.channel = channel
@@ -27,8 +27,8 @@ export class AMQPConsumer {
 
   /**
    * Wait for the consumer to finish.
-   * @param {number} [timeout] wait for this many milliseconds and then return regardless
-   * @return {Promise<void>} - Fulfilled when the consumer/channel/connection is closed by the client. Rejected if the timeout is hit.
+   * @param [timeout] wait for this many milliseconds and then return regardless
+   * @return Fulfilled when the consumer/channel/connection is closed by the client. Rejected if the timeout is hit.
    */
   wait(timeout: number) {
     if (this.closedError) return Promise.reject(this.closedError)
@@ -53,7 +53,7 @@ export class AMQPConsumer {
 
   /**
    * @ignore
-   * @param {Error} [err] - why the consumer was closed
+   * @param [err] - why the consumer was closed
    */
   setClosed(err?: Error) {
     this.closed = true

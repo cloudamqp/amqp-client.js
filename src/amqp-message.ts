@@ -1,4 +1,5 @@
 import { AMQPChannel } from './amqp-channel'
+import { AMQPProperties } from './amqp-properties'
 
 /**
  * AMQP message

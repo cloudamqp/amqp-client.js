@@ -24,11 +24,11 @@ export abstract class AMQPBaseClient {
   frameMax = 16384
   heartbeat = 0
   /**
-   * @param {string} vhost
-   * @param {string} username
-   * @param {string} password
-   * @param {string?} name - name of the connection, set in client properties
-   * @param {string} platform - used in client properties
+   * @param vhost
+   * @param username
+   * @param password
+   * @param name - name of the connection, set in client properties
+   * @param platform - used in client properties
    */
   constructor(vhost: string, username: string, password: string, name?: string, platform?: string) {
     this.vhost = vhost
@@ -46,8 +46,7 @@ export abstract class AMQPBaseClient {
 
   /**
    * Open a channel
-   * @param {number} [id] - An existing or non existing specific channel
-   * @return {Promise<AMQPChannel>} channel
+   * @param [id] - An existing or non existing specific channel
    */
   channel(id: number): Promise<AMQPChannel> {
     if (this.closed) return this.rejectClosed()
@@ -57,6 +56,7 @@ export abstract class AMQPBaseClient {
     if (!id)
       id = this.channels.findIndex((ch) => ch === undefined)
     if (id === -1) id = this.channels.length
+    // FIXME: check max channels (or let the server deal with that?)
     const channel = new AMQPChannel(this, id)
     this.channels[id] = channel
 
@@ -78,9 +78,9 @@ export abstract class AMQPBaseClient {
 
   /**
    * Gracefully close the AMQP connection
-   * @param {object} params
-   * @param {number} [params.code=200] - Close code
-   * @param {string} [params.reason=""] - Reason for closing the connection
+   * @param params
+   * @param [params.code=200] - Close code
+   * @param [params.reason=""] - Reason for closing the connection
    */
   close({ code = 200, reason = "" } = {}) {
     if (this.closed) return this.rejectClosed()
@@ -106,16 +106,15 @@ export abstract class AMQPBaseClient {
   }
 
   /**
-   * @abstract
-   * @return {Promise<AMQPBaseClient>}
+   * Try establish a connection
    */
   abstract connect(): Promise<AMQPBaseClient>
 
   /**
    * @abstract
    * @ignore
-   * @param {Uint8Array} bytes to send
-   * @return {Promise<void>} fulfilled when the data is enqueued
+   * @param bytes to send
+   * @return fulfilled when the data is enqueued
    */
   abstract send(bytes: Uint8Array): Promise<void>
 
@@ -130,7 +129,7 @@ export abstract class AMQPBaseClient {
   }
 
   /** @private
-   * @param {Error} err
+   * @param err
    */
   rejectConnect(err: Error) {
     if (this.connectPromise) {
@@ -144,7 +143,7 @@ export abstract class AMQPBaseClient {
 
   /**
    * Parse and act on frames in an AMQPView
-   * @param {AMQPView} view over a ArrayBuffer
+   * @param view over a ArrayBuffer
    * @ignore
    */
   parseFrames(view: AMQPView) {
