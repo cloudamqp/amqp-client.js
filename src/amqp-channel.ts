@@ -269,21 +269,7 @@ export class AMQPChannel {
    * Publish a message
    * @param exchange - the exchange to publish to, the exchange must exists
    * @param routingKey - routing key
-   * @param {string|Uint8Array|ArrayBuffer} data - the data to be published, can be a string or an uint8array
-   * @param properties - publish properties
-   * @param properties.contentType - mime type, eg. application/json
-   * @param properties.contentEncoding - eg. gzip
-   * @param properties.headers - custom headers, can also be used for routing with header exchanges
-   * @param properties.deliveryMode - 1 for transient, 2 for persisent
-   * @param properties.priority - between 0 and 255
-   * @param properties.correlationId - for RPC requests
-   * @param properties.replyTo - for RPC requests
-   * @param properties.expiration - number in milliseconds, as string
-   * @param properties.messageId
-   * @param properties.timestamp - the time the message was generated
-   * @param properties.type
-   * @param properties.userId
-   * @param properties.appId
+   * @param data - the data to be published, can be a string or an uint8array
    * @param [mandatory] - if the message should be returned if there's no queue to be delivered to
    * @param [immediate] - if the message should be returned if it can't be delivered to a consumer immediately (not supported in RabbitMQ)
    * @return - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
