@@ -1,5 +1,5 @@
-import AMQPBaseClient from './amqp-base-client'
-import AMQPView from './amqp-view'
+import { AMQPBaseClient } from './amqp-base-client'
+import { AMQPView } from './amqp-view'
 
 /** 
  * WebSocket client for AMQP 0-9-1 servers
@@ -9,7 +9,7 @@ import AMQPView from './amqp-view'
  * @param {string} password, default 'guest'
  * @param {string} name of the connection, no default
  */
-export default class AMQPWebSocketClient extends AMQPBaseClient {
+export class AMQPWebSocketClient extends AMQPBaseClient {
   url: string
   socket?: WebSocket
 
@@ -38,10 +38,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
       this.connectPromise = /** @type {[function(AMQPBaseClient) : void, function(Error) : void]} */ ([resolve, reject])
       socket.onclose = reject
       socket.onerror = reject
-      socket.onopen = () => {
-        const amqpstart = new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1])
-        socket.send(amqpstart)
-      }
+      socket.onopen = () => socket.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
     })
   }
 
