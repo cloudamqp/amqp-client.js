@@ -1,6 +1,6 @@
-import AMQPMessage from './amqp-message'
-import AMQPChannel from './amqp-channel'
-import { AMQPProperties } from './amqp-properties'
+import AMQPMessage from './amqp-message.js'
+import AMQPChannel from './amqp-channel.js'
+import { AMQPProperties } from './amqp-properties.js'
 
 /**
  * Convience class for queues

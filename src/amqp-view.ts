@@ -1,4 +1,4 @@
-import { AMQPProperties } from './amqp-properties'
+import { AMQPProperties } from './amqp-properties.js'
 
 /**
  * An extended DataView, with AMQP protocol specific methods

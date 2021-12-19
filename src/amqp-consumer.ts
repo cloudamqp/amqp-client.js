@@ -1,6 +1,6 @@
-import AMQPError from './amqp-error'
-import AMQPChannel from './amqp-channel'
-import AMQPMessage from './amqp-message'
+import AMQPError from './amqp-error.js'
+import AMQPChannel from './amqp-channel.js'
+import AMQPMessage from './amqp-message.js'
 
 /**
  * A consumer, subscribed to a queue
