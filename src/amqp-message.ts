@@ -19,7 +19,7 @@ export class AMQPMessage {
   channel: AMQPChannel
   exchange = ""
   routingKey = ""
-  properties = {}
+  properties : AMQPProperties = {}
   bodySize = 0
   body?: Uint8Array
   bodyPos = 0
@@ -29,8 +29,11 @@ export class AMQPMessage {
   messageCount?: number
   replyCode?: number
   replyText?: string
+
+  static decoder = new TextDecoder()
+
   /**
-   * @param {AMQPChannel} channel - Channel this message was delivered on
+   * @param channel - Channel this message was delivered on
    */
   constructor(channel: AMQPChannel) {
     this.channel = channel
@@ -38,16 +41,11 @@ export class AMQPMessage {
 
   /**
    * Converts the message (which is deliviered as an uint8array) to a string
-   * @return {string} utf8 encoded string
    */
   bodyToString() {
-    const decoder = new TextDecoder()
-    return decoder.decode(this.body)
+    return AMQPMessage.decoder.decode(this.body)
   }
 
-  /**
-   * @return {string}
-   */
   bodyString() {
     return this.bodyToString()
   }
