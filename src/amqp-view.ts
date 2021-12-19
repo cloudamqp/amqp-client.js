@@ -4,7 +4,7 @@ import { AMQPProperties } from './amqp-properties'
  * An extended DataView, with AMQP protocol specific methods
  * @ignore
  */
-export default class AMQPView extends DataView {
+export class AMQPView extends DataView {
   static decoder = new TextDecoder()
 
   /**

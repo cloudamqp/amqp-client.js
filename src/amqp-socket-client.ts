@@ -1,6 +1,6 @@
-import AMQPBaseClient from './amqp-base-client'
-import AMQPError from './amqp-error'
-import AMQPView from './amqp-view'
+import { AMQPBaseClient } from './amqp-base-client'
+import { AMQPError } from './amqp-error'
+import { AMQPView } from './amqp-view'
 import { Buffer } from 'buffer'
 import net from 'net'
 import tls from 'tls'
@@ -9,7 +9,7 @@ import process from 'process'
 /**
  * AMQP 0-9-1 client over TCP socket.
  */
-export default class AMQPClient extends AMQPBaseClient {
+export class AMQPClient extends AMQPBaseClient {
   tls : boolean
   host : string
   port : number

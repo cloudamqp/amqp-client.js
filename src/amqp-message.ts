@@ -1,4 +1,4 @@
-import AMQPChannel from './amqp-channel'
+import { AMQPChannel } from './amqp-channel'
 
 /**
  * AMQP message
@@ -15,7 +15,7 @@ import AMQPChannel from './amqp-channel'
  * @property {number} replyCode - Code if message was returned
  * @property {string} replyText - Error message on why message was returned
  */
-export default class AMQPMessage {
+export class AMQPMessage {
   channel: AMQPChannel
   exchange = ""
   routingKey = ""

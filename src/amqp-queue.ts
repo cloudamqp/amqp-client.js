@@ -1,11 +1,11 @@
-import AMQPMessage from './amqp-message'
-import AMQPChannel from './amqp-channel'
+import { AMQPMessage } from './amqp-message'
+import { AMQPChannel } from './amqp-channel'
 import { AMQPProperties } from './amqp-properties'
 
 /**
  * Convience class for queues
  */
-export default class AMQPQueue {
+export class AMQPQueue {
   channel: AMQPChannel
   name: string
   /**
@@ -96,7 +96,7 @@ export default class AMQPQueue {
    * @param {string} consumerTag
    * @return {Promise<self>}
    */
-  unsubscribe(consumerTag: string): Promise<typeof self> {
+  unsubscribe(consumerTag: string): Promise<AMQPQueue> {
     const self = this
     return new Promise((resolve, reject) => {
       this.channel.basicCancel(consumerTag)
@@ -109,7 +109,7 @@ export default class AMQPQueue {
    * Delete the queue
    * @return {Promise<self>}
    */
-  delete(): Promise<typeof self> {
+  delete(): Promise<AMQPQueue> {
     const self = this
     return new Promise((resolve, reject) => {
       this.channel.queueDelete(this.name)
