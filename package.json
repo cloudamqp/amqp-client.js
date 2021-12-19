@@ -7,18 +7,18 @@
   "types": "dist/index.d.ts",
   "exports": {
     "require": "./dist/index.cjs",
-    "import": "./dist/index.mjs"
+    "import": "./dist/index.js"
   },
   "browser": "dist/amqp-websocket-client.mjs",
   "engines": {
     "node": ">=12.0.0"
   },
   "scripts": {
-    "docs": "documentation build src/** -f html -o docs",
+    "docs": "typedoc --entryPoints src/index.ts",
     "lint": "eslint",
     "test": "ava",
-    "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.mjs && git add src/amqp-base-client.mjs",
-    "build": "rollup -c && tsc",
+    "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.ts && git add src/amqp-base-client.ts",
+    "build": "tsc && rollup -c",
     "preversion": "npm test",
     "version": "npm run build"
   },
@@ -41,9 +41,6 @@
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
     "ava": "^3.15.0",
-    "documentation": "^13.1.1",
-    "esdoc": "^1.1.0",
-    "esdoc-standard-plugin": "^1.0.0",
     "eslint": "^7.32.0",
     "rollup": "^2.39.1",
     "rollup-plugin-cleanup": "^3.2.1",

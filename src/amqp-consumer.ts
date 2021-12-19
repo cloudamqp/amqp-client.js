@@ -1,11 +1,11 @@
-import { AMQPError } from './amqp-error'
-import { AMQPChannel } from './amqp-channel'
-import { AMQPMessage } from './amqp-message'
+import AMQPError from './amqp-error'
+import AMQPChannel from './amqp-channel'
+import AMQPMessage from './amqp-message'
 
 /**
  * A consumer, subscribed to a queue
  */
-export class AMQPConsumer {
+export default class AMQPConsumer {
   channel: AMQPChannel
   tag: string
   onMessage: (msg: AMQPMessage) => void

@@ -1,21 +1,16 @@
-import { AMQPBaseClient } from './amqp-base-client'
-import { AMQPView } from './amqp-view'
+import AMQPBaseClient from './amqp-base-client'
+import AMQPView from './amqp-view'
 
 /** 
  * WebSocket client for AMQP 0-9-1 servers
- * @param url to the websocket endpoint
- * @param vhost, default '/'
- * @param username, default 'guest'
- * @param password, default 'guest'
- * @param name of the connection, no default
  */
-export class AMQPWebSocketClient extends AMQPBaseClient {
+export default class AMQPWebSocketClient extends AMQPBaseClient {
   url: string
   socket?: WebSocket
 
 /** 
  * @param url to the websocket endpoint
- * @param [vhost='/']
+ * @param [vhost='/'] url to the websocket endpoint
  * @param [username='guest']
  * @param [password='guest']
  * @param [name] of the connection, no default
