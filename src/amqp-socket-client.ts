@@ -15,7 +15,7 @@ export class AMQPClient extends AMQPBaseClient {
   port : number
   socket?: net.Socket
   /**
-   * @param {string} url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
+   * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
    */
   constructor(url: string) {
     const u = new URL(url)
@@ -30,10 +30,6 @@ export class AMQPClient extends AMQPBaseClient {
     this.port = parseInt(u.port) || (this.tls ? 5671 : 5672)
   }
 
-  /**
-   * Try establish a connection
-   * @return {Promise<AMQPBaseClient>}
-   */
   override connect(): Promise<AMQPBaseClient> {
     const socket = this.connectSocket()
     Object.defineProperty(this, 'socket', {
@@ -114,8 +110,8 @@ export class AMQPClient extends AMQPBaseClient {
 
   /**
    * @ignore
-   * @param {Uint8Array} bytes to send
-   * @return {Promise<void>} fulfilled when the data is enqueued
+   * @param bytes to send
+   * @return fulfilled when the data is enqueued
    */
   override send(bytes: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {

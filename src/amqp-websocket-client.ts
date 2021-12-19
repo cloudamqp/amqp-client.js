@@ -3,22 +3,22 @@ import { AMQPView } from './amqp-view'
 
 /** 
  * WebSocket client for AMQP 0-9-1 servers
- * @param {string} url to the websocket endpoint
- * @param {string} vhost, default '/'
- * @param {string} username, default 'guest'
- * @param {string} password, default 'guest'
- * @param {string} name of the connection, no default
+ * @param url to the websocket endpoint
+ * @param vhost, default '/'
+ * @param username, default 'guest'
+ * @param password, default 'guest'
+ * @param name of the connection, no default
  */
 export class AMQPWebSocketClient extends AMQPBaseClient {
   url: string
   socket?: WebSocket
 
 /** 
- * @param {string} url to the websocket endpoint
- * @param {string} [vhost='/']
- * @param {string} [username='guest']
- * @param {string} [password='guest']
- * @param {string?} [name] of the connection, no default
+ * @param url to the websocket endpoint
+ * @param [vhost='/']
+ * @param [username='guest']
+ * @param [password='guest']
+ * @param [name] of the connection, no default
  */
   constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string) {
     super(vhost, username, password, name, window.navigator.userAgent)
@@ -27,7 +27,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
 
   /**
    * Establish a AMQP connection over WebSocket
-   * @return {Promise<AMQPBaseClient>} Promise to returns itself when successfully connected
+   * @return Promise to returns itself when successfully connected
    */
   override connect(): Promise<AMQPBaseClient> {
     const socket = new WebSocket(this.url)
@@ -44,8 +44,8 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
 
   /**
    * @ignore
-   * @param {Uint8Array} bytes to send
-   * @return {Promise<void>} fulfilled when the data is enqueued
+   * @param bytes to send
+   * @return fulfilled when the data is enqueued
    */
   override send(bytes: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {

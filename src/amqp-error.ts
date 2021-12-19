@@ -8,8 +8,8 @@ import { AMQPBaseClient } from './amqp-base-client'
 export class AMQPError extends Error {
   connection: AMQPBaseClient
   /**
-   * @param {string} message
-   * @param {AMQPBaseClient} connection - The connection the error was raised on
+   * @param message
+   * @param connection - The connection the error was raised on
    */
   constructor(message: string, connection: AMQPBaseClient) {
     super(message)
