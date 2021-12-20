@@ -16,7 +16,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
  * @param [name] of the connection, no default
  */
   constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string) {
-    super(vhost, username, password, name, window.navigator.userAgent)
+    super(vhost, username, password, name, AMQPWebSocketClient.platform())
     this.url = url
   }
 
@@ -30,7 +30,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
     socket.binaryType = "arraybuffer"
     socket.onmessage = (event) => this.parseFrames(new AMQPView(event.data))
     return new Promise((resolve, reject) => {
-      this.connectPromise = /** @type {[function(AMQPBaseClient) : void, function(Error) : void]} */ ([resolve, reject])
+      this.connectPromise = [resolve, reject]
       socket.onclose = reject
       socket.onerror = reject
       socket.onopen = () => socket.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
@@ -62,5 +62,12 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
    */
   override closeSocket() {
     if (this.socket) this.socket.close()
+  }
+
+  static platform(): string {
+   if (global.window)
+     return global.window.navigator.userAgent
+   else
+     return `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
   }
 }

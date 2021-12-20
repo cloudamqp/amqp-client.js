@@ -4,7 +4,6 @@ import AMQPView from './amqp-view.js'
 import { Buffer } from 'buffer'
 import net from 'net'
 import tls from 'tls'
-import process from 'process'
 
 /**
  * AMQP 0-9-1 client over TCP socket.
