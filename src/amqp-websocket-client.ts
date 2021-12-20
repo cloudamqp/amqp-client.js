@@ -65,9 +65,9 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
   }
 
   static platform(): string {
-   if (global.window)
-     return global.window.navigator.userAgent
-   else
-     return `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
+    if (typeof(window) !== 'undefined')
+      return window.navigator.userAgent
+    else
+      return `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
   }
 }
