@@ -18,7 +18,8 @@
     "lint": "eslint src",
     "test": "ava",
     "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.ts && git add src/amqp-base-client.ts",
-    "build": "tsc && tsc -p tsconfig.cjs.json && rollup -c",
+    "build": "rm -rf dist && tsc && tsc -p tsconfig.cjs.json && rollup -c",
+    "prepack": "npm run build",
     "preversion": "npm test",
     "version": "npm run build"
   },
