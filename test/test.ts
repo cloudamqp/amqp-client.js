@@ -39,6 +39,36 @@ test('can publish and consume', t => {
   }).then((result: AMQPMessage) => t.is(result.bodyString(), "hello world"))
 })
 
+test('can nack a message', t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  return new Promise<AMQPMessage>((resolve, reject) => {
+    amqp.connect()
+      .then(conn => conn.channel())
+      .then(ch => ch.queue(""))
+      .then(q => q.publish("hello world"))
+      .then(q => q.subscribe({noAck: false}, msg => {
+        msg.nack()
+        resolve(msg)
+      }))
+      .catch(reject)
+  }).then((result: AMQPMessage) => t.is(result.bodyString(), "hello world"))
+})
+
+test('can reject a message', t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  return new Promise<AMQPMessage>((resolve, reject) => {
+    amqp.connect()
+      .then(conn => conn.channel())
+      .then(ch => ch.queue(""))
+      .then(q => q.publish("hello world"))
+      .then(q => q.subscribe({noAck: false}, msg => {
+        msg.reject()
+        resolve(msg)
+      }))
+      .catch(reject)
+  }).then((result: AMQPMessage) => t.is(result.bodyString(), "hello world"))
+})
+
 test('will throw an error', async t => {
   const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
