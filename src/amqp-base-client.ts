@@ -24,9 +24,6 @@ export default abstract class AMQPBaseClient {
   frameMax = 16384
   heartbeat = 0
   /**
-   * @param vhost
-   * @param username
-   * @param password
    * @param name - name of the connection, set in client properties
    * @param platform - used in client properties
    */
@@ -81,11 +78,9 @@ export default abstract class AMQPBaseClient {
 
   /**
    * Gracefully close the AMQP connection
-   * @param params
-   * @param [params.code=200] - Close code
-   * @param [params.reason=""] - Reason for closing the connection
+   * @param [reason] might be logged by the server
    */
-  close({ code = 200, reason = "" } = {}) {
+  close(reason = "", code = 200) {
     if (this.closed) return this.rejectClosed()
     this.closed = true
     let j = 0
@@ -114,16 +109,13 @@ export default abstract class AMQPBaseClient {
   abstract connect(): Promise<AMQPBaseClient>
 
   /**
-   * @abstract
    * @ignore
    * @param bytes to send
    * @return fulfilled when the data is enqueued
    */
   abstract send(bytes: Uint8Array): Promise<void>
 
-  /**
-   * @protected
-   */
+  /** @protected */
   abstract closeSocket(): void
 
   /** @private */
@@ -131,9 +123,7 @@ export default abstract class AMQPBaseClient {
     return Promise.reject(new AMQPError("Connection closed", this))
   }
 
-  /** @private
-   * @param err
-   */
+  /** @private */
   rejectConnect(err: Error) {
     if (this.connectPromise) {
       const [, reject] = this.connectPromise
@@ -146,7 +136,6 @@ export default abstract class AMQPBaseClient {
 
   /**
    * Parse and act on frames in an AMQPView
-   * @param view over a ArrayBuffer
    * @ignore
    */
   parseFrames(view: AMQPView) {
