@@ -1,5 +1,5 @@
 import test from 'ava';
-import { AMQPClient } from '../dist/index.js';
+import { AMQPClient, AMQPMessage } from '../src/index.js';
 
 test('can parse the url correctly', t => {
   const username = 'user_name'
@@ -26,7 +26,7 @@ test('can open a connection and a channel', t => {
 
 test('can publish and consume', t => {
   const amqp = new AMQPClient("amqp://localhost")
-  return new Promise((resolve, reject) => {
+  return new Promise<AMQPMessage>((resolve, reject) => {
     amqp.connect()
       .then(conn => conn.channel())
       .then(ch => ch.queue(""))
@@ -36,15 +36,15 @@ test('can publish and consume', t => {
         resolve(msg)
       }))
       .catch(reject)
-  }).then((result) => t.is(result.bodyString(), "hello world"))
+  }).then((result: AMQPMessage) => t.is(result.bodyString(), "hello world"))
 })
 
-test('will throw an error', t => {
+test('will throw an error', async t => {
   const amqp = new AMQPClient("amqp://localhost")
-  return amqp.connect()
-    .then((conn) => conn.channel())
-    .then((ch) => ch.queue("amq.foobar"))
-    .catch((e) => t.regex(e.message, /ACCESS_REFUSED/))
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await t.throwsAsync(async () => { await ch.queue("amq.foobar") },
+                      { message: /ACCESS_REFUSED/ })
 })
 
 test('can cancel a consumer', t => {
@@ -71,11 +71,8 @@ test('connection error raises everywhere', async t => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await conn.close()
-  try {
-    await ch.close()
-  } catch (err) {
-    t.is(err.message, 'Channel is closed');
-  }
+  await t.throwsAsync(async () => { await ch.close() },
+                      { message: /Channel is closed/ })
 })
 
 test('consumer stops wait on cancel', async t => {
@@ -83,7 +80,7 @@ test('consumer stops wait on cancel', async t => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
-  const consumer = await q.subscribe({}, () => { })
+  const consumer = await q.subscribe({}, () => ({}))
   await q.publish("foobar")
   await consumer.cancel()
   const ok = await consumer.wait()
@@ -95,7 +92,7 @@ test('consumer stops wait on channel error', async t => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
-  const consumer = await q.subscribe({}, () => { })
+  const consumer = await q.subscribe({}, () => ({}))
   // acking invalid delivery tag should close channel
   setTimeout(() => ch.basicAck(99999), 1)
   await t.throwsAsync(consumer.wait())
@@ -144,7 +141,7 @@ test('can handle rejects', async t => {
 
   const returned = new Promise((resolve) => ch.onReturn = resolve)
   await ch.basicPublish("", "not-a-queue", "body", {}, true)
-  const msg = await returned
+  const msg = await returned as AMQPMessage
   t.is(msg.replyCode, 312)
   t.is(msg.routingKey, "not-a-queue")
 })
@@ -163,9 +160,9 @@ test('can handle nacks on confirm channel', async t => {
 test('throws on invalid exchange type', async t => {
   const amqp = new AMQPClient("amqp://localhost")
   const conn = await amqp.connect()
-  let ch = await conn.channel()
+  const ch = await conn.channel()
   const name = "test" + Math.random()
-  let err = await t.throwsAsync(ch.exchangeDeclare(name, "none"))
+  const err = await t.throwsAsync(ch.exchangeDeclare(name, "none"))
   t.regex(err.message, /invalid exchange type/)
 })
 
@@ -194,14 +191,16 @@ test('exchange to exchange bind/unbind', async t => {
   const q = await ch.queue()
   await q.bind(name2)
   await ch.confirmSelect()
-  await ch.basicPublish(name1)
+  await ch.basicPublish(name1, "", "")
   const msg1 = await ch.basicGet(q.name)
-  t.is(msg1.exchange, name1)
+  t.assert(msg1)
+  if (msg1)
+    t.is(msg1.exchange, name1)
   await ch.exchangeUnbind(name2, name1)
-  await ch.basicPublish(name1)
+  await ch.basicPublish(name1, "", "")
   const msg2 = await ch.basicGet(q.name)
   t.is(msg2, null)
-  await ch.exchangeDelete(name1, "fanout")
+  await ch.exchangeDelete(name1)
 })
 
 test.skip('can change flow state of channel', async t => {
@@ -224,7 +223,9 @@ test('basic get', async t => {
   t.is(msg, null)
   await q.publish("foobar")
   msg = await ch.basicGet(q.name)
-  t.is(msg.bodyToString(), "foobar")
+  t.assert(msg)
+  if (msg)
+    t.is(msg.bodyToString(), "foobar")
 })
 
 test('transactions', async t => {
@@ -238,7 +239,9 @@ test('transactions', async t => {
   t.is(msg1, null)
   await ch.txCommit()
   const msg2 = await ch.basicGet(q.name)
-  t.is(msg2.bodyToString(), "foobar")
+  t.assert(msg2, "missing message")
+  if (msg2)
+    t.is(msg2.bodyToString(), "foobar")
 
   await q.publish("foobar")
   await ch.txRollback()

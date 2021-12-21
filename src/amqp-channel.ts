@@ -119,7 +119,7 @@ export default class AMQPChannel {
    * @param [param.args={}] - custom arguments
    * @param {function(AMQPMessage) : void} callback - will be called for each message delivered to this consumer
    */
-  basicConsume(queue: string, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback: (msg: AMQPMessage) => void) {
+  basicConsume(queue: string, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback: (msg: AMQPMessage) => void): Promise<AMQPConsumer> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const noWait = false
@@ -156,7 +156,7 @@ export default class AMQPChannel {
    * Cancel/stop a consumer
    * @param tag - consumer tag
    */
-  basicCancel(tag: string) {
+  basicCancel(tag: string): Promise<AMQPChannel> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
@@ -188,7 +188,7 @@ export default class AMQPChannel {
    * @param deliveryTag - tag of the message
    * @param [multiple=false] - batch confirm all messages up to this delivery tag
    */
-  basicAck(deliveryTag: number, multiple = false) {
+  basicAck(deliveryTag: number, multiple = false): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(21))
@@ -209,7 +209,7 @@ export default class AMQPChannel {
    * @param [requeue=false] - if the message should be requeued or removed
    * @param [multiple=false] - batch confirm all messages up to this delivery tag
    */
-  basicNack(deliveryTag: number, requeue = false, multiple = false) {
+  basicNack(deliveryTag: number, requeue = false, multiple = false): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(21))

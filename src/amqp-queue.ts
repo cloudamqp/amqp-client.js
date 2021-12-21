@@ -24,10 +24,10 @@ export default class AMQPQueue {
    * @param args - arguments
    * @return
    */
-  bind(exchange: string, routingkey: string, args = {}) {
+  bind(exchange: string, routingKey = "", args = {}) {
     const self = this
     return new Promise((resolve, reject) => {
-      this.channel.queueBind(this.name, exchange, routingkey, args)
+      this.channel.queueBind(this.name, exchange, routingKey, args)
         .then(() => resolve(self))
         .catch(reject)
     })
@@ -40,10 +40,10 @@ export default class AMQPQueue {
    * @param args - arguments
    * @return
    */
-  unbind(exchange: string, routingkey: string, args = {}) {
+  unbind(exchange: string, routingKey = "", args = {}) {
     const self = this
     return new Promise((resolve, reject) => {
-      this.channel.queueUnbind(this.name, exchange, routingkey, args)
+      this.channel.queueUnbind(this.name, exchange, routingKey, args)
         .then(() => resolve(self))
         .catch(reject)
     })
@@ -55,7 +55,7 @@ export default class AMQPQueue {
    * @param properties - publish properties
    * @return - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
-  publish(body: string|Uint8Array|ArrayBuffer, properties: AMQPProperties = {}) {
+  publish(body: string|Uint8Array|ArrayBuffer, properties: AMQPProperties = {}): Promise<AMQPQueue> {
     const self = this
     return new Promise((resolve, reject) => {
       this.channel.basicPublish("", this.name, body, properties)
