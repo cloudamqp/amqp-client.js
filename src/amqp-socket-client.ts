@@ -50,7 +50,6 @@ export default class AMQPClient extends AMQPBaseClient {
     let framePos = 0
     let frameSize = 0
     const frameBuffer = Buffer.allocUnsafe(16384)
-    const self = this
     const options = {
       host: this.host,
       port: this.port,
@@ -87,7 +86,7 @@ export default class AMQPClient extends AMQPBaseClient {
           // avoid copying if the whole frame is in the read buffer
           if (buf.length - bufPos >= frameSize) {
             const view = new AMQPView(buf.buffer, buf.byteOffset + bufPos, frameSize)
-            self.parseFrames(view)
+            this.parseFrames(view)
             bufPos += frameSize
             frameSize = 0
             continue
@@ -102,7 +101,7 @@ export default class AMQPClient extends AMQPBaseClient {
         bufPos += copied
         if (framePos === frameSize) {
           const view = new AMQPView(frameBuffer.buffer, 0, frameSize)
-          self.parseFrames(view)
+          this.parseFrames(view)
           frameSize = framePos = 0
         }
       }
