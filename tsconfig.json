@@ -32,8 +32,6 @@
     "noPropertyAccessFromIndexSignature": true,       /* Enforces using indexed accessors for keys declared using an indexed type */
     "allowUnusedLabels": false,                        /* Disable error reporting for unused labels. */
     "allowUnreachableCode": false,                     /* Disable error reporting for unreachable code. */
-
-    /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   }
