@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.1] - 2021-12-21
+## [1.2.2] - 2021-12-21
 
 ### Fixed
 
 - tls/net.socket onread is buggy in nodejs 16, revert to 'data' event for parsing frames
+
+### Changed
+
+- nodejs version expanded to 12
 
 ## [1.2.1] - 2021-12-20
 
