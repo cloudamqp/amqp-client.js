@@ -5,5 +5,5 @@ import AMQPQueue from './amqp-queue.js'
 import AMQPConsumer from './amqp-consumer.js'
 import AMQPError from './amqp-error.js'
 import AMQPMessage from './amqp-message.js'
-export { AMQPProperties } from './amqp-properties.js'
+export { AMQPProperties, Field } from './amqp-properties.js'
 export { AMQPWebSocketClient, AMQPClient, AMQPChannel, AMQPConsumer, AMQPQueue, AMQPError, AMQPMessage }
