@@ -1,6 +1,5 @@
 import test from 'ava';
-import process from 'process';
-import { AMQPClient } from '../dist/index.js';
+import { AMQPClient } from '../src/index.js';
 
 test('can connect with TLS', t => {
   const amqp = new AMQPClient(process.env["AMQPS_URL"] || "amqps://localhost?insecure=true")

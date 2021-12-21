@@ -48,7 +48,7 @@ export default abstract class AMQPBaseClient {
    * Open a channel
    * @param [id] - An existing or non existing specific channel
    */
-  channel(id: number): Promise<AMQPChannel> {
+  channel(id?: number): Promise<AMQPChannel> {
     if (this.closed) return this.rejectClosed()
     if (id && id > 0 && this.channels[id]) return Promise.resolve(this.channels[id])
     // Store channels in an array, set position to null when channel is closed
