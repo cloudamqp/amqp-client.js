@@ -50,7 +50,10 @@ export default abstract class AMQPBaseClient {
    */
   channel(id?: number): Promise<AMQPChannel> {
     if (this.closed) return this.rejectClosed()
-    if (id && id > 0 && this.channels[id]) return Promise.resolve(this.channels[id])
+    if (id && id > 0) {
+      const channel = this.channels[id]
+      if (channel) return Promise.resolve(channel)
+    }
     // Store channels in an array, set position to null when channel is closed
     // Look for first null value or add one the end
     if (!id)
@@ -153,6 +156,12 @@ export default abstract class AMQPBaseClient {
       const type = view.getUint8(i); i += 1
       const channelId = view.getUint16(i); i += 2
       const frameSize = view.getUint32(i); i += 4
+      const channel = this.channels[channelId]
+      if (!channel) {
+        console.warn("channel", channelId, "closed")
+        i += frameSize
+        continue
+      }
       switch (type) {
         case 1: { // method
           const classId = view.getUint16(i); i += 2
@@ -297,13 +306,11 @@ export default abstract class AMQPBaseClient {
               switch (methodId) {
                 case 11: { // openok
                   i += 4 // reserved1 (long string)
-                  const channel = this.channels[channelId]
                   channel.resolvePromise(channel)
                   break
                 }
                 case 21: { // flowOk
                   const active = view.getUint8(i) !== 0; i += 1
-                  const channel = this.channels[channelId]
                   channel.resolvePromise(active)
                   break
                 }
@@ -314,15 +321,10 @@ export default abstract class AMQPBaseClient {
                   const methodId = view.getUint16(i); i += 2
                   console.debug("channel", channelId, "closed", code, text, classId, methodId)
 
-                  const channel = this.channels[channelId]
-                  if (channel) {
-                    const msg = `channel ${channelId} closed: ${text} (${code})`
-                    const err = new AMQPError(msg, this)
-                    channel.setClosed(err)
-                    delete this.channels[channelId]
-                  } else {
-                    console.warn("channel", channelId, "already closed")
-                  }
+                  const msg = `channel ${channelId} closed: ${text} (${code})`
+                  const err = new AMQPError(msg, this)
+                  channel.setClosed(err)
+                  delete this.channels[channelId]
 
                   const closeOk = new AMQPView(new ArrayBuffer(12))
                   closeOk.setUint8(j, 1); j += 1 // type: method
@@ -336,12 +338,9 @@ export default abstract class AMQPBaseClient {
                   break
                 }
                 case 41: { // closeOk
-                  const channel = this.channels[channelId]
-                  if (channel) {
-                    channel.setClosed()
-                    delete this.channels[channelId]
-                    channel.resolvePromise()
-                  }
+                  channel.setClosed()
+                  delete this.channels[channelId]
+                  channel.resolvePromise()
                   break
                 }
                 default:
@@ -353,22 +352,18 @@ export default abstract class AMQPBaseClient {
             case 40: { // exchange
               switch (methodId) {
                 case 11: { // declareOk
-                  const channel = this.channels[channelId]
                   channel.resolvePromise()
                   break
                 }
                 case 21: { // deleteOk
-                  const channel = this.channels[channelId]
                   channel.resolvePromise()
                   break
                 }
                 case 31: { // bindOk
-                  const channel = this.channels[channelId]
                   channel.resolvePromise()
                   break
                 }
                 case 51: { // unbindOk
-                  const channel = this.channels[channelId]
                   channel.resolvePromise()
                   break
                 }
@@ -384,29 +379,24 @@ export default abstract class AMQPBaseClient {
                   const [name, strLen] = view.getShortString(i); i += strLen
                   const messageCount = view.getUint32(i); i += 4
                   const consumerCount = view.getUint32(i); i += 4
-                  const channel = this.channels[channelId]
                   channel.resolvePromise({ name, messageCount, consumerCount })
                   break
                 }
                 case 21: { // bindOk
-                  const channel = this.channels[channelId]
                   channel.resolvePromise()
                   break
                 }
                 case 31: { // purgeOk
                   const messageCount = view.getUint32(i); i += 4
-                  const channel = this.channels[channelId]
                   channel.resolvePromise({ messageCount })
                   break
                 }
                 case 41: { // deleteOk
                   const messageCount = view.getUint32(i); i += 4
-                  const channel = this.channels[channelId]
                   channel.resolvePromise({ messageCount })
                   break
                 }
                 case 51: { // unbindOk
-                  const channel = this.channels[channelId]
                   channel.resolvePromise()
                   break
                 }
@@ -419,19 +409,16 @@ export default abstract class AMQPBaseClient {
             case 60: { // basic
               switch (methodId) {
                 case 11: { // qosOk
-                  const channel = this.channels[channelId]
                   channel.resolvePromise()
                   break
                 }
                 case 21: { // consumeOk
                   const [ consumerTag, len ] = view.getShortString(i); i += len
-                  const channel = this.channels[channelId]
                   channel.resolvePromise(consumerTag)
                   break
                 }
                 case 31: { // cancelOk
                   const [consumerTag, len] = view.getShortString(i); i += len
-                  const channel = this.channels[channelId]
                   channel.resolvePromise(consumerTag)
                   break
                 }
@@ -440,11 +427,6 @@ export default abstract class AMQPBaseClient {
                   const [text, len] = view.getShortString(i); i += len
                   const [exchange, exchangeLen] = view.getShortString(i); i += exchangeLen
                   const [routingKey, routingKeyLen] = view.getShortString(i); i += routingKeyLen
-                  const channel = this.channels[channelId]
-                  if (!channel) {
-                    console.warn("Cannot return to closed channel", channelId)
-                    break
-                  }
                   const message = new AMQPMessage(channel)
                   message.exchange = exchange
                   message.routingKey = routingKey
@@ -459,11 +441,6 @@ export default abstract class AMQPBaseClient {
                   const redelivered = view.getUint8(i) === 1; i += 1
                   const [exchange, exchangeLen] = view.getShortString(i); i += exchangeLen
                   const [routingKey, routingKeyLen] = view.getShortString(i); i += routingKeyLen
-                  const channel = this.channels[channelId]
-                  if (!channel) {
-                    console.warn("Cannot deliver to closed channel", channelId)
-                    break
-                  }
                   const message = new AMQPMessage(channel)
                   message.consumerTag = consumerTag
                   message.deliveryTag = deliveryTag
@@ -479,11 +456,6 @@ export default abstract class AMQPBaseClient {
                   const [exchange, exchangeLen]= view.getShortString(i); i += exchangeLen
                   const [routingKey, routingKeyLen]= view.getShortString(i); i += routingKeyLen
                   const messageCount = view.getUint32(i); i += 4
-                  const channel = this.channels[channelId]
-                  if (!channel) {
-                    console.warn("Cannot deliver to closed channel", channelId)
-                    break
-                  }
                   const message = new AMQPMessage(channel)
                   message.deliveryTag = deliveryTag
                   message.redelivered = redelivered
@@ -495,34 +467,22 @@ export default abstract class AMQPBaseClient {
                 }
                 case 72: { // getEmpty
                   const [ , len]= view.getShortString(i); i += len // reserved1
-                  const channel = this.channels[channelId]
                   channel.resolvePromise(null)
                   break
                 }
                 case 80: { // confirm ack
                   const deliveryTag = view.getUint64(i); i += 8
                   const multiple = view.getUint8(i) === 1; i += 1
-                  const channel = this.channels[channelId]
-                  if (!channel) {
-                    console.warn("Got publish confirm ack for closed channel", channelId)
-                    break
-                  }
                   channel.publishConfirmed(deliveryTag, multiple, false)
                   break
                 }
                 case 111: { // recoverOk
-                  const channel = this.channels[channelId]
                   channel.resolvePromise()
                   break
                 }
                 case 120: { // confirm nack
                   const deliveryTag = view.getUint64(i); i += 8
                   const multiple = view.getUint8(i) === 1; i += 1
-                  const channel = this.channels[channelId]
-                  if (!channel) {
-                    console.warn("Got publish confirm nack for closed channel", channelId)
-                    break
-                  }
                   channel.publishConfirmed(deliveryTag, multiple, true)
                   break
                 }
@@ -535,7 +495,6 @@ export default abstract class AMQPBaseClient {
             case 85: { // confirm
               switch (methodId) {
                 case 11: { // selectOk
-                  const channel = this.channels[channelId]
                   channel.confirmId = 1
                   channel.resolvePromise()
                   break
@@ -551,7 +510,6 @@ export default abstract class AMQPBaseClient {
                 case 11: // selectOk
                 case 21: // commitOk
                 case 31: { // rollbackOk
-                  const channel = this.channels[channelId]
                   channel.resolvePromise()
                   break
                 }
@@ -568,13 +526,6 @@ export default abstract class AMQPBaseClient {
           break
         }
         case 2: { // header
-          const channel = this.channels[channelId]
-          if (!channel) {
-            console.warn("Cannot deliver to closed channel", channelId)
-            i += frameSize
-            break
-          }
-
           i += 4 // ignoring class id and weight
           const bodySize = view.getUint64(i); i += 8
           const [properties, propLen] = view.getProperties(i); i += propLen
@@ -591,12 +542,6 @@ export default abstract class AMQPBaseClient {
           break
         }
         case 3: { // body
-          const channel = this.channels[channelId]
-          if (!channel) {
-            console.warn("Cannot deliver to closed channel", channelId)
-            i += frameSize
-            break
-          }
           const message = channel.delivery || channel.getMessage || channel.returned
           if (message && message.body) {
             const bodyPart = new Uint8Array(view.buffer, view.byteOffset + i, frameSize)
