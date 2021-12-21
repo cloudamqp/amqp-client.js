@@ -1,4 +1,4 @@
-import { AMQPProperties } from './amqp-properties.js'
+import { AMQPProperties, Field } from './amqp-properties.js'
 
 /**
  * An extended DataView, with AMQP protocol specific methods
@@ -239,8 +239,8 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return
    */
-  getTable(byteOffset: number, littleEndian?: boolean): [Record<string, unknown>, number] {
-    const table: Record<string, unknown> = {}
+  getTable(byteOffset: number, littleEndian?: boolean): [Record<string, Field>, number] {
+    const table: Record<string, Field> = {}
     let i = byteOffset
     const len = this.getUint32(byteOffset, littleEndian); i += 4
     for (; i < byteOffset + 4 + len;) {
@@ -253,11 +253,11 @@ export default class AMQPView extends DataView {
 
   /**
    * @param byteOffset
-   * @param {Object.<string, any>} table
+   * @param {Record<string, Field>} table
    * @param [littleEndian]
    * @return bytes written
    */
-  setTable(byteOffset: number, table : Record<string, unknown>, littleEndian?: boolean) : number {
+  setTable(byteOffset: number, table : Record<string, Field>, littleEndian?: boolean) : number {
     // skip the first 4 bytes which are for the size
     let i = byteOffset + 4
     for (const [key, value] of Object.entries(table)) {
@@ -274,7 +274,7 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return
    */
-  getField(byteOffset: number, littleEndian?: boolean): [unknown, number] {
+  getField(byteOffset: number, littleEndian?: boolean): [Field, number] {
     let i = byteOffset
     const k = this.getUint8(i); i += 1
     const type = String.fromCharCode(k)
@@ -315,7 +315,8 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return bytes written
    */
-  setField(byteOffset: number, field: any, littleEndian?: boolean) : number {
+  setField(byteOffset: number, field: Field,
+           littleEndian?: boolean) : number {
     let i = byteOffset
     switch (typeof field) {
       case "string":
@@ -331,6 +332,7 @@ export default class AMQPView extends DataView {
         this.setBigInt64(i, field as bigint, littleEndian); i += 8
         break
       case "number":
+        field = field as number
         if (Number.isInteger(field)) {
           if (-(2**32) < field && field < 2**32) {
             this.setUint8(i, 'I'.charCodeAt(0)); i += 1
@@ -369,7 +371,7 @@ export default class AMQPView extends DataView {
           this.setInt64(i, unixEpoch, littleEndian); i += 8
         } else { // hopefully it's a hash like object
           this.setUint8(i, 'F'.charCodeAt(0)); i += 1
-          i += this.setTable(i, field, littleEndian)
+          i += this.setTable(i, field as Record<string, Field>, littleEndian)
         }
         break
       default:
@@ -383,7 +385,7 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return array and length
    */
-  getArray(byteOffset: number, littleEndian?: boolean): [unknown[], number] {
+  getArray(byteOffset: number, littleEndian?: boolean): [Field[], number] {
     const len = this.getUint32(byteOffset, littleEndian); byteOffset += 4
     const endOffset = byteOffset + len
     const v = []
@@ -396,11 +398,11 @@ export default class AMQPView extends DataView {
 
   /**
    * @param byteOffset
-   * @param {any[]} array
+   * @param {Field[]} array
    * @param [littleEndian]
    * @return bytes written
    */
-  setArray(byteOffset: number, array: unknown[], littleEndian?: boolean) : number {
+  setArray(byteOffset: number, array: Field[], littleEndian?: boolean) : number {
     const start = byteOffset
     byteOffset += 4 // update the length later
     array.forEach((e) => {

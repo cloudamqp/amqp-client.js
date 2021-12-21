@@ -17,7 +17,7 @@ export default abstract class AMQPBaseClient {
   platform?: string
   channels: AMQPChannel[]
   connectPromise?: [(conn: AMQPBaseClient) => void, (err: Error) => void]
-  closePromise?: [(value?: any) => void, (err: Error) => void]
+  closePromise?: [(value?: void) => void, (err: Error) => void]
   closed = false
   blocked?: string
   channelMax = 0
