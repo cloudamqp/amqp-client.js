@@ -57,7 +57,7 @@ export default class AMQPConsumer {
    */
   setClosed(err?: Error) {
     this.closed = true
-    this.closedError = err
+    if (err) this.closedError = err
     if (this.timeoutId) clearTimeout(this.timeoutId)
     if (err) {
       if (this.rejectWait) this.rejectWait(err)
