@@ -764,6 +764,7 @@ export default class AMQPChannel {
 
   /**
    * Send a RPC request, will resolve a RPC promise when RPC response arrives
+   * @ignore
    * @private
    * @param frame with data
    * @param frameSize - bytes the frame actually is

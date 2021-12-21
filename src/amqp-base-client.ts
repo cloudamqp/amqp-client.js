@@ -145,10 +145,14 @@ export default abstract class AMQPBaseClient {
       const type = view.getUint8(i); i += 1
       const channelId = view.getUint16(i); i += 2
       const frameSize = view.getUint32(i); i += 4
+      const frameEnd = view.getUint8(i + frameSize)
+      if (frameEnd !== 206)
+        throw(new AMQPError(`Invalid frame end ${frameEnd}, expected 206`, this))
+
       const channel = this.channels[channelId]
       if (!channel) {
         console.warn("channel", channelId, "closed")
-        i += frameSize
+        i += frameSize + 1
         continue
       }
       switch (type) {
@@ -402,7 +406,7 @@ export default abstract class AMQPBaseClient {
                   break
                 }
                 case 21: { // consumeOk
-                  const [ consumerTag, len ] = view.getShortString(i); i += len
+                  const [consumerTag, len] = view.getShortString(i); i += len
                   channel.resolvePromise(consumerTag)
                   break
                 }
@@ -539,6 +543,8 @@ export default abstract class AMQPBaseClient {
             i += frameSize
             if (message.bodyPos === message.bodySize)
               channel.onMessageReady(message)
+          } else {
+            console.warn("Body frame but no message")
           }
           break
         }
@@ -551,9 +557,7 @@ export default abstract class AMQPBaseClient {
           console.error("invalid frame type:", type)
           i += frameSize
       }
-      const frameEnd = view.getUint8(i); i += 1
-      if (frameEnd != 206)
-        console.error("Invalid frame end", frameEnd)
+      i += 1 // frame end
     }
   }
 }
