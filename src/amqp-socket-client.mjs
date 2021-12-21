@@ -58,9 +58,7 @@ export default class AMQPClient extends AMQPBaseClient {
       servername: this.host
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
-    const conn = this.tls ?
-      tls.connect(options, sendStart) :
-      net.connect(options, sendStart)
+    const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)
     conn.on('data', (buf) => {
       // A socket read can contain 0 or more frames, so find frame boundries
       let bufPos = 0
