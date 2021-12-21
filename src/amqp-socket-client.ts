@@ -13,6 +13,7 @@ export default class AMQPClient extends AMQPBaseClient {
   host : string
   port : number
   socket?: net.Socket
+  insecure : boolean
   /**
    * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
    */
@@ -27,6 +28,7 @@ export default class AMQPClient extends AMQPBaseClient {
     this.tls = u.protocol === "amqps:"
     this.host = u.hostname || "localhost"
     this.port = parseInt(u.port) || (this.tls ? 5671 : 5672)
+    this.insecure = u.searchParams.get("insecure") !== undefined
   }
 
   override connect(): Promise<AMQPBaseClient> {
@@ -52,7 +54,8 @@ export default class AMQPClient extends AMQPBaseClient {
     const options = {
       host: this.host,
       port: this.port,
-      servername: this.host
+      servername: this.host,
+      rejectUnauthorized: !this.insecure
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
     const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)

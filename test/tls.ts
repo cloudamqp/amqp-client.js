@@ -3,7 +3,7 @@ import process from 'process';
 import { AMQPClient } from '../dist/index.js';
 
 test('can connect with TLS', t => {
-  const amqp = new AMQPClient(process.env.AMQPS_URL || "amqps://localhost")
+  const amqp = new AMQPClient(process.env["AMQPS_URL"] || "amqps://localhost?insecure=true")
   return amqp.connect()
     .then(conn => conn.channel())
     .then(ch => t.is(ch.connection.channels.length, 2)) // 2 because channel 0 is counted
