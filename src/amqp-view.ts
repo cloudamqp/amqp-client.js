@@ -12,7 +12,7 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return
    */
-  getUint64(byteOffset: number, littleEndian?: boolean) {
+  getUint64(byteOffset: number, littleEndian?: boolean) : number {
     // split 64-bit number into two 32-bit (4-byte) parts
     const left =  this.getUint32(byteOffset, littleEndian)
     const right = this.getUint32(byteOffset + 4, littleEndian)
@@ -31,7 +31,7 @@ export default class AMQPView extends DataView {
    * @param value
    * @param [littleEndian]
    */
-  setUint64(byteOffset: number, value: number, littleEndian?: boolean) {
+  setUint64(byteOffset: number, value: number, littleEndian?: boolean) : void {
     this.setBigUint64(byteOffset, BigInt(value), littleEndian)
   }
 
@@ -40,7 +40,7 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return
    */
-  getInt64(byteOffset: number, littleEndian?: boolean) {
+  getInt64(byteOffset: number, littleEndian?: boolean) : number {
     return Number(this.getBigInt64(byteOffset, littleEndian))
   }
 
@@ -49,7 +49,7 @@ export default class AMQPView extends DataView {
    * @param value
    * @param [littleEndian]
    */
-  setInt64(byteOffset: number, value: number, littleEndian?: boolean) {
+  setInt64(byteOffset: number, value: number, littleEndian?: boolean) : void {
     this.setBigInt64(byteOffset, BigInt(value), littleEndian)
   }
 
@@ -69,7 +69,7 @@ export default class AMQPView extends DataView {
    * @param string
    * @return bytes written
    */
-  setShortString(byteOffset: number, string: string) {
+  setShortString(byteOffset: number, string: string) : number {
     const encoder = new TextEncoder()
     const utf8 = encoder.encode(string)
     this.setUint8(byteOffset, utf8.byteLength)
@@ -97,7 +97,7 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return bytes written
    */
-  setLongString(byteOffset: number, string: string, littleEndian?: boolean) {
+  setLongString(byteOffset: number, string: string, littleEndian?: boolean) : number {
     const encoder = new TextEncoder()
     const utf8 = encoder.encode(string)
     this.setUint32(byteOffset, utf8.byteLength, littleEndian)
@@ -240,7 +240,7 @@ export default class AMQPView extends DataView {
    * @return
    */
   getTable(byteOffset: number, littleEndian?: boolean): [Record<string, unknown>, number] {
-    const table: {[index: string]: unknown} = {}
+    const table: Record<string, unknown> = {}
     let i = byteOffset
     const len = this.getUint32(byteOffset, littleEndian); i += 4
     for (; i < byteOffset + 4 + len;) {
@@ -257,7 +257,7 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return bytes written
    */
-  setTable(byteOffset: number, table : Record<string, unknown>, littleEndian?: boolean) {
+  setTable(byteOffset: number, table : Record<string, unknown>, littleEndian?: boolean) : number {
     // skip the first 4 bytes which are for the size
     let i = byteOffset + 4
     for (const [key, value] of Object.entries(table)) {
@@ -315,7 +315,7 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return bytes written
    */
-  setField(byteOffset: number, field: any, littleEndian?: boolean) {
+  setField(byteOffset: number, field: any, littleEndian?: boolean) : number {
     let i = byteOffset
     switch (typeof field) {
       case "string":
@@ -400,7 +400,7 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return bytes written
    */
-  setArray(byteOffset: number, array: unknown[], littleEndian?: boolean) {
+  setArray(byteOffset: number, array: unknown[], littleEndian?: boolean) : number {
     const start = byteOffset
     byteOffset += 4 // update the length later
     array.forEach((e) => {
@@ -427,7 +427,7 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return bytes written
    */
-  setByteArray(byteOffset: number, data: Uint8Array, littleEndian?: boolean) {
+  setByteArray(byteOffset: number, data: Uint8Array, littleEndian?: boolean) : number {
     this.setUint32(byteOffset, data.byteLength, littleEndian); byteOffset += 4
     const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, data.byteLength)
     view.set(data)
@@ -439,7 +439,7 @@ export default class AMQPView extends DataView {
    * @param [littleEndian]
    * @return bytes written
    */
-  setFrameEnd(byteOffset: number, littleEndian?: boolean) {
+  setFrameEnd(byteOffset: number, littleEndian?: boolean) : 1 {
     this.setUint32(3, byteOffset - 7, littleEndian) // update frameSize
     this.setUint8(byteOffset, 206) // frame end byte
     return 1

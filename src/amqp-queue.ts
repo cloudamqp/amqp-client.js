@@ -1,6 +1,7 @@
 import AMQPMessage from './amqp-message.js'
 import AMQPChannel from './amqp-channel.js'
 import { AMQPProperties } from './amqp-properties.js'
+import AMQPConsumer from './amqp-consumer.js'
 
 /**
  * Convience class for queues
@@ -24,11 +25,10 @@ export default class AMQPQueue {
    * @param args - arguments
    * @return
    */
-  bind(exchange: string, routingKey = "", args = {}) {
-    const self = this
-    return new Promise((resolve, reject) => {
+  bind(exchange: string, routingKey = "", args = {}) : Promise<AMQPQueue> {
+    return new Promise<AMQPQueue>((resolve, reject) => {
       this.channel.queueBind(this.name, exchange, routingKey, args)
-        .then(() => resolve(self))
+        .then(() => resolve(this))
         .catch(reject)
     })
   }
@@ -40,11 +40,10 @@ export default class AMQPQueue {
    * @param args - arguments
    * @return
    */
-  unbind(exchange: string, routingKey = "", args = {}) {
-    const self = this
-    return new Promise((resolve, reject) => {
+  unbind(exchange: string, routingKey = "", args = {}) : Promise<AMQPQueue>{
+    return new Promise<AMQPQueue>((resolve, reject) => {
       this.channel.queueUnbind(this.name, exchange, routingKey, args)
-        .then(() => resolve(self))
+        .then(() => resolve(this))
         .catch(reject)
     })
   }
@@ -56,10 +55,9 @@ export default class AMQPQueue {
    * @return - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
   publish(body: string|Uint8Array|ArrayBuffer, properties: AMQPProperties = {}): Promise<AMQPQueue> {
-    const self = this
-    return new Promise((resolve, reject) => {
+    return new Promise<AMQPQueue>((resolve, reject) => {
       this.channel.basicPublish("", this.name, body, properties)
-        .then(() => resolve(self))
+        .then(() => resolve(this))
         .catch(reject)
     })
   }
@@ -74,7 +72,8 @@ export default class AMQPQueue {
    * @param {function(AMQPMessage) : void} callback - Function to be called for each received message
    * @return
    */
-  subscribe({noAck = true, exclusive = false, tag = "", args = {}} = {}, callback: (msg: AMQPMessage) => void) {
+  subscribe({noAck = true, exclusive = false, tag = "", args = {}} = {},
+            callback: (msg: AMQPMessage) => void) : Promise<AMQPConsumer> {
     return this.channel.basicConsume(this.name, {noAck, exclusive, tag, args}, callback)
   }
 
@@ -84,10 +83,9 @@ export default class AMQPQueue {
    * @return
    */
   unsubscribe(consumerTag: string): Promise<AMQPQueue> {
-    const self = this
     return new Promise((resolve, reject) => {
       this.channel.basicCancel(consumerTag)
-        .then(() => resolve(self))
+        .then(() => resolve(this))
         .catch(reject)
     })
   }
@@ -97,10 +95,9 @@ export default class AMQPQueue {
    * @return
    */
   delete(): Promise<AMQPQueue> {
-    const self = this
     return new Promise((resolve, reject) => {
       this.channel.queueDelete(this.name)
-        .then(() => resolve(self))
+        .then(() => resolve(this))
         .catch(reject)
     })
   }
@@ -111,7 +108,7 @@ export default class AMQPQueue {
    * @param params.noAck - automatically acknowledge messages when received
    * @return
    */
-  get({ noAck = true }) {
+  get({ noAck = true }) : Promise<AMQPMessage | undefined> {
     return this.channel.basicGet(this.name, { noAck })
   }
 }
