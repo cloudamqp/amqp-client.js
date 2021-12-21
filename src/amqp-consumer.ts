@@ -11,7 +11,7 @@ export default class AMQPConsumer {
   onMessage: (msg: AMQPMessage) => void
   closed = false
   closedError?: Error
-  resolveWait?: (value?: any) => void
+  resolveWait?: (value: void) => void
   rejectWait?: (err: Error) => void
   timeoutId?: ReturnType<typeof setTimeout>
   /**
