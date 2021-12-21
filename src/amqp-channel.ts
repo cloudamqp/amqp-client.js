@@ -836,13 +836,13 @@ export default class AMQPChannel {
    */
   onMessageReady(message: AMQPMessage) {
     if (this.delivery) {
-      this.delivery = undefined
+      delete this.delivery
       this.deliver(message)
     } else if (this.getMessage) {
-      this.getMessage = undefined
+      delete this.getMessage
       this.resolvePromise(message)
     } else {
-      this.returned = undefined
+      delete this.returned
       this.onReturn(message)
     }
   }

@@ -35,8 +35,8 @@ export default abstract class AMQPBaseClient {
       value: password,
       enumerable: false // hide it from console.log etc.
     })
-    this.name = name // connection name
-    this.platform = platform
+    if (name) this.name = name // connection name
+    if (platform) this.platform = platform
     this.channels = [new AMQPChannel(this, 0)]
     this.closed = false
   }
@@ -282,7 +282,7 @@ export default abstract class AMQPBaseClient {
                   break
                 }
                 case 61: { // unblocked
-                  this.blocked = undefined
+                  delete this.blocked
                   break
                 }
                 default:
