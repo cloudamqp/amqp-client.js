@@ -4,7 +4,7 @@ export type AMQPProperties = {
   /** content encoding of body, eg. gzip */
   contentEncoding?: string
   /** custom headers, can also be used for routing with header exchanges */
-  headers?: Record<string, unknown>
+  headers?: Record<string, Field>
   /** 1 for transient messages, 2 for persistent messages */
   deliveryMode?: number
   /** between 0 and 255 */
@@ -22,3 +22,6 @@ export type AMQPProperties = {
   userId?: string
   appId?: string
 }
+
+
+export type Field = string | boolean | bigint | number | undefined | null | object;
