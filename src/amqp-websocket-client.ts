@@ -9,11 +9,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
   socket?: WebSocket
 
 /** 
- * @param url to the websocket endpoint
- * @param [vhost='/'] url to the websocket endpoint
- * @param [username='guest']
- * @param [password='guest']
- * @param [name] of the connection, no default
+ * @param url to the websocket endpoint, example: wss://server/ws/amqp
  */
   constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string) {
     super(vhost, username, password, name, AMQPWebSocketClient.platform())
@@ -22,7 +18,6 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
 
   /**
    * Establish a AMQP connection over WebSocket
-   * @return Promise to returns itself when successfully connected
    */
   override connect(): Promise<AMQPBaseClient> {
     const socket = new WebSocket(this.url)

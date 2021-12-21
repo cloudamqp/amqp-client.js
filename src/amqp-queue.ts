@@ -20,10 +20,6 @@ export default class AMQPQueue {
 
   /**
    * Bind the queue to an exchange
-   * @param exchange
-   * @param routingkey
-   * @param args - arguments
-   * @return
    */
   bind(exchange: string, routingKey = "", args = {}) : Promise<AMQPQueue> {
     return new Promise<AMQPQueue>((resolve, reject) => {
@@ -35,10 +31,6 @@ export default class AMQPQueue {
 
   /**
    * Delete a binding between this queue and an exchange
-   * @param exchange
-   * @param routingkey
-   * @param args - arguments
-   * @return
    */
   unbind(exchange: string, routingKey = "", args = {}) : Promise<AMQPQueue>{
     return new Promise<AMQPQueue>((resolve, reject) => {
@@ -52,7 +44,7 @@ export default class AMQPQueue {
    * Publish a message directly to the queue
    * @param body - the data to be published, can be a string or an uint8array
    * @param properties - publish properties
-   * @return - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
+   * @return fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
   publish(body: string|Uint8Array|ArrayBuffer, properties: AMQPProperties = {}): Promise<AMQPQueue> {
     return new Promise<AMQPQueue>((resolve, reject) => {
@@ -70,7 +62,6 @@ export default class AMQPQueue {
    * @param [params.tag=""] - tag of the consumer, will be server generated if left empty
    * @param [params.args={}] - custom arguments
    * @param {function(AMQPMessage) : void} callback - Function to be called for each received message
-   * @return
    */
   subscribe({noAck = true, exclusive = false, tag = "", args = {}} = {},
             callback: (msg: AMQPMessage) => void) : Promise<AMQPConsumer> {
@@ -79,8 +70,6 @@ export default class AMQPQueue {
 
   /**
    * Unsubscribe from the queue
-   * @param consumerTag
-   * @return
    */
   unsubscribe(consumerTag: string): Promise<AMQPQueue> {
     return new Promise((resolve, reject) => {
@@ -92,7 +81,6 @@ export default class AMQPQueue {
 
   /**
    * Delete the queue
-   * @return
    */
   delete(): Promise<AMQPQueue> {
     return new Promise((resolve, reject) => {
@@ -106,7 +94,6 @@ export default class AMQPQueue {
    * Poll the queue for messages
    * @param params
    * @param params.noAck - automatically acknowledge messages when received
-   * @return
    */
   get({ noAck = true }) : Promise<AMQPMessage | undefined> {
     return this.channel.basicGet(this.name, { noAck })

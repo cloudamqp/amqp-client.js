@@ -54,7 +54,7 @@ export default class AMQPChannel {
 
   /**
    * Default handler for Returned messages
-   * @param message
+   * @param message returned from server
    */
   onReturn(message: AMQPMessage) {
     console.error("Message returned from server", message)
@@ -62,11 +62,9 @@ export default class AMQPChannel {
 
   /**
    * Close the channel gracefully
-   * @param params
-   * @param [params.code=200] - Close code
-   * @param [params.reason=""] - Reason for closing the channel
+   * @param [reason] might be logged by the server
    */
-  close({ code = 200, reason = "" } = {}) {
+  close(reason = "", code = 200) {
     if (this.closed) return this.rejectClosed()
     this.closed = true
     let j = 0
@@ -718,6 +716,7 @@ export default class AMQPChannel {
 
   /**
    * @private
+   * @ignore
    * @param methodId
    */
   txMethod(methodId: number) {
@@ -736,7 +735,6 @@ export default class AMQPChannel {
   /**
    * Resolves the next RPC promise
    * @ignore
-   * @param [value]
    * @return true if a promise was resolved, otherwise false
    */
   resolvePromise(value?: any) {
@@ -752,7 +750,6 @@ export default class AMQPChannel {
   /**
    * Rejects the next RPC promise
    * @ignore
-   * @param [err]
    * @return true if a promise was rejected, otherwise false
    */
   rejectPromise(err?: Error) {
@@ -853,7 +850,6 @@ export default class AMQPChannel {
   /**
    * Deliver a message to a consumer
    * @ignore
-   * @param message
    */
   deliver(message: AMQPMessage) {
     queueMicrotask(() => {
