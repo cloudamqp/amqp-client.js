@@ -4,7 +4,7 @@ import { AMQPClient, AMQPMessage } from '../src/index.js';
 test('can parse the url correctly', t => {
   const username = 'user_name'
   const password = 'passwd'
-  const hostname = 'localhost'
+  const hostname = '127.0.0.1'
   const port = 5672
   const vhost = 'my_host'
   const name = 'test'
@@ -18,14 +18,14 @@ test('can parse the url correctly', t => {
 })
 
 test('can open a connection and a channel', t => {
-  const amqp = new AMQPClient("amqp://")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   return amqp.connect()
     .then((conn) => conn.channel())
     .then((ch) => t.is(ch.connection.channels.length, 2)) // 2 because channel 0 is counted
 })
 
 test('can publish and consume', t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   return new Promise<AMQPMessage>((resolve, reject) => {
     amqp.connect()
       .then(conn => conn.channel())
@@ -40,7 +40,7 @@ test('can publish and consume', t => {
 })
 
 test('will throw an error', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await t.throwsAsync(async () => { await ch.queue("amq.foobar") },
@@ -48,7 +48,7 @@ test('will throw an error', async t => {
 })
 
 test('can cancel a consumer', t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   return amqp.connect()
     .then((conn) => conn.channel())
     .then((ch) => ch.queue(""))
@@ -58,7 +58,7 @@ test('can cancel a consumer', t => {
 })
 
 test('can close a channel', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await ch.close()
@@ -67,7 +67,7 @@ test('can close a channel', async t => {
 })
 
 test('connection error raises everywhere', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await conn.close()
@@ -76,7 +76,7 @@ test('connection error raises everywhere', async t => {
 })
 
 test('consumer stops wait on cancel', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
@@ -88,7 +88,7 @@ test('consumer stops wait on cancel', async t => {
 })
 
 test('consumer stops wait on channel error', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
@@ -99,7 +99,7 @@ test('consumer stops wait on channel error', async t => {
 })
 
 test('connection error raises on publish', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
@@ -108,7 +108,7 @@ test('connection error raises on publish', async t => {
 })
 
 test('wait for publish confirms', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   let tag
@@ -135,7 +135,7 @@ test('wait for publish confirms', async t => {
 })
 
 test('can handle rejects', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
 
@@ -147,7 +147,7 @@ test('can handle rejects', async t => {
 })
 
 test('can handle nacks on confirm channel', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
 
@@ -158,7 +158,7 @@ test('can handle nacks on confirm channel', async t => {
 })
 
 test('throws on invalid exchange type', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const name = "test" + Math.random()
@@ -167,7 +167,7 @@ test('throws on invalid exchange type', async t => {
 })
 
 test('can declare an exchange', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const name = "test" + Math.random()
@@ -180,7 +180,7 @@ test('can declare an exchange', async t => {
 })
 
 test('exchange to exchange bind/unbind', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const name1 = "test1" + Math.random()
@@ -204,7 +204,7 @@ test('exchange to exchange bind/unbind', async t => {
 })
 
 test.skip('can change flow state of channel', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   let flow = await ch.basicFlow(false)
@@ -214,7 +214,7 @@ test.skip('can change flow state of channel', async t => {
 })
 
 test('basic get', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
@@ -229,7 +229,7 @@ test('basic get', async t => {
 })
 
 test('transactions', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
@@ -250,7 +250,7 @@ test('transactions', async t => {
 })
 
 test('can publish and consume msgs with large headers', async t => {
-  const amqp = new AMQPClient("amqp://localhost")
+  const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
