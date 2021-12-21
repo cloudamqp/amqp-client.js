@@ -69,12 +69,71 @@ test('can reject a message', t => {
   }).then((result: AMQPMessage) => t.is(result.bodyString(), "hello world"))
 })
 
+test('can unbind a queue from exchange', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  await q.bind("amq.topic", "asd")
+  await t.notThrowsAsync(async () =>  await q.unbind("amq.topic", "asd"))
+})
+
+test('can unsubscribe from a queue', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  const consumer = await q.subscribe({}, () => "")
+  await t.notThrowsAsync(async () =>  await q.unsubscribe(consumer.tag))
+})
+
+test("can delete a queue", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  await t.notThrowsAsync(async () =>  await q.delete())
+})
+
+test("can get message from a queue", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  await q.publish("message")
+  const msg = await q.get({noAck: true})
+  t.is((msg as AMQPMessage).bodyString(), "message")
+})
+
 test('will throw an error', async t => {
   const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await t.throwsAsync(async () => { await ch.queue("amq.foobar") },
                       { message: /ACCESS_REFUSED/ })
+})
+
+test('will throw an error after consumer timeout', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  const consumer = await q.subscribe({noAck: false}, () => "")
+  await t.throwsAsync(async () => { await consumer.wait(1) })
+})
+
+test('will throw an error if consumer is closed', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  const consumer = await q.subscribe({noAck: false}, () => "")
+  consumer.setClosed(new Error("testing"))
+  try {
+    await consumer.wait(1);
+  } catch (error) {
+    t.is((error as Error).message, "testing")
+  }
 })
 
 test('can cancel a consumer', t => {
