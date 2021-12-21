@@ -151,7 +151,7 @@ export default abstract class AMQPBaseClient {
 
       const channel = this.channels[channelId]
       if (!channel) {
-        console.warn("channel", channelId, "closed")
+        console.warn("AMQP channel", channelId, "not open")
         i += frameSize + 1
         continue
       }
