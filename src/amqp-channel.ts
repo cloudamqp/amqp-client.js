@@ -33,12 +33,11 @@ export default class AMQPChannel {
   }
 
   /**
-   * Declare a queue and return a AMQPQueue object.
-   * @return Convient wrapper around a Queue object
+   * Declare a queue and return an AMQPQueue instance.
    */
-  queue(name = "", props = {}, args = {}): Promise<AMQPQueue> {
+  queue(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {}, args = {}): Promise<AMQPQueue> {
     return new Promise((resolve, reject) => {
-      this.queueDeclare(name, props, args)
+      this.queueDeclare(name, {passive, durable, autoDelete, exclusive}, args)
         .then(({name}) => resolve(new AMQPQueue(this, name)))
         .catch(reject)
     })
