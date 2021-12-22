@@ -264,7 +264,6 @@ export default class AMQPView extends DataView {
         this.setBigInt64(i, field as bigint, littleEndian); i += 8
         break
       case "number":
-        field = field as number
         if (Number.isInteger(field)) {
           if (-(2**32) < field && field < 2**32) {
             this.setUint8(i, 'I'.charCodeAt(0)); i += 1
@@ -283,10 +282,6 @@ export default class AMQPView extends DataView {
           }
         }
         break
-      case undefined:
-      case null:
-        this.setUint8(i, 'V'.charCodeAt(0)); i += 1
-        break
       case "object":
         if (Array.isArray(field)) {
           this.setUint8(i, 'A'.charCodeAt(0)); i += 1
@@ -301,6 +296,8 @@ export default class AMQPView extends DataView {
           this.setUint8(i, 'T'.charCodeAt(0)); i += 1
           const unixEpoch = Math.floor(Number(field) / 1000)
           this.setInt64(i, unixEpoch, littleEndian); i += 8
+        } else if (field === null || field === undefined) {
+          this.setUint8(i, 'V'.charCodeAt(0)); i += 1
         } else { // hopefully it's a hash like object
           this.setUint8(i, 'F'.charCodeAt(0)); i += 1
           i += this.setTable(i, field as Record<string, Field>, littleEndian)

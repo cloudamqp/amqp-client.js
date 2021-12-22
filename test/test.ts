@@ -363,3 +363,35 @@ test('can purge a queue', async t => {
   const msg = await q.get()
   t.is(msg, null)
 })
+
+test('can publish all type of properties', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue()
+  const headers = {
+    a: 2, b: true, c: "c", d: 1.5, e: null, f: new Date(1000), g: { a: 1 },
+    i: 2**32 + 1, j: 2.5**33,
+  }
+  const properties = {
+    contentType: "application/json",
+    contentEncoding: "gzip",
+    headers: headers,
+    deliveryMode: 2,
+    priority: 1,
+    correlationId: "corr",
+    replyTo: "me",
+    expiration: "10000",
+    messageId: "msgid",
+    appId: "appid",
+    userId: "guest",
+    type: "type",
+    timestamp: new Date(Math.round(Date.now()/1000)*1000) // amqp timestamps does only have second resolution
+  }
+  await q.publish("", properties)
+  const msg = await q.get()
+  if (msg)
+    t.deepEqual(msg.properties, properties)
+  else
+    t.assert(msg)
+})
