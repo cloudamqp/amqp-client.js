@@ -8,6 +8,7 @@ import { AMQPProperties, Field } from './amqp-properties.js'
  */
 export default class AMQPView extends DataView {
   private static decoder = new TextDecoder()
+  private static encoder = new TextEncoder()
 
   getUint64(byteOffset: number, littleEndian?: boolean) : number {
     // split 64-bit number into two 32-bit (4-byte) parts
@@ -43,8 +44,8 @@ export default class AMQPView extends DataView {
   }
 
   setShortString(byteOffset: number, string: string) : number {
-    const encoder = new TextEncoder()
-    const utf8 = encoder.encode(string)
+    const utf8 = AMQPView.encoder.encode(string)
+    if (utf8.byteLength > 255) throw new Error(`Short string too long, ${utf8.byteLength} bytes: ${string.substring(0, 255)}...`)
     this.setUint8(byteOffset, utf8.byteLength)
     byteOffset += 1
     const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset)
@@ -60,8 +61,7 @@ export default class AMQPView extends DataView {
   }
 
   setLongString(byteOffset: number, string: string, littleEndian?: boolean) : number {
-    const encoder = new TextEncoder()
-    const utf8 = encoder.encode(string)
+    const utf8 = AMQPView.encoder.encode(string)
     this.setUint32(byteOffset, utf8.byteLength, littleEndian)
     byteOffset += 4
     const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset)

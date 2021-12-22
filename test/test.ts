@@ -395,3 +395,11 @@ test('can publish all type of properties', async t => {
   else
     t.assert(msg)
 })
+
+test('cannot publish too long strings', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await t.throwsAsync(async () => await ch.queue("a".repeat(256)),
+                      { message: /Short string too long/ })
+})
