@@ -7,7 +7,7 @@ import { AMQPProperties, Field } from './amqp-properties.js'
  * @ignore
  */
 export default class AMQPView extends DataView {
-  static decoder = new TextDecoder()
+  private static decoder = new TextDecoder()
 
   getUint64(byteOffset: number, littleEndian?: boolean) : number {
     // split 64-bit number into two 32-bit (4-byte) parts
