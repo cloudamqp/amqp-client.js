@@ -89,7 +89,7 @@ export default class AMQPChannel {
    * @param [param.noAck=true] - if message is removed from the server upon delivery, or have to be acknowledged
    * @return - returns null if the queue is empty otherwise a single message
    */
-  basicGet(queue: string, { noAck = true } = {}): Promise<AMQPMessage|undefined> {
+  basicGet(queue: string, { noAck = true } = {}): Promise<AMQPMessage|null> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
