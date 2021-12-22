@@ -1,5 +1,6 @@
 {
   "include": ["src"],
+  "exclude": ["src/index.ts"],                        /* only used for typedoc */
   "compilerOptions": {
     "target": "es2020",                               /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
     "module": "es2020",                               /* Specify what module code is generated. */
@@ -32,6 +33,7 @@
     "noPropertyAccessFromIndexSignature": true,       /* Enforces using indexed accessors for keys declared using an indexed type */
     "allowUnusedLabels": false,                       /* Disable error reporting for unused labels. */
     "allowUnreachableCode": false,                    /* Disable error reporting for unreachable code. */
+    "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true                              /* Skip type checking all .d.ts files. */
   }
 }
