@@ -95,7 +95,11 @@ export default class AMQPQueue {
    * @param params
    * @param params.noAck - automatically acknowledge messages when received
    */
-  get({ noAck = true }) : Promise<AMQPMessage | undefined> {
+  get({ noAck = true } = {}) {
     return this.channel.basicGet(this.name, { noAck })
+  }
+
+  purge() {
+    return this.channel.queuePurge(this.name)
   }
 }
