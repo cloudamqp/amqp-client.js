@@ -2,13 +2,8 @@
   "name": "@cloudamqp/amqp-client",
   "version": "1.2.2",
   "description": "AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)",
-  "type": "module",
-  "main": "dist/cjs/index.js",
-  "types": "dist/types/index.d.ts",
-  "exports": {
-    "require": "./dist/cjs/amqp-socket-client.js",
-    "import": "./dist/esm/amqp-socket-client.js"
-  },
+  "main": "dist/cjs/amqp-socket-client.js",
+  "types": "dist/cjs/amqp-socket-client.d.ts",
   "browser": "dist/amqp-websocket-client.mjs",
   "engines": {
     "node": ">=12.0.0"
@@ -18,7 +13,7 @@
     "lint": "eslint src",
     "test": "c8 ava",
     "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.ts && git add src/amqp-base-client.ts",
-    "build": "rm -rf dist && tsc && tsc -p tsconfig.cjs.json && rollup -c",
+    "build": "rm -rf dist && tsc -p tsconfig.cjs.json && rollup -c",
     "prepack": "npm run build",
     "preversion": "npm test",
     "version": "npm run build"
