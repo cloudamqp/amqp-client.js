@@ -7,8 +7,8 @@ import AMQPConsumer from './amqp-consumer.js'
  * Convience class for queues
  */
 export default class AMQPQueue {
-  channel: AMQPChannel
-  name: string
+  readonly channel: AMQPChannel
+  readonly name: string
   /**
    * @param channel - channel this queue was declared on
    * @param name - name of the queue
