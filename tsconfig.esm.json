@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["src/amqp-client.ts"],
+  "compilerOptions": {
+    "module": "es2020",
+    "outDir": "./dist/esm"
+  }
+}
