@@ -9,11 +9,11 @@ import * as tls from 'tls'
  * AMQP 0-9-1 client over TCP socket.
  */
 export default class AMQPClient extends AMQPBaseClient {
-  tls : boolean
-  host : string
-  port : number
-  socket?: net.Socket
-  insecure : boolean
+  readonly tls : boolean
+  readonly host : string
+  readonly port : number
+  private readonly insecure : boolean
+  private socket?: net.Socket
   /**
    * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
    */
@@ -43,10 +43,7 @@ export default class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  /**
-    * @private
-    */
-  connectSocket() {
+  private connectSocket() {
     let framePos = 0
     let frameSize = 0
     const frameBuffer = Buffer.allocUnsafe(16384)
@@ -123,10 +120,7 @@ export default class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  /**
-   * @protected
-   */
-  override closeSocket() {
+  protected override closeSocket() {
     if(this.socket) this.socket.end()
   }
 }

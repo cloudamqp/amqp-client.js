@@ -5,8 +5,8 @@ import AMQPView from './amqp-view.js'
  * WebSocket client for AMQP 0-9-1 servers
  */
 export default class AMQPWebSocketClient extends AMQPBaseClient {
-  url: string
-  socket?: WebSocket
+  readonly url: string
+  private socket?: WebSocket
 
 /** 
  * @param url to the websocket endpoint, example: wss://server/ws/amqp
@@ -33,7 +33,6 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
   }
 
   /**
-   * @ignore
    * @param bytes to send
    * @return fulfilled when the data is enqueued
    */
@@ -52,10 +51,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
     })
   }
 
-  /**
-   * @protected
-   */
-  override closeSocket() {
+  protected override closeSocket() {
     if (this.socket) this.socket.close()
   }
 
