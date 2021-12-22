@@ -1,20 +1,19 @@
 {
-  "include": ["./src"],
+  "include": ["src"],
   "compilerOptions": {
-    "target": "es2020",                                  /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
-    "module": "es2020",                                /* Specify what module code is generated. */
-    "moduleResolution": "node",
+    "target": "es2020",                               /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    "module": "es2020",                               /* Specify what module code is generated. */
     "declaration": true,                              /* Generate .d.ts files from TypeScript and JavaScript files in your project. */
     "declarationMap": true,                           /* Create sourcemaps for d.ts files. */
     "sourceMap": true,                                /* Create source map files for emitted JavaScript files. */
-    "outDir": "dist/esm",                                 /* Specify an output folder for all emitted files. */
-    "removeComments": true,                           /* Disable emitting comments. */
+    "outDir": "dist",                                 /* Specify an output folder for all emitted files. */
+    "declarationDir": "dist",                         /* Specify the output directory for generated declaration files. */
+    "removeComments": false,                          /* Disable emitting comments. */
     "noEmitOnError": true,                            /* Disable emitting files if any type checking errors are reported. */
-    "declarationDir": "dist/types",                      /* Specify the output directory for generated declaration files. */
-    "esModuleInterop": true,                             /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables `allowSyntheticDefaultImports` for type compatibility. */
-    "forceConsistentCasingInFileNames": true,            /* Ensure that casing is correct in imports. */
-    "strict": true,                                      /* Enable all strict type-checking options. */
-    // "noImplicitAny": true,                            /* Enable error reporting for expressions and declarations with an implied `any` type.. */
+    "esModuleInterop": false,                         /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables `allowSyntheticDefaultImports` for type compatibility. */
+    "forceConsistentCasingInFileNames": true,         /* Ensure that casing is correct in imports. */
+    "strict": true,                                   /* Enable all strict type-checking options. */
+    // "noImplicitAny": true,                         /* Enable error reporting for expressions and declarations with an implied `any` type.. */
     "strictNullChecks": true,                         /* When type checking, take into account `null` and `undefined`. */
     "strictFunctionTypes": true,                      /* When assigning functions, check to ensure parameters and the return values are subtype-compatible. */
     "strictBindCallApply": true,                      /* Check that the arguments for `bind`, `call`, and `apply` methods match the original function. */
@@ -30,9 +29,8 @@
     "noUncheckedIndexedAccess": true,                 /* Include 'undefined' in index signature results */
     "noImplicitOverride": true,                       /* Ensure overriding members in derived classes are marked with an override modifier. */
     "noPropertyAccessFromIndexSignature": true,       /* Enforces using indexed accessors for keys declared using an indexed type */
-    "allowUnusedLabels": false,                        /* Disable error reporting for unused labels. */
-    "allowUnreachableCode": false,                     /* Disable error reporting for unreachable code. */
-    // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+    "allowUnusedLabels": false,                       /* Disable error reporting for unused labels. */
+    "allowUnreachableCode": false,                    /* Disable error reporting for unreachable code. */
+    "skipLibCheck": true                              /* Skip type checking all .d.ts files. */
   }
 }
