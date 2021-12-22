@@ -351,3 +351,15 @@ test('can publish and consume msgs with large headers', async t => {
   const ok = await consumer.wait()
   t.is(ok, undefined)
 })
+
+test('can purge a queue', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue()
+  await q.publish("a")
+  const purged = await q.purge()
+  t.is(purged.messageCount, 1)
+  const msg = await q.get()
+  t.is(msg, null)
+})

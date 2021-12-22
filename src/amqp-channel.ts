@@ -552,9 +552,9 @@ export default class AMQPChannel {
    * @param queue - name of the queue
    * @return fulfilled when confirmed by the server
    */
-  queuePurge(queue: string) {
+  queuePurge(queue: string): Promise<{ messageCount: number }> {
     if (this.closed) return this.rejectClosed()
-    const noWait = true
+    const noWait = false
     let j = 0
     const purge = new AMQPView(new ArrayBuffer(512))
     purge.setUint8(j, 1); j += 1 // type: method
