@@ -10,12 +10,12 @@ import { AMQPProperties } from './amqp-properties.js'
  * Represents an AMQP Channel. Almost all actions in AMQP are performed on a Channel.
  */
 export default class AMQPChannel {
-  connection: AMQPBaseClient
-  id: number
-  consumers = new Map<string, AMQPConsumer>()
-  promises: [(arg0: any) => void, (err?: Error) => void][]
-  unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][]
-  closed = false
+  readonly connection: AMQPBaseClient
+  readonly id: number
+  readonly consumers = new Map<string, AMQPConsumer>()
+  readonly promises: [(arg0: any) => void, (err?: Error) => void][]
+  private readonly unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][]
+  private closed = false
   confirmId = 0
   delivery?: AMQPMessage
   getMessage?: AMQPMessage
@@ -714,12 +714,7 @@ export default class AMQPChannel {
     return this.txMethod(30)
   }
 
-  /**
-   * @private
-   * @ignore
-   * @param methodId
-   */
-  txMethod(methodId: number) {
+  private txMethod(methodId: number) {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(12))
@@ -735,7 +730,6 @@ export default class AMQPChannel {
   /**
    * Resolves the next RPC promise
    * @ignore
-   * @return true if a promise was resolved, otherwise false
    */
   resolvePromise(value?: any) {
     const promise  = this.promises.shift()
@@ -749,10 +743,9 @@ export default class AMQPChannel {
 
   /**
    * Rejects the next RPC promise
-   * @ignore
    * @return true if a promise was rejected, otherwise false
    */
-  rejectPromise(err?: Error) {
+  private rejectPromise(err?: Error) {
     const promise  = this.promises.shift()
     if (promise) {
       const [, reject] = promise
@@ -764,12 +757,10 @@ export default class AMQPChannel {
 
   /**
    * Send a RPC request, will resolve a RPC promise when RPC response arrives
-   * @ignore
-   * @private
    * @param frame with data
    * @param frameSize - bytes the frame actually is
    */
-  sendRpc(frame: AMQPView, frameSize: number): Promise<any> {
+  private sendRpc(frame: AMQPView, frameSize: number): Promise<any> {
     return new Promise((resolve, reject) => {
       this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
         .then(() => this.promises.push([resolve, reject]))
@@ -797,10 +788,9 @@ export default class AMQPChannel {
   }
 
   /**
-   * @ignore
    * @return Rejected promise with an error
    */
-  rejectClosed() {
+  private rejectClosed() {
     return Promise.reject(new AMQPError("Channel is closed", this.connection))
   }
 

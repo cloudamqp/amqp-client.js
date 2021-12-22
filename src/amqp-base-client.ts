@@ -16,8 +16,8 @@ export default abstract class AMQPBaseClient {
   name?: string
   platform?: string
   channels: AMQPChannel[]
-  connectPromise?: [(conn: AMQPBaseClient) => void, (err: Error) => void]
-  closePromise?: [(value?: void) => void, (err: Error) => void]
+  protected connectPromise?: [(conn: AMQPBaseClient) => void, (err: Error) => void]
+  protected closePromise?: [(value?: void) => void, (err: Error) => void]
   closed = false
   blocked?: string
   channelMax = 0
@@ -115,16 +115,13 @@ export default abstract class AMQPBaseClient {
    */
   abstract send(bytes: Uint8Array): Promise<void>
 
-  /** @protected */
-  abstract closeSocket(): void
+  protected abstract closeSocket(): void
 
-  /** @private */
-  rejectClosed() {
+  private rejectClosed() {
     return Promise.reject(new AMQPError("Connection closed", this))
   }
 
-  /** @private */
-  rejectConnect(err: Error) {
+  private rejectConnect(err: Error) {
     if (this.connectPromise) {
       const [, reject] = this.connectPromise
       delete this.connectPromise
@@ -138,7 +135,7 @@ export default abstract class AMQPBaseClient {
    * Parse and act on frames in an AMQPView
    * @ignore
    */
-  parseFrames(view: AMQPView) {
+  protected parseFrames(view: AMQPView) {
     // Can possibly be multiple AMQP frames in a single WS frame
     for (let i = 0; i < view.byteLength;) {
       let j = 0 // position in outgoing frame
