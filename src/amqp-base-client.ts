@@ -341,18 +341,9 @@ export default abstract class AMQPBaseClient {
             }
             case 40: { // exchange
               switch (methodId) {
-                case 11: { // declareOk
-                  channel.resolvePromise()
-                  break
-                }
-                case 21: { // deleteOk
-                  channel.resolvePromise()
-                  break
-                }
-                case 31: { // bindOk
-                  channel.resolvePromise()
-                  break
-                }
+                case 11: // declareOk
+                case 21: // deleteOk
+                case 31: // bindOk
                 case 51: { // unbindOk
                   channel.resolvePromise()
                   break
