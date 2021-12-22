@@ -39,7 +39,7 @@ export default class AMQPClient extends AMQPBaseClient {
     })
     return new Promise((resolve, reject) => {
       socket.on('error', (err) => reject(new AMQPError(err.message, this)))
-      this.connectPromise = /** @type {} */ ([resolve, reject])
+      this.connectPromise = [resolve, reject]
     })
   }
 

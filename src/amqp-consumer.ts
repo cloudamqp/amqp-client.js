@@ -6,14 +6,15 @@ import AMQPMessage from './amqp-message.js'
  * A consumer, subscribed to a queue
  */
 export default class AMQPConsumer {
-  channel: AMQPChannel
-  tag: string
-  onMessage: (msg: AMQPMessage) => void
-  closed = false
-  closedError?: Error
-  resolveWait?: (value: void) => void
-  rejectWait?: (err: Error) => void
-  timeoutId?: ReturnType<typeof setTimeout>
+  readonly channel: AMQPChannel
+  readonly tag: string
+  readonly onMessage: (msg: AMQPMessage) => void
+  private closed = false
+  private closedError?: Error
+  private resolveWait?: (value: void) => void
+  private rejectWait?: (err: Error) => void
+  private timeoutId?: ReturnType<typeof setTimeout>
+
   /**
    * @param channel - the consumer is created on
    * @param tag - consumer tag
