@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Rewrite in TypeScript
 
+### Fixed
+
+- Queue purged never resolved
+
+### Added
+
+- Logging when connection is blocked/unblocked by server
+
 ## [1.2.2] - 2021-12-21
 
 ### Fixed
