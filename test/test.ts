@@ -403,3 +403,27 @@ test('cannot publish too long strings', async t => {
   await t.throwsAsync(async () => await ch.queue("a".repeat(256)),
                       { message: /Short string too long/ })
 })
+
+test('can set prefetch', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const ok = await ch.prefetch(1)
+  t.is(ok, undefined)
+})
+
+test('can open a specific channel', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel(2)
+  t.is(ch.id, 2)
+})
+
+test('can open a specific channel twice', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel(2)
+  t.is(ch.id, 2)
+  const ch2 = await conn.channel(2)
+  t.is(ch2, ch)
+})
