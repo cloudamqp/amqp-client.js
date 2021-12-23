@@ -2,7 +2,7 @@ import typescript from '@rollup/plugin-typescript'
 
 const options = {
   exclude: ["src/amqp-client.ts"], // includes a ts hack for default export in commonjs module
-  removeComments: true, // comments only required in declrations
+  removeComments: true, // comments only required in declarations
   declaration: false, // let tsc generate declarations
   declarationMap: false,
   declarationDir: null
