@@ -262,6 +262,9 @@ export default class AMQPChannel {
     return this.sendRpc(frame, j)
   }
 
+  /** Used for string -> arraybuffer when publishing */
+  private static textEncoder = new TextEncoder()
+
   /**
    * Publish a message
    * @param exchange - the exchange to publish to, the exchange must exists
@@ -271,7 +274,7 @@ export default class AMQPChannel {
    * @param [immediate] - if the message should be returned if it can't be delivered to a consumer immediately (not supported in RabbitMQ)
    * @return - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
-  basicPublish(exchange: string, routingKey: string, data: string|Uint8Array|ArrayBuffer, properties: AMQPProperties = {}, mandatory = false, immediate = false) {
+  basicPublish(exchange: string, routingKey: string, data: string|Uint8Array|ArrayBuffer|null, properties: AMQPProperties = {}, mandatory = false, immediate = false) {
     if (this.closed) return this.rejectClosed()
     if (this.connection.blocked)
       return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))
@@ -281,13 +284,13 @@ export default class AMQPChannel {
       body = data
     } else if (data instanceof ArrayBuffer) {
       body = new Uint8Array(data)
+    } else if (data === null) {
+      body = new Uint8Array()
     } else if (typeof data === "string") {
-      const encoder = new TextEncoder()
-      body = encoder.encode(data)
+      body = AMQPChannel.textEncoder.encode(data)
     } else {
       const json = JSON.stringify(data)
-      const encoder = new TextEncoder()
-      body = encoder.encode(json)
+      body = AMQPChannel.textEncoder.encode(json)
     }
 
     const promises = new Array<Promise<void>>()
