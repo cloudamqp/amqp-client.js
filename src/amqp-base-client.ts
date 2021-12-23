@@ -178,7 +178,7 @@ export default abstract class AMQPBaseClient {
                     capabilities: {
                       "authentication_failure_close": true,
                       "basic.nack": true,
-                      "connection.blocked": false,
+                      "connection.blocked": true,
                       "consumer_cancel_notify": true,
                       "exchange_exchange_bindings": true,
                       "per_consumer_qos": true,
@@ -279,10 +279,12 @@ export default abstract class AMQPBaseClient {
                 }
                 case 60: { // blocked
                   const [reason, len] = view.getShortString(i); i += len
+                  console.warn("AMQP connection blocked:", reason)
                   this.blocked = reason
                   break
                 }
                 case 61: { // unblocked
+                  console.info("AMQP connection unblocked")
                   delete this.blocked
                   break
                 }
