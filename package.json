@@ -14,11 +14,11 @@
     "node": ">=12.0.0"
   },
   "scripts": {
-    "docs": "typedoc --entryPoints src/index.ts",
+    "docs": "typedoc --entryPoints src/index.ts --tsconfig tsconfig.typedoc.json",
     "lint": "eslint src",
     "test": "c8 ava",
     "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.ts && git add src/amqp-base-client.ts",
-    "build": "rm -rf dist && rollup -c && tsc --emitDeclarationOnly",
+    "build": "rm -rf dist && rollup -c && tsc --emitDeclarationOnly --module commonjs",
     "prepack": "npm run build",
     "preversion": "npm test",
     "version": "npm run build"
