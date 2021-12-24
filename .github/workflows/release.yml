@@ -20,3 +20,8 @@ jobs:
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "dist/amqp-websocket-client.mjs*"
+          token: ${{ secrets.GITHUB_TOKEN }}
