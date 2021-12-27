@@ -1,10 +1,14 @@
 # amqp-client.js
 
-AMQP 0-9-1 client both for Node.js and browsers (using WebSocket). [API documentation](https://cloudamqp.github.io/amqp-client.js/).
+AMQP 0-9-1 client both for Node.js and browsers (using WebSocket). This library is intended to replace all other Node.js AMQP libraries.
+
+[API documentation](https://cloudamqp.github.io/amqp-client.js/).
 
 This library is Promise-based and hence works very well with async/await. It's secure by default, for instance, publishes aren't fulfilled until either the data has been sent on the wire (so that back propagation is respected), or if the channel has Publish Confirms enabled, it isn't fulfilled until the server has acknowledged that the message has been enqueued.
 
 The library was developed so to make it easy for developers who already are familiar with AMQP to write browser apps that communicates directly with an AMQP server over WebSocket.
+
+## Support
 
 The library is developed and supported by [CloudAMQP](https://www.cloudamqp.com), the largest hosted RabbitMQ provider in the world.
 
@@ -13,6 +17,8 @@ The library is developed and supported by [CloudAMQP](https://www.cloudamqp.com)
 ```shell
 npm install @cloudamqp/amqp-client --save
 ```
+
+Start node with `--enable-source-maps` to get proper stacktraces as the library is transpiled from TypeScript.
 
 For web browsers a [rolled up](https://www.rollupjs.org/) version is available in [dist/](dist/).
 
@@ -45,6 +51,10 @@ async function run() {
 
 run()
 ```
+
+## Websockets
+
+This library can be used in the browser to access an AMQP server over WebSockets. For servers such as RabbitMQ that doesn't (yet?) support WebSockets natively a [WebSocket TCP relay](https://github.com/cloudamqp/websocket-tcp-relay/) have to be used as a proxy.
 
 Using AMQP over WebSockets in a browser:
 
