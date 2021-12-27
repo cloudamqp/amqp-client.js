@@ -1,6 +1,6 @@
 # amqp-client.js
 
-AMQP 0-9-1 client both for Node.js and browsers (using WebSocket). This library is intended to replace all other Node.js AMQP libraries.
+AMQP 0-9-1 TypeScript client both for Node.js and browsers (using WebSocket). This library is intended to replace all other Node.js AMQP libraries.
 
 [API documentation](https://cloudamqp.github.io/amqp-client.js/).
 
@@ -19,8 +19,6 @@ npm install @cloudamqp/amqp-client --save
 ```
 
 Start node with `--enable-source-maps` to get proper stacktraces as the library is transpiled from TypeScript.
-
-For web browsers a [rolled up](https://www.rollupjs.org/) version is available in [dist/](dist/).
 
 ## Example usage
 
@@ -52,9 +50,11 @@ async function run() {
 run()
 ```
 
-## Websockets
+## WebSockets
 
 This library can be used in the browser to access an AMQP server over WebSockets. For servers such as RabbitMQ that doesn't (yet?) support WebSockets natively a [WebSocket TCP relay](https://github.com/cloudamqp/websocket-tcp-relay/) have to be used as a proxy.
+
+For web browsers a [compiled](https://www.typescriptlang.org/) and [rolled up](https://www.rollupjs.org/) version is available at [https://github.com/cloudamqp/amqp-client.js/releases].
 
 Using AMQP over WebSockets in a browser:
 
