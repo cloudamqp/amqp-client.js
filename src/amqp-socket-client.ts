@@ -1,7 +1,7 @@
 import AMQPBaseClient from './amqp-base-client.js'
 import AMQPError from './amqp-error.js'
-import AMQPView from './amqp-view.js'
 import { Buffer } from 'buffer'
+import './amqp-view.js'
 import * as net from 'net'
 import * as tls from 'tls'
 
@@ -91,8 +91,8 @@ export default class AMQPClient extends AMQPBaseClient {
 
         // avoid copying if the whole frame is in the read buffer
         if (bufLen - bufPos >= this.frameSize) {
-          const view = new AMQPView(buf.buffer, buf.byteOffset + bufPos, this.frameSize)
-          this.parseFrames(view)
+          const frame = buf.subarray(bufPos, bufPos + this.frameSize)
+          this.parseFrames(frame)
           bufPos += this.frameSize
           this.frameSize = 0
           continue
@@ -106,8 +106,8 @@ export default class AMQPClient extends AMQPBaseClient {
       this.framePos += copied
       bufPos += copied
       if (this.framePos === this.frameSize) {
-        const view = new AMQPView(this.frameBuffer.buffer, 0, this.frameSize)
-        this.parseFrames(view)
+        const frame = buf.subarray(bufPos, bufPos + this.frameSize)
+        this.parseFrames(frame)
         this.frameSize = this.framePos = 0
       }
     }

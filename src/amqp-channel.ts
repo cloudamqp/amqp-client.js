@@ -1,5 +1,5 @@
 import AMQPError from './amqp-error.js'
-import AMQPView from './amqp-view.js'
+import './amqp-view.js'
 import AMQPQueue from './amqp-queue.js'
 import AMQPConsumer from './amqp-consumer.js'
 import AMQPMessage from './amqp-message.js'
@@ -19,7 +19,7 @@ export default class AMQPChannel {
   /** Used for string -> arraybuffer when publishing */
   private static textEncoder = new TextEncoder()
   /** Frame buffer, reuse when publishes to avoid repated allocations */
-  private readonly buffer = new AMQPView(new ArrayBuffer(4096))
+  private readonly buffer = Buffer.alloc(4096)
   confirmId = 0
   delivery?: AMQPMessage
   getMessage?: AMQPMessage
@@ -431,7 +431,7 @@ export default class AMQPChannel {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
-    const declare = new AMQPView(new ArrayBuffer(4096))
+    const declare = Buffer.allocUnsafe(4096)
     declare.setUint8(j, 1); j += 1 // type: method
     declare.setUint16(j, this.id); j += 2 // channel: 1
     declare.setUint32(j, 0); j += 4 // frameSize
@@ -493,7 +493,7 @@ export default class AMQPChannel {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
-    const bind = new AMQPView(new ArrayBuffer(4096))
+    const bind = Buffer.allocUnsafe(4096)
     bind.setUint8(j, 1); j += 1 // type: method
     bind.setUint16(j, this.id); j += 2 // channel: 1
     bind.setUint32(j, 0); j += 4 // frameSize
@@ -521,7 +521,7 @@ export default class AMQPChannel {
   queueUnbind(queue: string, exchange: string, routingKey: string, args = {}) {
     if (this.closed) return this.rejectClosed()
     let j = 0
-    const unbind = new AMQPView(new ArrayBuffer(4096))
+    const unbind = Buffer.allocUnsafe(4096)
     unbind.setUint8(j, 1); j += 1 // type: method
     unbind.setUint16(j, this.id); j += 2 // channel: 1
     unbind.setUint32(j, 0); j += 4 // frameSize
@@ -546,7 +546,7 @@ export default class AMQPChannel {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
-    const purge = new AMQPView(new ArrayBuffer(512))
+    const purge = Buffer.allocUnsafe(512)
     purge.setUint8(j, 1); j += 1 // type: method
     purge.setUint16(j, this.id); j += 2 // channel: 1
     purge.setUint32(j, 0); j += 4 // frameSize
@@ -635,7 +635,7 @@ export default class AMQPChannel {
   exchangeBind(destination: string, source: string, routingKey = "", args = {}) {
     if (this.closed) return this.rejectClosed()
     let j = 0
-    const bind = new AMQPView(new ArrayBuffer(4096))
+    const bind = Buffer.allocUnsafe(4096)
     bind.setUint8(j, 1); j += 1 // type: method
     bind.setUint16(j, this.id); j += 2 // channel: 1
     bind.setUint32(j, 0); j += 4 // frameSize
@@ -663,7 +663,7 @@ export default class AMQPChannel {
   exchangeUnbind(destination: string, source: string, routingKey = "", args = {}) {
     if (this.closed) return this.rejectClosed()
     let j = 0
-    const unbind = new AMQPView(new ArrayBuffer(4096))
+    const unbind = Buffer.allocUnsafe(4096)
     unbind.setUint8(j, 1); j += 1 // type: method
     unbind.setUint16(j, this.id); j += 2 // channel: 1
     unbind.setUint32(j, 0); j += 4 // frameSize
@@ -748,7 +748,7 @@ export default class AMQPChannel {
    * @param frame with data
    * @param frameSize - bytes the frame actually is
    */
-  private sendRpc(frame: AMQPView, frameSize: number): Promise<any> {
+  private sendRpc(frame: Buffer, frameSize: number): Promise<any> {
     return new Promise((resolve, reject) => {
       this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
         .then(() => this.promises.push([resolve, reject]))

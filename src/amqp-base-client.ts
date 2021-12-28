@@ -1,7 +1,8 @@
 import AMQPChannel from './amqp-channel.js'
 import AMQPError from './amqp-error.js'
 import AMQPMessage from './amqp-message.js'
-import AMQPView from './amqp-view.js'
+import { Buffer } from 'buffer'
+import './amqp-view.js'
 
 const VERSION = '1.3.2'
 
@@ -61,7 +62,7 @@ export default abstract class AMQPBaseClient {
     this.channels[id] = channel
 
     let j = 0
-    const channelOpen = new AMQPView(new ArrayBuffer(13))
+    const channelOpen = Buffer.allocUnsafe(13)
     channelOpen.setUint8(j, 1); j += 1 // type: method
     channelOpen.setUint16(j, id); j += 2 // channel id
     channelOpen.setUint32(j, 5); j += 4 // frameSize
@@ -70,7 +71,7 @@ export default abstract class AMQPBaseClient {
     channelOpen.setUint8(j, 0); j += 1 // reserved1
     channelOpen.setUint8(j, 206); j += 1 // frame end byte
     return new Promise((resolve, reject) => {
-      this.send(new Uint8Array(channelOpen.buffer, 0, 13))
+      this.send(channelOpen)
         .then(() => channel.promises.push([resolve, reject]))
         .catch(reject)
     })
@@ -84,7 +85,7 @@ export default abstract class AMQPBaseClient {
     if (this.closed) return this.rejectClosed()
     this.closed = true
     let j = 0
-    const frame = new AMQPView(new ArrayBuffer(512))
+    const frame = Buffer.allocUnsafe(512)
     frame.setUint8(j, 1); j += 1 // type: method
     frame.setUint16(j, 0); j += 2 // channel: 0
     frame.setUint32(j, 0); j += 4 // frameSize
@@ -97,7 +98,7 @@ export default abstract class AMQPBaseClient {
     frame.setUint8(j, 206); j += 1 // frame end byte
     frame.setUint32(3, j - 8) // update frameSize
     return new Promise((resolve, reject) => {
-      this.send(new Uint8Array(frame.buffer, 0, j))
+      this.send(frame.subarray(0, j))
         .then(() => this.closePromise = [resolve, reject])
         .catch(reject)
     })
@@ -135,7 +136,7 @@ export default abstract class AMQPBaseClient {
    * Parse and act on frames in an AMQPView
    * @ignore
    */
-  protected parseFrames(view: AMQPView) {
+  protected parseFrames(view: Buffer) {
     // Can possibly be multiple AMQP frames in a single WS frame
     for (let i = 0; i < view.byteLength;) {
       let j = 0 // position in outgoing frame
@@ -167,7 +168,7 @@ export default abstract class AMQPBaseClient {
                   // ignore start frame, just reply startok
                   i += frameSize - 4
 
-                  const startOk = new AMQPView(new ArrayBuffer(4096))
+                  const startOk = Buffer.allocUnsafe(4096)
                   startOk.setUint8(j, 1); j += 1 // type: method
                   startOk.setUint16(j, 0); j += 2 // channel: 0
                   startOk.setUint32(j, 0); j += 4 // frameSize: to be updated
@@ -196,7 +197,7 @@ export default abstract class AMQPBaseClient {
                   j += startOk.setShortString(j, "") // locale
                   startOk.setUint8(j, 206); j += 1 // frame end byte
                   startOk.setUint32(3, j - 8) // update frameSize
-                  this.send(new Uint8Array(startOk.buffer, 0, j)).catch(this.rejectConnect)
+                  this.send(startOk.subarray(0, j)).catch(this.rejectConnect)
                   break
                 }
                 case 30: { // tune
@@ -207,7 +208,7 @@ export default abstract class AMQPBaseClient {
                   this.frameMax = Math.min(4096, frameMax)
                   this.heartbeat = Math.min(0, heartbeat)
 
-                  const tuneOk = new AMQPView(new ArrayBuffer(20))
+                  const tuneOk = Buffer.allocUnsafe(20)
                   tuneOk.setUint8(j, 1); j += 1 // type: method
                   tuneOk.setUint16(j, 0); j += 2 // channel: 0
                   tuneOk.setUint32(j, 12); j += 4 // frameSize: 12
@@ -217,10 +218,10 @@ export default abstract class AMQPBaseClient {
                   tuneOk.setUint32(j, this.frameMax); j += 4 // frame max
                   tuneOk.setUint16(j, this.heartbeat); j += 2 // heartbeat
                   tuneOk.setUint8(j, 206); j += 1 // frame end byte
-                  this.send(new Uint8Array(tuneOk.buffer, 0, j)).catch(this.rejectConnect)
+                  this.send(tuneOk).catch(this.rejectConnect)
 
                   j = 0
-                  const open = new AMQPView(new ArrayBuffer(512))
+                  const open = Buffer.allocUnsafe(512)
                   open.setUint8(j, 1); j += 1 // type: method
                   open.setUint16(j, 0); j += 2 // channel: 0
                   open.setUint32(j, 0); j += 4 // frameSize: to be updated
@@ -231,7 +232,7 @@ export default abstract class AMQPBaseClient {
                   open.setUint8(j, 0); j += 1 // reserved2
                   open.setUint8(j, 206); j += 1 // frame end byte
                   open.setUint32(3, j - 8) // update frameSize
-                  this.send(new Uint8Array(open.buffer, 0, j)).catch(this.rejectConnect)
+                  this.send(open.subarray(0, j)).catch(this.rejectConnect)
 
                   break
                 }
@@ -257,14 +258,14 @@ export default abstract class AMQPBaseClient {
                   this.channels.forEach((ch) => ch.setClosed(err))
                   this.channels = [new AMQPChannel(this, 0)]
 
-                  const closeOk = new AMQPView(new ArrayBuffer(12))
+                  const closeOk = Buffer.allocUnsafe(12)
                   closeOk.setUint8(j, 1); j += 1 // type: method
                   closeOk.setUint16(j, 0); j += 2 // channel: 0
                   closeOk.setUint32(j, 4); j += 4 // frameSize
                   closeOk.setUint16(j, 10); j += 2 // class: connection
                   closeOk.setUint16(j, 51); j += 2 // method: closeok
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
-                  this.send(new Uint8Array(closeOk.buffer, 0, j))
+                  this.send(closeOk.subarray(0, j))
                     .catch(err => console.warn("Error while sending Connection#CloseOk", err))
                   this.rejectConnect(err)
                   break
@@ -322,14 +323,14 @@ export default abstract class AMQPBaseClient {
                   channel.setClosed(err)
                   delete this.channels[channelId]
 
-                  const closeOk = new AMQPView(new ArrayBuffer(12))
+                  const closeOk = Buffer.allocUnsafe(12)
                   closeOk.setUint8(j, 1); j += 1 // type: method
                   closeOk.setUint16(j, channelId); j += 2 // channel
                   closeOk.setUint32(j, 4); j += 4 // frameSize
                   closeOk.setUint16(j, 20); j += 2 // class: channel
                   closeOk.setUint16(j, 41); j += 2 // method: closeok
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
-                  this.send(new Uint8Array(closeOk.buffer, 0, j))
+                  this.send(closeOk.subarray(0, j))
                     .catch(err => console.error("Error while sending Channel#closeOk", err))
                   break
                 }
@@ -520,7 +521,7 @@ export default abstract class AMQPBaseClient {
           if (message) {
             message.bodySize = bodySize
             message.properties = properties
-            message.body = new Uint8Array(bodySize)
+            message.body = Buffer.allocUnsafe(bodySize)
             if (bodySize === 0)
               channel.onMessageReady(message)
           } else {
@@ -531,8 +532,7 @@ export default abstract class AMQPBaseClient {
         case 3: { // body
           const message = channel.delivery || channel.getMessage || channel.returned
           if (message && message.body) {
-            const bodyPart = new Uint8Array(view.buffer, view.byteOffset + i, frameSize)
-            message.body.set(bodyPart, message.bodyPos)
+            view.copy(message.body, message.bodyPos, i, i + frameSize)
             message.bodyPos += frameSize
             i += frameSize
             if (message.bodyPos === message.bodySize)

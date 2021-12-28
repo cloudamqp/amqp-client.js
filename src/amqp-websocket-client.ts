@@ -1,5 +1,6 @@
 import AMQPBaseClient from './amqp-base-client.js'
-import AMQPView from './amqp-view.js'
+import { Buffer } from 'buffer'
+import './amqp-view.js'
 
 /** 
  * WebSocket client for AMQP 0-9-1 servers
@@ -57,11 +58,10 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
 
   private framePos = 0
   private frameSize = 0
-  private frameBuffer = new Uint8Array(4096)
+  private frameBuffer = Buffer.alloc(4096)
 
   private handleMessage(event: MessageEvent) {
-    const buf : ArrayBuffer = event.data
-    const bufView = new DataView(buf)
+    const buf = Buffer.from(event.data)
     // A socket read can contain 0 or more frames, so find frame boundries
     let bufPos = 0
     while (bufPos < buf.byteLength) {
@@ -71,7 +71,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
         if (this.framePos !== 0) {
           const len = buf.byteLength - bufPos
           this.frameBuffer.set(new Uint8Array(buf, bufPos), this.framePos)
-          this.frameSize = new DataView(this.frameBuffer).getInt32(bufPos + 3) + 8
+          this.frameSize = this.frameBuffer.readInt32BE(bufPos + 3) + 8
           this.framePos += len
           bufPos += len
           continue
@@ -79,17 +79,16 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
         // frame header is split over multiple reads, copy to frameBuffer
         if (bufPos + 3 + 4 > buf.byteLength) {
           const len = buf.byteLength - bufPos
-          this.frameBuffer.set(new Uint8Array(buf, bufPos), this.framePos)
+          buf.copy(this.frameBuffer, this.framePos, bufPos, bufPos + len)
           this.framePos += len
           break
         }
 
-        this.frameSize = bufView.getInt32(bufPos + 3) + 8
+        this.frameSize = buf.readInt32BE(bufPos + 3) + 8
 
         // avoid copying if the whole frame is in the read buffer
         if (buf.byteLength - bufPos >= this.frameSize) {
-          const view = new AMQPView(buf, bufPos, this.frameSize)
-          this.parseFrames(view)
+          this.parseFrames(buf.subarray(bufPos, bufPos + this.frameSize))
           bufPos += this.frameSize
           this.frameSize = 0
           continue
@@ -99,12 +98,11 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
       const leftOfFrame = this.frameSize - this.framePos
       const copyBytes = Math.min(leftOfFrame, buf.byteLength - bufPos)
 
-      this.frameBuffer.set(new Uint8Array(buf, bufPos, copyBytes), this.framePos)
+      buf.copy(this.frameBuffer, this.framePos, bufPos, bufPos + copyBytes)
       this.framePos += copyBytes
       bufPos += copyBytes
       if (this.framePos === this.frameSize) {
-        const view = new AMQPView(this.frameBuffer.buffer, 0, this.frameSize)
-        this.parseFrames(view)
+        this.parseFrames(this.frameBuffer.subarray(bufPos, bufPos + this.frameSize))
         this.frameSize = this.framePos = 0
       }
     }
