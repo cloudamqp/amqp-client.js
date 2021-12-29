@@ -5,6 +5,7 @@ import AMQPConsumer from './amqp-consumer.js'
 import AMQPMessage from './amqp-message.js'
 import AMQPBaseClient from './amqp-base-client.js'
 import { AMQPProperties } from './amqp-properties.js'
+import { Buffer } from 'buffer'
 
 /**
  * Represents an AMQP Channel. Almost all actions in AMQP are performed on a Channel.
@@ -199,7 +200,7 @@ export default class AMQPChannel {
     frame.setUint64(j, deliveryTag); j += 8
     frame.setUint8(j, multiple ? 1 : 0); j += 1
     frame.setUint8(j, 206); j += 1 // frame end byte
-    return this.connection.send(new Uint8Array(frame.buffer, 0, 21))
+    return this.connection.send(frame)
   }
 
   /**
@@ -223,7 +224,7 @@ export default class AMQPChannel {
     if (requeue)  bits = bits | (1 << 1)
     frame.setUint8(j, bits); j += 1
     frame.setUint8(j, 206); j += 1 // frame end byte
-    return this.connection.send(new Uint8Array(frame.buffer, 0, 21))
+    return this.connection.send(frame)
   }
 
   /**
@@ -243,7 +244,7 @@ export default class AMQPChannel {
     frame.setUint64(j, deliveryTag); j += 8
     frame.setUint8(j, requeue ? 1 : 0); j += 1
     frame.setUint8(j, 206); j += 1 // frame end byte
-    return this.connection.send(new Uint8Array(frame.buffer, 0, 21))
+    return this.connection.send(frame)
   }
 
   /**
@@ -278,17 +279,17 @@ export default class AMQPChannel {
     if (this.connection.blocked)
       return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))
 
-    let body : Uint8Array
-    if (typeof Buffer !== "undefined" && data instanceof Buffer) {
+    let body : Buffer
+    if (data instanceof Buffer) {
       body = data
     } else if (data instanceof Uint8Array) {
-      body = data
+      body = Buffer.from(data)
     } else if (data instanceof ArrayBuffer) {
-      body = new Uint8Array(data)
+      body = Buffer.from(data)
     } else if (data === null) {
-      body = new Uint8Array(0)
+      body = Buffer.alloc(0)
     } else if (typeof data === "string") {
-      body = AMQPChannel.textEncoder.encode(data)
+      body = Buffer.from(data, 'utf8')
     } else {
       throw new TypeError(`Invalid type ${typeof data} for parameter data`)
     }
@@ -324,25 +325,22 @@ export default class AMQPChannel {
 
     // Send current frames if there's no body to send
     if (body.byteLength === 0) {
-      await this.connection.send(new Uint8Array(buffer.buffer, 0, j))
+      await this.connection.send(buffer.subarray(0, j))
     } else if (j >= 4096 - 8) {
       // Send current frames if a body frame can't fit in the rest of the frame buffer
-      await this.connection.send(new Uint8Array(buffer.buffer, 0, j))
+      await this.connection.send(buffer.subarray(0, j))
       j = 0
     }
 
     // split body into multiple frames if body > frameMax
     for (let bodyPos = 0; bodyPos < body.byteLength;) {
       const frameSize = Math.min(body.byteLength - bodyPos, 4096 - 8 - j) // frame overhead is 8 bytes
-      const dataSlice = body.subarray(bodyPos, bodyPos + frameSize)
-
       buffer.setUint8(j, 3); j += 1 // type: body
       buffer.setUint16(j, this.id); j += 2 // channel
       buffer.setUint32(j, frameSize); j += 4 // frameSize
-      const bodyView = new Uint8Array(buffer.buffer, j, frameSize)
-      bodyView.set(dataSlice); j += frameSize // body content
+      body.copy(buffer, j, bodyPos, bodyPos + frameSize)
       buffer.setUint8(j, 206); j += 1 // frame end byte
-      await this.connection.send(new Uint8Array(buffer.buffer, 0, j))
+      await this.connection.send(buffer.subarray(0, j))
       bodyPos += frameSize
       j = 0
     }
@@ -750,7 +748,7 @@ export default class AMQPChannel {
    */
   private sendRpc(frame: Buffer, frameSize: number): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
+      this.connection.send(frame.subarray(0, frameSize))
         .then(() => this.promises.push([resolve, reject]))
         .catch(reject)
     })

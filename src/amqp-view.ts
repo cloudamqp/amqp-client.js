@@ -13,10 +13,20 @@ declare global {
     setUint16(byteOffset: number, value: number): void
     setUint32(byteOffset: number, value: number): void
     setUint64(byteOffset: number, value: number): void
+    setInt64(byteOffset: number, value: number) : void
+
+    getInt64(byteOffset: number) : number
+    getInt32(byteOffset: number) : number
+    getInt16(byteOffset: number) : number
+    getInt8(byteOffset: number) : number
+    getFloat32(byteOffset: number) : number
+    getFloat64(byteOffset: number) : number
+
     setShortString(byteOffset: number, value: string): number
     setLongString(byteOffset: number, value: string): number
     setTable(byteOffset: number, table : Record<string, Field>) : number
     setProperties(byteOffset: number, properties: AMQPProperties): number
+    setField(byteOffset: number, field: Field) : number
 
     getUint8(byteOffset: number): number
     getUint16(byteOffset: number): number
@@ -25,50 +35,50 @@ declare global {
     getShortString(byteOffset: number): [string, number]
     getLongString(byteOffset: number): [string, number]
     getProperties(byteOffset: number): [AMQPProperties, number]
+    getTable(byteOffset: number): [Record<string, Field>, number]
+    getField(byteOffset: number): [Field, number]
+    getArray(byteOffset: number): [Field[], number]
+    getByteArray(byteOffset: number): [Uint8Array, number]
   }
 }
 
-Buffer.prototype.getUint8 = function(byteOffset: number): number {
+Buffer.prototype.getUint8 = function(this: Buffer, byteOffset: number): number {
   return this.readUInt8(byteOffset)
 }
 
-Buffer.prototype.getUint16 = function(byteOffset: number): number {
+Buffer.prototype.getUint16 = function(this: Buffer, byteOffset: number): number {
   return this.readUInt16BE(byteOffset)
 }
 
-Buffer.prototype.getUint32 = function(byteOffset: number): number {
+Buffer.prototype.getUint32 = function(this: Buffer, byteOffset: number): number {
   return this.readUInt32BE(byteOffset)
 }
 
-Buffer.prototype.setUint8 = function(byteOffset: number, value: number): void {
+Buffer.prototype.setUint8 = function(this: Buffer, byteOffset: number, value: number): void {
   this.writeUInt8(value, byteOffset)
 }
 
-Buffer.prototype.setUint16 = function(byteOffset: number, value: number): void {
+Buffer.prototype.setUint16 = function(this: Buffer, byteOffset: number, value: number): void {
   this.writeUInt16BE(value, byteOffset)
 }
 
-Buffer.prototype.setUint32 = function(byteOffset: number, value: number): void {
+Buffer.prototype.setUint32 = function(this: Buffer, byteOffset: number, value: number): void {
   this.writeUInt32BE(value, byteOffset)
 }
 
-Buffer.prototype.setUint32 = function(byteOffset: number, value: number): void {
+Buffer.prototype.setUint32 = function(this: Buffer, byteOffset: number, value: number): void {
   this.writeUInt32BE(value, byteOffset)
 }
 
-Buffer.prototype.setShortString = function(byteOffset: number, value: string): number {
-  return this.writeShortString(value, byteOffset)
-}
-
-Buffer.prototype.getUInt64 = function(byteOffset: number): number {
+Buffer.prototype.getUInt64 = function(this: Buffer, byteOffset: number): number {
   return Number(this.readBigUInt64BE(byteOffset))
 }
 
-Buffer.prototype.writeUInt64 = function(value: number, byteOffset: number): number {
+Buffer.prototype.writeUInt64 = function(this: Buffer, value: number, byteOffset: number): number {
   return this.writeBigUInt64BE(BigInt(value), byteOffset)
 }
 
-Buffer.prototype.getUint64 = function(byteOffset: number) : number {
+Buffer.prototype.getUint64 = function(this: Buffer, byteOffset: number) : number {
   // split 64-bit number into two 32-bit (4-byte) parts
   const left =  this.getUint32(byteOffset)
   const right = this.getUint32(byteOffset + 4)
@@ -82,26 +92,46 @@ Buffer.prototype.getUint64 = function(byteOffset: number) : number {
   return combined
 }
 
-Buffer.prototype.setUint64 = function(byteOffset: number, value: number) : void {
-  this.setBigUint64(byteOffset, BigInt(value))
+Buffer.prototype.setUint64 = function(this: Buffer, byteOffset: number, value: number) : void {
+  this.writeBigUInt64BE(BigInt(value), byteOffset)
 }
 
-Buffer.prototype.getInt64 = function(byteOffset: number) : number {
-  return Number(this.getBigInt64(byteOffset))
+Buffer.prototype.getInt64 = function(this: Buffer, byteOffset: number) : number {
+  return Number(this.readBigInt64BE(byteOffset))
 }
 
-Buffer.prototype.setInt64 = function(byteOffset: number, value: number) : void {
-  this.setBigInt64(byteOffset, BigInt(value))
+Buffer.prototype.getInt32 = function(this: Buffer, byteOffset: number) : number {
+  return this.readInt32BE(byteOffset)
 }
 
-Buffer.prototype.getShortString = function(byteOffset: number): [string, number] {
+Buffer.prototype.getInt16 = function(this: Buffer, byteOffset: number) : number {
+  return this.readInt16BE(byteOffset)
+}
+
+Buffer.prototype.getInt8 = function(this: Buffer, byteOffset: number) : number {
+  return this.readInt8(byteOffset)
+}
+
+Buffer.prototype.getFloat32 = function(this: Buffer, byteOffset: number) : number {
+  return this.readFloatBE(byteOffset)
+}
+
+Buffer.prototype.getFloat64 = function(this: Buffer, byteOffset: number) : number {
+  return this.readDoubleBE(byteOffset)
+}
+
+Buffer.prototype.setInt64 = function(this: Buffer, byteOffset: number, value: number) : void {
+  this.writeBigInt64BE(BigInt(value), byteOffset)
+}
+
+Buffer.prototype.getShortString = function(this: Buffer, byteOffset: number): [string, number] {
   const len = this.getUint8(byteOffset)
   byteOffset += 1
   const text = this.toString('utf8', byteOffset, byteOffset + len)
   return [text, len + 1]
 }
 
-Buffer.prototype.setShortString = function(byteOffset: number, string: string) : number {
+Buffer.prototype.setShortString = function(this: Buffer, byteOffset: number, string: string) : number {
   const len = Buffer.byteLength(string)
   if (len > 255) throw new Error(`Short string too long, ${len} bytes: ${string.substring(0, 255)}...`)
   this.setUint8(byteOffset, len)
@@ -110,14 +140,14 @@ Buffer.prototype.setShortString = function(byteOffset: number, string: string) :
   return len + 1
 }
 
-Buffer.prototype.getLongString = function(byteOffset: number): [string, number] {
+Buffer.prototype.getLongString = function(this: Buffer, byteOffset: number): [string, number] {
   const len = this.getUint32(byteOffset)
   byteOffset += 4
   const text = this.toString('utf8', byteOffset, byteOffset + len)
   return [text, len + 4]
 }
 
-Buffer.prototype.setLongString = function(byteOffset: number, string: string) : number {
+Buffer.prototype.setLongString = function(this: Buffer, byteOffset: number, string: string) : number {
   const len = Buffer.byteLength(string)
   this.setUint32(byteOffset, len)
   byteOffset += 4
@@ -125,7 +155,7 @@ Buffer.prototype.setLongString = function(byteOffset: number, string: string) : 
   return len + 4
 }
 
-Buffer.prototype.getProperties = function(byteOffset: number): [AMQPProperties, number] {
+Buffer.prototype.getProperties = function(this: Buffer, byteOffset: number): [AMQPProperties, number] {
   let j = byteOffset
   const flags = this.getUint16(j); j += 2
   const props: AMQPProperties = {}
@@ -182,7 +212,7 @@ Buffer.prototype.getProperties = function(byteOffset: number): [AMQPProperties, 
   return [props, len]
 }
 
-Buffer.prototype.setProperties = function(byteOffset: number, properties: AMQPProperties): number {
+Buffer.prototype.setProperties = function(this: Buffer, byteOffset: number, properties: AMQPProperties): number {
   let j = byteOffset
   let flags = 0
   if (properties.contentType)     flags = flags | 0x8000
@@ -244,7 +274,7 @@ Buffer.prototype.setProperties = function(byteOffset: number, properties: AMQPPr
   return len
 }
 
-Buffer.prototype.getTable = function(byteOffset: number): [Record<string, Field>, number] {
+Buffer.prototype.getTable = function(this: Buffer, byteOffset: number): [Record<string, Field>, number] {
   const table: Record<string, Field> = {}
   let i = byteOffset
   const len = this.getUint32(byteOffset); i += 4
@@ -256,7 +286,7 @@ Buffer.prototype.getTable = function(byteOffset: number): [Record<string, Field>
   return [table, len + 4]
 }
 
-Buffer.prototype.setTable = function(byteOffset: number, table : Record<string, Field>) : number {
+Buffer.prototype.setTable = function(this: Buffer, byteOffset: number, table : Record<string, Field>) : number {
   // skip the first 4 bytes which are for the size
   let i = byteOffset + 4
   for (const [key, value] of Object.entries(table)) {
@@ -268,7 +298,7 @@ Buffer.prototype.setTable = function(byteOffset: number, table : Record<string, 
   return i - byteOffset
 }
 
-Buffer.prototype.getField = function(byteOffset: number): [Field, number] {
+Buffer.prototype.getField = function(this: Buffer, byteOffset: number): [Field, number] {
   let i = byteOffset
   const k = this.getUint8(i); i += 1
   const type = String.fromCharCode(k)
@@ -303,7 +333,7 @@ Buffer.prototype.getField = function(byteOffset: number): [Field, number] {
   return [v, i - byteOffset]
 }
 
-Buffer.prototype.setField = function(byteOffset: number, field: Field) : number {
+Buffer.prototype.setField = function(this: Buffer, byteOffset: number, field: Field) : number {
   let i = byteOffset
   switch (typeof field) {
     case "string":
@@ -364,7 +394,7 @@ Buffer.prototype.setField = function(byteOffset: number, field: Field) : number 
   return i - byteOffset
 }
 
-Buffer.prototype.getArray = function(byteOffset: number): [Field[], number] {
+Buffer.prototype.getArray = function(this: Buffer, byteOffset: number): [Field[], number] {
   const len = this.getUint32(byteOffset); byteOffset += 4
   const endOffset = byteOffset + len
   const v = []
@@ -375,7 +405,7 @@ Buffer.prototype.getArray = function(byteOffset: number): [Field[], number] {
   return [v, len + 4]
 }
 
-Buffer.prototype.setArray = function(byteOffset: number, array: Field[]) : number {
+Buffer.prototype.setArray = function(this: Buffer, byteOffset: number, array: Field[]) : number {
   const start = byteOffset
   byteOffset += 4 // update the length later
   array.forEach((e) => {
@@ -385,20 +415,20 @@ Buffer.prototype.setArray = function(byteOffset: number, array: Field[]) : numbe
   return byteOffset - start
 }
 
-Buffer.prototype.getByteArray = function(byteOffset: number): [Uint8Array, number] {
+Buffer.prototype.getByteArray = function(this: Buffer, byteOffset: number): [Uint8Array, number] {
   const len = this.getUint32(byteOffset); byteOffset += 4
   const v = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
   return [v, len + 4]
 }
 
-Buffer.prototype.setByteArray = function(byteOffset: number, data: Uint8Array) : number {
+Buffer.prototype.setByteArray = function(this: Buffer, byteOffset: number, data: Uint8Array) : number {
   this.setUint32(byteOffset, data.byteLength); byteOffset += 4
   const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, data.byteLength)
   view.set(data)
   return data.byteLength + 4
 }
 
-Buffer.prototype.setFrameEnd = function(byteOffset: number) : 1 {
+Buffer.prototype.setFrameEnd = function(this: Buffer, byteOffset: number) : 1 {
   this.setUint32(3, byteOffset - 7) // update frameSize
   this.setUint8(byteOffset, 206) // frame end byte
   return 1
