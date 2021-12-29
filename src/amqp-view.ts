@@ -39,6 +39,10 @@ export default class AMQPView extends DataView {
   getShortString(byteOffset: number): [string, number] {
     const len = this.getUint8(byteOffset)
     byteOffset += 1
+    if (typeof Buffer !== "undefined") {
+      const text = Buffer.from(this.buffer, this.byteOffset + byteOffset, len).toString()
+      return [text, len + 1]
+    }
     const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
     const text = AMQPView.decoder.decode(view)
     return [text, len + 1]
@@ -57,6 +61,10 @@ export default class AMQPView extends DataView {
   getLongString(byteOffset: number, littleEndian?: boolean): [string, number] {
     const len = this.getUint32(byteOffset, littleEndian)
     byteOffset += 4
+    if (typeof Buffer !== "undefined") {
+      const text = Buffer.from(this.buffer, this.byteOffset + byteOffset, len).toString()
+      return [text, len + 4]
+    }
     const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
     const text = AMQPView.decoder.decode(view)
     return [text, len + 4]
