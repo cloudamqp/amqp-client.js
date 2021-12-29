@@ -451,3 +451,62 @@ test.only('can publish messages spanning multiple frames', async t => {
     if (msg) t.is(msg.bodySize, n)
   }
 })
+
+test('set basic flow on channel', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await t.notThrowsAsync(async () =>  await ch.basicFlow(true))
+})
+
+test('can resolve promise on channel', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  t.false(ch.resolvePromise())
+})
+
+test('confirming unknown deliveryTag', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  t.notThrows(() => ch.publishConfirmed(1, false, false))
+})
+
+// ch.deliver does enqueue a microtask, rendering the ch.deliver method untestable.
+test.skip('delivering a message when no consumer exists raises', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const msg = new AMQPMessage(ch)
+  msg.consumerTag = "abc"
+  t.throws(() => ch.deliver(msg))
+})
+
+test("can publish null", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  t.notThrows(() => ch.basicPublish("amq.topic", "", null))
+})
+
+test("can publish ArrayBuffer", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  t.notThrows(() => ch.basicPublish("amq.topic", "", new ArrayBuffer(2)))
+})
+
+test("can publish Uint8array", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  t.notThrows(() => ch.basicPublish("amq.topic", "", new Uint8Array(2)))
+})
+
+test("can do basicRecover", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  t.notThrows(() => ch.basicRecover(true))
+})
