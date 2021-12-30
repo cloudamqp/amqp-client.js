@@ -155,7 +155,7 @@ export default class AMQPView extends DataView {
     return [props, len]
   }
 
-  setProperties(byteOffset: number, properties: AMQPProperties = {}, littleEndian?: boolean): number {
+  setProperties(byteOffset: number, properties: AMQPProperties, littleEndian?: boolean): number {
     let j = byteOffset
     let flags = 0
     if (properties.contentType)     flags = flags | 0x8000
