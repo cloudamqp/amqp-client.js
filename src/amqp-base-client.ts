@@ -21,7 +21,7 @@ export default abstract class AMQPBaseClient {
   closed = false
   blocked?: string
   channelMax = 0
-  frameMax = 16384
+  frameMax = 4096
   heartbeat = 0
   /**
    * @param name - name of the connection, set in client properties
@@ -200,7 +200,7 @@ export default abstract class AMQPBaseClient {
                   const frameMax = view.getUint32(i); i += 4
                   const heartbeat = view.getUint16(i); i += 2
                   this.channelMax = channelMax
-                  this.frameMax = Math.min(16384, frameMax)
+                  this.frameMax = Math.min(4096, frameMax)
                   this.heartbeat = Math.min(0, heartbeat)
 
                   const tuneOk = new AMQPView(new ArrayBuffer(20))

@@ -295,7 +295,7 @@ export default class AMQPChannel {
 
     const promises = new Array<Promise<void>>()
     let j = 0
-    let buffer = new AMQPView(new ArrayBuffer(16384))
+    let buffer = new AMQPView(new ArrayBuffer(4096))
     buffer.setUint8(j, 1); j += 1 // type: method
     buffer.setUint16(j, this.id); j += 2 // channel
     j += 4 // frame size, update later
@@ -327,7 +327,7 @@ export default class AMQPChannel {
     if (body.byteLength === 0) {
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))
       promises.push(p)
-    } else if (j >= 16384 - 8) {
+    } else if (j >= 4096 - 8) {
       // Send current frames if a body frame can't fit in the rest of the frame buffer
       const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))
       promises.push(p)
@@ -336,7 +336,7 @@ export default class AMQPChannel {
 
     // split body into multiple frames if body > frameMax
     for (let bodyPos = 0; bodyPos < body.byteLength;) {
-      const frameSize = Math.min(body.byteLength - bodyPos, 16384 - 8 - j) // frame overhead is 8 bytes
+      const frameSize = Math.min(body.byteLength - bodyPos, 4096 - 8 - j) // frame overhead is 8 bytes
       const dataSlice = body.subarray(bodyPos, bodyPos + frameSize)
 
       if (j === 0)
