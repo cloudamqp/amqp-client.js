@@ -46,7 +46,7 @@ export default class AMQPClient extends AMQPBaseClient {
   private connectSocket() {
     let framePos = 0
     let frameSize = 0
-    const frameBuffer = Buffer.allocUnsafe(16384)
+    const frameBuffer = Buffer.allocUnsafe(4096)
     const options = {
       host: this.host,
       port: this.port,
