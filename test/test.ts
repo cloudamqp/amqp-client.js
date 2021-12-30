@@ -344,12 +344,20 @@ test('can publish and consume msgs with large headers', async t => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
-  await q.publish("a".repeat(4000), { headers: { long: Buffer.from("a".repeat(10000)) } })
-  await q.publish("a".repeat(8000), { headers: { long: "a".repeat(10000) } })
-  await q.publish("a".repeat(8000), { headers: { long: Array(1000).fill("a") } })
+  await q.publish("a".repeat(4000), { headers: { long: Buffer.from("a".repeat(4000)) } })
+  await q.publish("a".repeat(8000), { headers: { long: "a".repeat(4000) } })
+  await q.publish("a".repeat(8000), { headers: { long: Array(100).fill("a") } })
   const consumer = await q.subscribe({ noAck: false }, async (msg) => { if (msg.deliveryTag === 3) await msg.cancelConsumer() })
   const ok = await consumer.wait()
   t.is(ok, undefined)
+})
+
+test.skip('will throw when headers are too long', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue()
+  await t.throwsAsync(async () => await q.publish("a".repeat(8000), { headers: { long: "a".repeat(5000) } }))
 })
 
 test('can purge a queue', async t => {
