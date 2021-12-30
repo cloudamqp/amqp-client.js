@@ -373,10 +373,4 @@ export default class AMQPView extends DataView {
     view.set(data)
     return data.byteLength + 4
   }
-
-  setFrameEnd(byteOffset: number, littleEndian?: boolean) : 1 {
-    this.setUint32(3, byteOffset - 7, littleEndian) // update frameSize
-    this.setUint8(byteOffset, 206) // frame end byte
-    return 1
-  }
 }

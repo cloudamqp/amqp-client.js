@@ -288,8 +288,7 @@ export default class AMQPChannel {
     } else if (typeof data === "string") {
       body = AMQPChannel.textEncoder.encode(data)
     } else {
-      const json = JSON.stringify(data)
-      body = AMQPChannel.textEncoder.encode(json)
+      throw new TypeError(`Invalid type ${typeof data} for parameter data`)
     }
 
     let j = 0
