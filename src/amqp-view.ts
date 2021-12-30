@@ -42,20 +42,30 @@ export default class AMQPView extends DataView {
     if (typeof Buffer !== "undefined") {
       const text = Buffer.from(this.buffer, this.byteOffset + byteOffset, len).toString()
       return [text, len + 1]
+    } else {
+      const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
+      const text = AMQPView.decoder.decode(view)
+      return [text, len + 1]
     }
-    const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
-    const text = AMQPView.decoder.decode(view)
-    return [text, len + 1]
   }
 
   setShortString(byteOffset: number, string: string) : number {
-    const utf8 = AMQPView.encoder.encode(string)
-    if (utf8.byteLength > 255) throw new Error(`Short string too long, ${utf8.byteLength} bytes: ${string.substring(0, 255)}...`)
-    this.setUint8(byteOffset, utf8.byteLength)
-    byteOffset += 1
-    const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset)
-    view.set(utf8)
-    return utf8.byteLength + 1
+    if (typeof Buffer !== "undefined") {
+      const len = Buffer.byteLength(string)
+      if (len > 255) throw new Error(`Short string too long, ${len} bytes: ${string.substring(0, 255)}...`)
+      this.setUint8(byteOffset, len)
+      byteOffset += 1
+      Buffer.from(this.buffer, this.byteOffset + byteOffset, len).write(string)
+      return len + 1
+    } else {
+      const utf8 = AMQPView.encoder.encode(string)
+      if (utf8.byteLength > 255) throw new Error(`Short string too long, ${utf8.byteLength} bytes: ${string.substring(0, 255)}...`)
+      this.setUint8(byteOffset, utf8.byteLength)
+      byteOffset += 1
+      const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset)
+      view.set(utf8)
+      return utf8.byteLength + 1
+    }
   }
 
   getLongString(byteOffset: number, littleEndian?: boolean): [string, number] {
@@ -64,19 +74,28 @@ export default class AMQPView extends DataView {
     if (typeof Buffer !== "undefined") {
       const text = Buffer.from(this.buffer, this.byteOffset + byteOffset, len).toString()
       return [text, len + 4]
+    } else {
+      const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
+      const text = AMQPView.decoder.decode(view)
+      return [text, len + 4]
     }
-    const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
-    const text = AMQPView.decoder.decode(view)
-    return [text, len + 4]
   }
 
   setLongString(byteOffset: number, string: string, littleEndian?: boolean) : number {
-    const utf8 = AMQPView.encoder.encode(string)
-    this.setUint32(byteOffset, utf8.byteLength, littleEndian)
-    byteOffset += 4
-    const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset)
-    view.set(utf8)
-    return utf8.byteLength + 4
+    if (typeof Buffer !== "undefined") {
+      const len = Buffer.byteLength(string)
+      this.setUint32(byteOffset, len, littleEndian)
+      byteOffset += 4
+      Buffer.from(this.buffer, this.byteOffset + byteOffset, len).write(string)
+      return len + 4
+    } else {
+      const utf8 = AMQPView.encoder.encode(string)
+      this.setUint32(byteOffset, utf8.byteLength, littleEndian)
+      byteOffset += 4
+      const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset)
+      view.set(utf8)
+      return utf8.byteLength + 4
+    }
   }
 
   getProperties(byteOffset: number, littleEndian?: boolean): [AMQPProperties, number] {
