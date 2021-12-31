@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Use Buffer for string encoding/decoding for healty performance boost
+- Use 4096 frameMax for smaller and faster allocations (down from 16KB)
+- Reraise RangeErrors with more debug information
+
+### Changed
+
 - Rewrite in TypeScript
 
 ### Fixed
