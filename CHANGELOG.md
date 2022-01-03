@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2022-01-03
+
 ### Changed
 
-- Use Buffer for string encoding/decoding for healty performance boost
+- Use Buffer for string encoding/decoding for >100% performance boost
 - Use 4096 frameMax for smaller and faster allocations (down from 16KB)
 - Reraise RangeErrors with more debug information
+
+## [1.3.0] - 2021-12-23
 
 ### Changed
 
