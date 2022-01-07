@@ -59,12 +59,13 @@ export default class AMQPView extends DataView {
       return len + 1
     } else {
       const utf8 = AMQPView.encoder.encode(string)
-      if (utf8.byteLength > 255) throw new Error(`Short string too long, ${utf8.byteLength} bytes: ${string.substring(0, 255)}...`)
-      this.setUint8(byteOffset, utf8.byteLength)
+      const len = utf8.byteLength
+      if (len > 255) throw new Error(`Short string too long, ${len} bytes: ${string.substring(0, 255)}...`)
+      this.setUint8(byteOffset, len)
       byteOffset += 1
       const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset)
       view.set(utf8)
-      return utf8.byteLength + 1
+      return len + 1
     }
   }
 
@@ -90,11 +91,12 @@ export default class AMQPView extends DataView {
       return len + 4
     } else {
       const utf8 = AMQPView.encoder.encode(string)
-      this.setUint32(byteOffset, utf8.byteLength, littleEndian)
+      const len = utf8.byteLength
+      this.setUint32(byteOffset, len, littleEndian)
       byteOffset += 4
       const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset)
       view.set(utf8)
-      return utf8.byteLength + 4
+      return len + 4
     }
   }
 
