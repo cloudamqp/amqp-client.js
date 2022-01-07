@@ -122,3 +122,26 @@ Using AMQP over WebSockets in a browser:
   </body>
 </html>
 ```
+
+## Performance
+
+Messages with a 1-byte body, no properties:
+
+| Client | Publish rate | Consume rate |
+| ------ | ------------ | ------------ |
+| amqp-client.js | 300.000 msgs/s | 512.000 msgs/s |
+| amqplib | 172.000 msgs/s | 519.000 msgs/s |
+
+Messages with a 1-byte body, and all properties, except headers:
+
+| Client | Publish rate | Consume rate |
+| ------ | ------------ | ------------ |
+| amqp-client.js | 144.000 msgs/s | 202.000 msgs/s |
+| amqplib | 110.000 msgs/s | 251.000 msgs/s |
+
+Messages with a 1-byte body, and all properties, including headers:
+
+| Client | Publish rate | Consume rate |
+| ------ | ------------ | ------------ |
+| amqp-client.js | 70.000 msgs/s | 89.000 msgs/s |
+| amqplib | 60.000 msgs/s | 99.000 msgs/s |
