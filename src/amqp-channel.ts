@@ -265,6 +265,9 @@ export default class AMQPChannel {
   /** Used for string -> arraybuffer when publishing */
   private static textEncoder = new TextEncoder()
 
+  /** Frame buffer, reuse when publishes to avoid repated allocations */
+  private buffer = new AMQPView(new ArrayBuffer(4096))
+
   /**
    * Publish a message
    * @param exchange - the exchange to publish to, the exchange must exists
@@ -274,13 +277,13 @@ export default class AMQPChannel {
    * @param [immediate] - if the message should be returned if it can't be delivered to a consumer immediately (not supported in RabbitMQ)
    * @return - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
-  basicPublish(exchange: string, routingKey: string, data: string|Uint8Array|ArrayBuffer|null, properties: AMQPProperties = {}, mandatory = false, immediate = false) {
+  async basicPublish(exchange: string, routingKey: string, data: string|Uint8Array|ArrayBuffer|Buffer|null, properties: AMQPProperties = {}, mandatory = false, immediate = false): Promise<number> {
     if (this.closed) return this.rejectClosed()
     if (this.connection.blocked)
       return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))
 
-    let body
-    if (data instanceof Uint8Array) {
+    let body : Uint8Array
+    if (data instanceof Uint8Array || data instanceof Buffer) {
       body = data
     } else if (data instanceof ArrayBuffer) {
       body = new Uint8Array(data)
@@ -293,9 +296,8 @@ export default class AMQPChannel {
       body = AMQPChannel.textEncoder.encode(json)
     }
 
-    const promises = new Array<Promise<void>>()
     let j = 0
-    let buffer = new AMQPView(new ArrayBuffer(4096))
+    const buffer = this.buffer
     buffer.setUint8(j, 1); j += 1 // type: method
     buffer.setUint16(j, this.id); j += 2 // channel
     j += 4 // frame size, update later
@@ -325,12 +327,10 @@ export default class AMQPChannel {
 
     // Send current frames if there's no body to send
     if (body.byteLength === 0) {
-      const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))
-      promises.push(p)
+      await this.connection.send(new Uint8Array(buffer.buffer, 0, j))
     } else if (j >= 4096 - 8) {
       // Send current frames if a body frame can't fit in the rest of the frame buffer
-      const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))
-      promises.push(p)
+      await this.connection.send(new Uint8Array(buffer.buffer, 0, j))
       j = 0
     }
 
@@ -339,16 +339,13 @@ export default class AMQPChannel {
       const frameSize = Math.min(body.byteLength - bodyPos, 4096 - 8 - j) // frame overhead is 8 bytes
       const dataSlice = body.subarray(bodyPos, bodyPos + frameSize)
 
-      if (j === 0)
-        buffer = new AMQPView(new ArrayBuffer(frameSize + 8))
       buffer.setUint8(j, 3); j += 1 // type: body
       buffer.setUint16(j, this.id); j += 2 // channel
       buffer.setUint32(j, frameSize); j += 4 // frameSize
       const bodyView = new Uint8Array(buffer.buffer, j, frameSize)
       bodyView.set(dataSlice); j += frameSize // body content
       buffer.setUint8(j, 206); j += 1 // frame end byte
-      const p = this.connection.send(new Uint8Array(buffer.buffer, 0, j))
-      promises.push(p)
+      await this.connection.send(new Uint8Array(buffer.buffer, 0, j))
       bodyPos += frameSize
       j = 0
     }
@@ -356,16 +353,9 @@ export default class AMQPChannel {
     // the promise on the queue will be fullfilled by the read loop when an ack/nack
     // comes from the server
     if (this.confirmId) {
-      return new Promise((resolve, reject) =>
-        Promise.all(promises)
-        .then(() => this.unconfirmedPublishes.push([this.confirmId++, resolve, reject]))
-        .catch(reject)
-      )
+      return new Promise((resolve, reject) => this.unconfirmedPublishes.push([this.confirmId++, resolve, reject]))
     } else {
-      return new Promise((resolve, reject) =>
-        Promise.all(promises)
-        .then(() => resolve(0))
-        .catch(reject))
+      return Promise.resolve(0)
     }
   }
 
