@@ -285,7 +285,7 @@ export default class AMQPChannel {
     } else if (data instanceof ArrayBuffer) {
       body = new Uint8Array(data)
     } else if (data === null) {
-      body = new Uint8Array()
+      body = new Uint8Array(0)
     } else if (typeof data === "string") {
       body = AMQPChannel.textEncoder.encode(data)
     } else {
