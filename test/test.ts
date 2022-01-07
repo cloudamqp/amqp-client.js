@@ -435,3 +435,19 @@ test('can open a specific channel twice', async t => {
   const ch2 = await conn.channel(2)
   t.is(ch2, ch)
 })
+
+test.only('can publish messages spanning multiple frames', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await ch.confirmSelect()
+  const q = await ch.queue("")
+  const sizes = [4087, 4088, 4089, 4096, 5000, 10000]
+  t.plan(sizes.length)
+  for (let i = 0; i < sizes.length; i++) {
+    const n = sizes[i]
+    await q.publish(Buffer.alloc(n || 0))
+    const msg = await q.get()
+    if (msg) t.is(msg.bodySize, n)
+  }
+})
