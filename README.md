@@ -151,4 +151,4 @@ Module comparison
 | Client | Runtime dependencies | [Lines of code](https://github.com/AlDanial/cloc) |
 | ------ | ------------ | --- |
 | amqp-client.js | 0 | 1743 |
-| amqplib | 14 | 6720 (+ dependencies) |
+| amqplib | 14 | 6720 (w/o dependencies) |
