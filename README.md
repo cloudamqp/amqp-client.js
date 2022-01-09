@@ -145,3 +145,10 @@ Messages with a 1-byte body, and all properties, including headers:
 | ------ | ------------ | ------------ |
 | amqp-client.js | 70.000 msgs/s | 89.000 msgs/s |
 | amqplib | 60.000 msgs/s | 99.000 msgs/s |
+
+Module comparison
+
+| Client | Runtime dependencies | [Lines of code](https://github.com/AlDanial/cloc) |
+| ------ | ------------ | --- |
+| amqp-client.js | 0 | 1743 |
+| amqplib | 14 | 6720 (+ dependencies) |
