@@ -23,7 +23,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
     const socket = new WebSocket(this.url)
     this.socket = socket
     socket.binaryType = "arraybuffer"
-    socket.onmessage = this.handleMessage
+    socket.onmessage = this.handleMessage.bind(this)
     return new Promise((resolve, reject) => {
       this.connectPromise = [resolve, reject]
       socket.onclose = reject
