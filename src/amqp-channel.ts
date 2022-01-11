@@ -279,7 +279,9 @@ export default class AMQPChannel {
       return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))
 
     let body : Uint8Array
-    if (data instanceof Uint8Array || data instanceof Buffer) {
+    if (typeof Buffer !== "undefined" && data instanceof Buffer) {
+      body = data
+    } else if (data instanceof Uint8Array) {
       body = data
     } else if (data instanceof ArrayBuffer) {
       body = new Uint8Array(data)
