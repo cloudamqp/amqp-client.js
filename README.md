@@ -146,7 +146,7 @@ Messages with a 1-byte body, and all properties, including headers:
 | amqp-client.js | 70.000 msgs/s | 89.000 msgs/s |
 | amqplib | 60.000 msgs/s | 99.000 msgs/s |
 
-The reason amqp-client is slower to consume is that to maintain browser compabilty for the websocket client `DataView` are used for parsing the binary protocol instead of `Buffer`.
+The reason amqp-client is slower to consume is that to maintain browser compatibility for the websocket client `DataView` are used for parsing the binary protocol instead of `Buffer`.
 
 Module comparison
 
