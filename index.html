@@ -98,7 +98,7 @@
 <td>99.000 msgs/s</td>
 </tr>
 </tbody></table>
-<p>The reason amqp-client is slower to consume is that to maintain browser compatibility for the websocket client <code>DataView</code> are used for parsing the binary protocol instead of <code>Buffer</code>.</p>
+<p>The reason amqp-client is somewhat slower to consume is that to maintain browser compatibility for the websocket client, <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView"><code>DataView</code></a> are used for parsing the binary protocol instead of <a href="https://nodejs.org/api/buffer.html"><code>Buffer</code></a>.</p>
 <p>Module comparison</p>
 <table>
 <thead>
