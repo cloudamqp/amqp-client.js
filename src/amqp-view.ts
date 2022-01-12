@@ -80,7 +80,7 @@ Buffer.prototype.getUInt64 = function(this: Buffer, byteOffset: number): number 
   return Number(this.readBigUInt64BE(byteOffset))
 }
 
-Buffer.prototype.writeUInt64 = function(this: Buffer, value: number, byteOffset: number): number {
+Buffer.prototype.setInt64 = function(this: Buffer, byteOffset: number, value: number): number {
   return this.writeBigUInt64BE(BigInt(value), byteOffset)
 }
 

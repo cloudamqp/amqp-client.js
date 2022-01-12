@@ -17,8 +17,6 @@ export default class AMQPChannel {
   readonly promises: [(arg0: any) => void, (err?: Error) => void][] = []
   private readonly unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][] = []
   private closed = false
-  /** Used for string -> arraybuffer when publishing */
-  private static textEncoder = new TextEncoder()
   /** Frame buffer, reuse when publishes to avoid repated allocations */
   private readonly buffer = Buffer.alloc(4096)
   confirmId = 0
@@ -200,7 +198,7 @@ export default class AMQPChannel {
     frame.setUint64(j, deliveryTag); j += 8
     frame.setUint8(j, multiple ? 1 : 0); j += 1
     frame.setUint8(j, 206); j += 1 // frame end byte
-    return this.connection.send(frame)
+    return this.connection.send(frame.subarray(0, j))
   }
 
   /**
@@ -224,7 +222,7 @@ export default class AMQPChannel {
     if (requeue)  bits = bits | (1 << 1)
     frame.setUint8(j, bits); j += 1
     frame.setUint8(j, 206); j += 1 // frame end byte
-    return this.connection.send(frame)
+    return this.connection.send(frame.subarray(0, j))
   }
 
   /**
@@ -244,7 +242,7 @@ export default class AMQPChannel {
     frame.setUint64(j, deliveryTag); j += 8
     frame.setUint8(j, requeue ? 1 : 0); j += 1
     frame.setUint8(j, 206); j += 1 // frame end byte
-    return this.connection.send(frame)
+    return this.connection.send(frame.subarray(0, j))
   }
 
   /**

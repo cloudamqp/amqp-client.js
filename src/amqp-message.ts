@@ -44,7 +44,7 @@ export default class AMQPMessage {
    * Converts the message (which is deliviered as an uint8array) to a string
    */
   bodyToString() {
-    return AMQPMessage.decoder.decode(this.body)
+    return this.body ? Buffer.from(this.body).toString() : null
   }
 
   bodyString() {
