@@ -52,7 +52,7 @@ run()
 
 ## WebSockets
 
-This library can be used in the browser to access an AMQP server over WebSockets. For servers such as RabbitMQ that doesn't (yet?) support WebSockets natively a [WebSocket TCP relay](https://github.com/cloudamqp/websocket-tcp-relay/) have to be used as a proxy.
+This library can be used in the browser to access an AMQP server over WebSockets. For servers such as RabbitMQ that doesn't (yet?) support WebSockets natively a [WebSocket TCP relay](https://github.com/cloudamqp/websocket-tcp-relay/) have to be used as a proxy. More information can be found [in this blog post](https://www.cloudamqp.com/blog/cloudamqp-releases-amqp-websockets.html).
 
 For web browsers a [compiled](https://www.typescriptlang.org/) and [rolled up](https://www.rollupjs.org/) version is available at https://github.com/cloudamqp/amqp-client.js/releases.
 
