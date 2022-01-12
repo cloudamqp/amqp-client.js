@@ -436,7 +436,7 @@ test('can open a specific channel twice', async t => {
   t.is(ch2, ch)
 })
 
-test.only('can publish messages spanning multiple frames', async t => {
+test('can publish messages spanning multiple frames', async t => {
   const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()
