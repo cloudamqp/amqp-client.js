@@ -1,4 +1,4 @@
-import { Buffer } from 'buffer'
+export { Buffer } from 'buffer'
 import { AMQPProperties, Field } from './amqp-properties.js'
 
 /**

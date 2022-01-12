@@ -4,8 +4,7 @@ import AMQPConsumer from './amqp-consumer.js'
 import AMQPMessage from './amqp-message.js'
 import AMQPBaseClient from './amqp-base-client.js'
 import { AMQPProperties } from './amqp-properties.js'
-import { Buffer } from 'buffer'
-import './amqp-buffer.js'
+import { Buffer } from './amqp-buffer.js'
 
 /**
  * Represents an AMQP Channel. Almost all actions in AMQP are performed on a Channel.
