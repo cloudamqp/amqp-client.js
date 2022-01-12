@@ -81,7 +81,7 @@ export default class AMQPClient extends AMQPBaseClient {
         }
         // frame header is split over reads, copy to frameBuffer
         if (bufPos + 3 + 4 > bufLen) {
-          const copied = buf.copy(this.frameBuffer, this.framePos, bufPos, bufLen)
+          const copied = buf.copy(this.frameBuffer, this.framePos, bufPos, bufPos + bufLen)
           if (copied === 0) throw `Copied 0 bytes framePos=${this.framePos} bufPos=${bufPos} bytesWritten=${bufLen}`
           this.framePos += copied
           break
@@ -106,7 +106,7 @@ export default class AMQPClient extends AMQPBaseClient {
       this.framePos += copied
       bufPos += copied
       if (this.framePos === this.frameSize) {
-        const frame = buf.subarray(bufPos, bufPos + this.frameSize)
+        const frame = this.frameBuffer.subarray(0, this.frameSize)
         this.parseFrames(frame)
         this.frameSize = this.framePos = 0
       }

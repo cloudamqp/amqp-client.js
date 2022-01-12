@@ -22,7 +22,7 @@ export default class AMQPMessage {
   routingKey = ""
   properties : AMQPProperties = {}
   bodySize = 0
-  body?: Uint8Array
+  body?: Buffer
   bodyPos = 0
   deliveryTag = 0
   consumerTag = ""
@@ -44,7 +44,7 @@ export default class AMQPMessage {
    * Converts the message (which is deliviered as an uint8array) to a string
    */
   bodyToString() {
-    return this.body ? Buffer.from(this.body).toString() : null
+    return this.body ? this.body.toString() : null
   }
 
   bodyString() {
