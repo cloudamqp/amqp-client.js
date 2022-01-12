@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Websocket client now supports parsing AMQP frames split over multiple WebSocket frames (could happen with high throughput via websocket-tcp-relay).
+
+### Changed
+
 - 67% increased publish rate, by reusing frame buffer
 
 ## [1.3.1] - 2022-01-03
