@@ -1,6 +1,5 @@
 import typescript from '@rollup/plugin-typescript'
-import { nodeResolve } from '@rollup/plugin-node-resolve'
-import commonjs from '@rollup/plugin-commonjs';
+import nodePolyfills from 'rollup-plugin-polyfill-node';
 
 const options = {
   exclude: ["src/amqp-client.ts"], // includes a ts hack for default export in commonjs module
@@ -14,8 +13,7 @@ export default [
     input: 'src/amqp-websocket-client.ts',
     plugins: [
       typescript({target: "es6", lib: ["es6", "dom"], ...options}),
-      nodeResolve({browser: true, preferBuiltins: false}),
-      commonjs()
+      nodePolyfills()
   ],
     output: {
       file: 'dist/amqp-websocket-client.mjs',
