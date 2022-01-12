@@ -1,6 +1,6 @@
 import AMQPBaseClient from './amqp-base-client.js'
 import { Buffer } from 'buffer'
-import './amqp-view.js'
+import './amqp-buffer.js'
 
 /** 
  * WebSocket client for AMQP 0-9-1 servers

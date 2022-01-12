@@ -2,7 +2,7 @@ import AMQPChannel from './amqp-channel.js'
 import AMQPError from './amqp-error.js'
 import AMQPMessage from './amqp-message.js'
 import { Buffer } from 'buffer'
-import './amqp-view.js'
+import './amqp-buffer.js'
 
 const VERSION = '1.3.2'
 
