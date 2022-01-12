@@ -29,6 +29,9 @@ export default class AMQPClient extends AMQPBaseClient {
     this.host = u.hostname || "localhost"
     this.port = parseInt(u.port) || (this.tls ? 5671 : 5672)
     this.insecure = u.searchParams.get("insecure") !== undefined
+    this.framePos = 0
+    this.frameSize = 0
+    this.frameBuffer = Buffer.allocUnsafe(4096)
   }
 
   override connect(): Promise<AMQPBaseClient> {
@@ -44,9 +47,6 @@ export default class AMQPClient extends AMQPBaseClient {
   }
 
   private connectSocket() {
-    let framePos = 0
-    let frameSize = 0
-    const frameBuffer = Buffer.allocUnsafe(4096)
     const options = {
       host: this.host,
       port: this.port,
@@ -55,55 +55,63 @@ export default class AMQPClient extends AMQPBaseClient {
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
     const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)
-    conn.on('data', (buf: Buffer) => {
-      // A socket read can contain 0 or more frames, so find frame boundries
-      let bufPos = 0
-      while (bufPos < buf.length) {
-        // read frame size of next frame
-        if (frameSize === 0) {
-          // first 7 bytes of a frame was split over two reads, this reads the second part
-          if (framePos !== 0) {
-            const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + 7 - framePos)
-            if (copied === 0) throw `Copied 0 bytes framePos=${framePos} bufPos=${bufPos} bytesWritten=${buf.length}`
-            frameSize = frameBuffer.readInt32BE(bufPos + 3) + 8
-            framePos += copied
-            bufPos += copied
-            continue
-          }
-          // frame header is split over reads, copy to frameBuffer
-          if (bufPos + 3 + 4 > buf.length) {
-            const copied = buf.copy(frameBuffer, framePos, bufPos, buf.length)
-            if (copied === 0) throw `Copied 0 bytes framePos=${framePos} bufPos=${bufPos} bytesWritten=${buf.length}`
-            framePos += copied
-            break
-          }
+    conn.on('data', this.onRead.bind(this))
+    return conn
+  }
 
-          frameSize = buf.readInt32BE(bufPos + 3) + 8
+  private framePos: number
+  private frameSize: number
+  private frameBuffer: Buffer
 
-          // avoid copying if the whole frame is in the read buffer
-          if (buf.length - bufPos >= frameSize) {
-            const view = new AMQPView(buf.buffer, buf.byteOffset + bufPos, frameSize)
-            this.parseFrames(view)
-            bufPos += frameSize
-            frameSize = 0
-            continue
-          }
+  private onRead(buf: Buffer): boolean {
+    const bufLen = buf.length
+    // A socket read can contain 0 or more frames, so find frame boundries
+    let bufPos = 0
+    while (bufPos < bufLen) {
+      // read frame size of next frame
+      if (this.frameSize === 0) {
+        // first 7 bytes of a frame was split over two reads, this reads the second part
+        if (this.framePos !== 0) {
+          const copied = buf.copy(this.frameBuffer, this.framePos, bufPos, bufPos + 7 - this.framePos)
+          if (copied === 0) throw `Copied 0 bytes framePos=${this.framePos} bufPos=${bufPos} bytesWritten=${bufLen}`
+          this.frameSize = this.frameBuffer.readInt32BE(bufPos + 3) + 8
+          this.framePos += copied
+          bufPos += copied
+          continue
+        }
+        // frame header is split over reads, copy to frameBuffer
+        if (bufPos + 3 + 4 > bufLen) {
+          const copied = buf.copy(this.frameBuffer, this.framePos, bufPos, bufLen)
+          if (copied === 0) throw `Copied 0 bytes framePos=${this.framePos} bufPos=${bufPos} bytesWritten=${bufLen}`
+          this.framePos += copied
+          break
         }
 
-        const leftOfFrame = frameSize - framePos
-        const copyBytes = Math.min(leftOfFrame, buf.length - bufPos)
-        const copied = buf.copy(frameBuffer, framePos, bufPos, bufPos + copyBytes)
-        if (copied === 0) throw `Copied 0 bytes, please report this bug, frameSize=${frameSize} framePos=${framePos} bufPos=${bufPos} copyBytes=${copyBytes} bytesWritten=${buf.length}`
-        framePos += copied
-        bufPos += copied
-        if (framePos === frameSize) {
-          const view = new AMQPView(frameBuffer.buffer, 0, frameSize)
+        this.frameSize = buf.readInt32BE(bufPos + 3) + 8
+
+        // avoid copying if the whole frame is in the read buffer
+        if (bufLen - bufPos >= this.frameSize) {
+          const view = new AMQPView(buf.buffer, buf.byteOffset + bufPos, this.frameSize)
           this.parseFrames(view)
-          frameSize = framePos = 0
+          bufPos += this.frameSize
+          this.frameSize = 0
+          continue
         }
       }
-    })
-    return conn
+
+      const leftOfFrame = this.frameSize - this.framePos
+      const copyBytes = Math.min(leftOfFrame, bufLen - bufPos)
+      const copied = buf.copy(this.frameBuffer, this.framePos, bufPos, bufPos + copyBytes)
+      if (copied === 0) throw `Copied 0 bytes, please report this bug, frameSize=${this.frameSize} framePos=${this.framePos} bufPos=${bufPos} copyBytes=${copyBytes} bytesWritten=${bufLen}`
+      this.framePos += copied
+      bufPos += copied
+      if (this.framePos === this.frameSize) {
+        const view = new AMQPView(this.frameBuffer.buffer, 0, this.frameSize)
+        this.parseFrames(view)
+        this.frameSize = this.framePos = 0
+      }
+    }
+    return true
   }
 
   /**
