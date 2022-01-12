@@ -339,6 +339,7 @@ export default class AMQPChannel {
       buffer.setUint16(j, this.id); j += 2 // channel
       buffer.setUint32(j, frameSize); j += 4 // frameSize
       body.copy(buffer, j, bodyPos, bodyPos + frameSize)
+      j += frameSize
       buffer.setUint8(j, 206); j += 1 // frame end byte
       await this.connection.send(buffer.subarray(0, j))
       bodyPos += frameSize

@@ -13,7 +13,11 @@ declare global {
     setUint16(byteOffset: number, value: number): void
     setUint32(byteOffset: number, value: number): void
     setUint64(byteOffset: number, value: number): void
+    setInt32(byteOffset: number, value: number) : void
     setInt64(byteOffset: number, value: number) : void
+    setBigInt64(byteOffset: number, value: bigint) : void
+    setFloat32(byteOffset: number, value: number) : void
+    setFloat64(byteOffset: number, value: number) : void
 
     getInt64(byteOffset: number) : number
     getInt32(byteOffset: number) : number
@@ -27,6 +31,8 @@ declare global {
     setTable(byteOffset: number, table : Record<string, Field>) : number
     setProperties(byteOffset: number, properties: AMQPProperties): number
     setField(byteOffset: number, field: Field) : number
+    setArray(byteOffset: number, array: Field[]) : number
+    setByteArray(byteOffset: number, data: Uint8Array) : number
 
     getUint8(byteOffset: number): number
     getUint16(byteOffset: number): number
@@ -120,8 +126,20 @@ Buffer.prototype.getFloat64 = function(this: Buffer, byteOffset: number) : numbe
   return this.readDoubleBE(byteOffset)
 }
 
-Buffer.prototype.setInt64 = function(this: Buffer, byteOffset: number, value: number) : void {
-  this.writeBigInt64BE(BigInt(value), byteOffset)
+Buffer.prototype.setBigInt64 = function(this: Buffer, byteOffset: number, value: bigint) : void {
+  this.writeBigInt64BE(value, byteOffset)
+}
+
+Buffer.prototype.setInt32 = function(this: Buffer, byteOffset: number, value: number) : void {
+  this.writeInt32BE(value, byteOffset)
+}
+
+Buffer.prototype.setFloat32 = function(this: Buffer, byteOffset: number, value: number) : void {
+  this.writeFloatBE(value, byteOffset)
+}
+
+Buffer.prototype.setFloat64 = function(this: Buffer, byteOffset: number, value: number) : void {
+  this.writeDoubleBE(value, byteOffset)
 }
 
 Buffer.prototype.getShortString = function(this: Buffer, byteOffset: number): [string, number] {
