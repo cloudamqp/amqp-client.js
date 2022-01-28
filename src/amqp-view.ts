@@ -6,7 +6,7 @@ import { AMQPProperties, Field } from './amqp-properties.js'
  * Get methods returns the value read and how many bytes it used.
  * @ignore
  */
-export default class AMQPView extends DataView {
+export class AMQPView extends DataView {
   private static decoder = new TextDecoder()
   private static encoder = new TextEncoder()
 

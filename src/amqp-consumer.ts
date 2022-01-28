@@ -1,11 +1,11 @@
-import AMQPError from './amqp-error.js'
-import AMQPChannel from './amqp-channel.js'
-import AMQPMessage from './amqp-message.js'
+import { AMQPError } from './amqp-error.js'
+import { AMQPChannel } from './amqp-channel.js'
+import { AMQPMessage } from './amqp-message.js'
 
 /**
  * A consumer, subscribed to a queue
  */
-export default class AMQPConsumer {
+export class AMQPConsumer {
   readonly channel: AMQPChannel
   readonly tag: string
   readonly onMessage: (msg: AMQPMessage) => void

@@ -1,6 +1,6 @@
 import test from 'ava';
-import AMQPClient from '../src/amqp-socket-client.js';
-import AMQPMessage from '../src/amqp-message.js';
+import { AMQPClient } from '../src/amqp-socket-client.js';
+import { AMQPMessage } from '../src/amqp-message.js';
 
 test('can parse the url correctly', t => {
   const username = 'user_name'

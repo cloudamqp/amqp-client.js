@@ -1,12 +1,12 @@
-import AMQPMessage from './amqp-message.js'
-import AMQPChannel from './amqp-channel.js'
+import { AMQPMessage } from './amqp-message.js'
+import { AMQPChannel } from './amqp-channel.js'
 import { AMQPProperties } from './amqp-properties.js'
-import AMQPConsumer from './amqp-consumer.js'
+import { AMQPConsumer } from './amqp-consumer.js'
 
 /**
  * Convience class for queues
  */
-export default class AMQPQueue {
+export class AMQPQueue {
   readonly channel: AMQPChannel
   readonly name: string
   /**

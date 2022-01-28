@@ -1,2 +1,1 @@
-import AMQPClient from './amqp-socket-client.js'
-export = AMQPClient
+export { AMQPClient } from './amqp-socket-client.js'

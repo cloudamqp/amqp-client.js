@@ -1,10 +1,10 @@
-import AMQPBaseClient from './amqp-base-client.js'
-import AMQPView from './amqp-view.js'
+import { AMQPBaseClient } from './amqp-base-client.js'
+import { AMQPView } from './amqp-view.js'
 
 /** 
  * WebSocket client for AMQP 0-9-1 servers
  */
-export default class AMQPWebSocketClient extends AMQPBaseClient {
+export class AMQPWebSocketClient extends AMQPBaseClient {
   readonly url: string
   private socket?: WebSocket
   private framePos = 0
