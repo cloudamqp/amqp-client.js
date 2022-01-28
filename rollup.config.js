@@ -22,7 +22,6 @@ export default [
     output: {
       file: 'dist/amqp-client.cjs',
       format: 'cjs',
-      exports: 'default',
       sourcemap: 'dist/amqp-client.cjs.map'
     }
   }, {
@@ -31,7 +30,6 @@ export default [
     plugins: [typescript(options)],
     output: {
       file: 'dist/amqp-client.mjs',
-      exports: 'default',
       sourcemap: 'dist/amqp-client.mjs.map'
     }
   }

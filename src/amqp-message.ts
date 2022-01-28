@@ -1,4 +1,4 @@
-import AMQPChannel from './amqp-channel.js'
+import { AMQPChannel } from './amqp-channel.js'
 import { AMQPProperties } from './amqp-properties.js'
 
 /**
@@ -16,7 +16,7 @@ import { AMQPProperties } from './amqp-properties.js'
  * @property {number} replyCode - Code if message was returned
  * @property {string} replyText - Error message on why message was returned
  */
-export default class AMQPMessage {
+export class AMQPMessage {
   channel: AMQPChannel
   exchange = ""
   routingKey = ""

@@ -1,7 +1,7 @@
-import AMQPChannel from './amqp-channel.js'
-import AMQPError from './amqp-error.js'
-import AMQPMessage from './amqp-message.js'
-import AMQPView from './amqp-view.js'
+import { AMQPChannel } from './amqp-channel.js'
+import { AMQPError } from './amqp-error.js'
+import { AMQPMessage } from './amqp-message.js'
+import { AMQPView } from './amqp-view.js'
 
 const VERSION = '1.3.2'
 
@@ -9,7 +9,7 @@ const VERSION = '1.3.2'
  * Base class for AMQPClients.
  * Implements everything except how to connect, send data and close the socket
  */
-export default abstract class AMQPBaseClient {
+export abstract class AMQPBaseClient {
   vhost: string
   username: string
   password: string

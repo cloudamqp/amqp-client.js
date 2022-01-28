@@ -1,6 +1,6 @@
-import AMQPBaseClient from './amqp-base-client.js'
-import AMQPError from './amqp-error.js'
-import AMQPView from './amqp-view.js'
+import { AMQPBaseClient } from './amqp-base-client.js'
+import { AMQPError } from './amqp-error.js'
+import { AMQPView } from './amqp-view.js'
 import { Buffer } from 'buffer'
 import * as net from 'net'
 import * as tls from 'tls'
@@ -8,7 +8,7 @@ import * as tls from 'tls'
 /**
  * AMQP 0-9-1 client over TCP socket.
  */
-export default class AMQPClient extends AMQPBaseClient {
+export class AMQPClient extends AMQPBaseClient {
   socket?: net.Socket
   readonly tls : boolean
   readonly host : string
