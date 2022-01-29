@@ -9,11 +9,15 @@ import * as tls from 'tls'
  * AMQP 0-9-1 client over TCP socket.
  */
 export default class AMQPClient extends AMQPBaseClient {
+  socket?: net.Socket
   readonly tls : boolean
   readonly host : string
   readonly port : number
   private readonly insecure : boolean
-  private socket?: net.Socket
+  private framePos: number
+  private frameSize: number
+  private frameBuffer: Buffer
+
   /**
    * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
    */
@@ -23,15 +27,17 @@ export default class AMQPClient extends AMQPBaseClient {
     const username = u.username || "guest"
     const password = u.password || "guest"
     const name = u.searchParams.get("name") || ""
+    const frameMax = parseInt(u.searchParams.get("frameMax") || "4096")
+    const heartbeat = parseInt(u.searchParams.get("heartbeat") || "0")
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
-    super(vhost, username, password, name, platform)
+    super(vhost, username, password, name, platform, frameMax, heartbeat)
     this.tls = u.protocol === "amqps:"
     this.host = u.hostname || "localhost"
     this.port = parseInt(u.port) || (this.tls ? 5671 : 5672)
     this.insecure = u.searchParams.get("insecure") !== undefined
     this.framePos = 0
     this.frameSize = 0
-    this.frameBuffer = Buffer.allocUnsafe(4096)
+    this.frameBuffer = Buffer.allocUnsafe(frameMax)
   }
 
   override connect(): Promise<AMQPBaseClient> {
@@ -58,10 +64,6 @@ export default class AMQPClient extends AMQPBaseClient {
     conn.on('data', this.onRead.bind(this))
     return conn
   }
-
-  private framePos: number
-  private frameSize: number
-  private frameBuffer: Buffer
 
   private onRead(buf: Buffer): boolean {
     const bufLen = buf.length

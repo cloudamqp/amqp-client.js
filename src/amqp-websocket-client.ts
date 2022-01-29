@@ -7,13 +7,17 @@ import AMQPView from './amqp-view.js'
 export default class AMQPWebSocketClient extends AMQPBaseClient {
   readonly url: string
   private socket?: WebSocket
+  private framePos = 0
+  private frameSize = 0
+  private frameBuffer: Uint8Array
 
-/** 
- * @param url to the websocket endpoint, example: wss://server/ws/amqp
- */
-  constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string) {
-    super(vhost, username, password, name, AMQPWebSocketClient.platform())
+  /** 
+   * @param url to the websocket endpoint, example: wss://server/ws/amqp
+   */
+  constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 4096, heartbeat = 0) {
+    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat)
     this.url = url
+    this.frameBuffer = new Uint8Array(frameMax)
   }
 
   /**
@@ -54,10 +58,6 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
   protected override closeSocket() {
     if (this.socket) this.socket.close()
   }
-
-  private framePos = 0
-  private frameSize = 0
-  private frameBuffer = new Uint8Array(4096)
 
   private handleMessage(event: MessageEvent) {
     const buf : ArrayBuffer = event.data

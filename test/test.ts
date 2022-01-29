@@ -510,3 +510,27 @@ test("can do basicRecover", async t => {
   const ch = await conn.channel()
   t.notThrows(() => ch.basicRecover(true))
 })
+
+test("can set frameMax", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1?frameMax=" + 16*1024)
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await ch.confirmSelect()
+  const q = await ch.queue("")
+  await q.publish("", { headers: { a: "a".repeat(15000) } })
+  const msg = await q.get()
+  if (msg) {
+    const props = msg.properties
+    if (props) {
+      const headers = props.headers
+      if (headers) {
+        const a = headers["a"] as string
+        t.is(a.length, 15000)
+      } else t.assert(headers)
+    } else t.assert(props)
+  } else t.assert(msg)
+})
+
+test("can't set too small frameMax", t => {
+  t.throws(() => new AMQPClient("amqp://127.0.0.1?frameMax=" + 16))
+})
