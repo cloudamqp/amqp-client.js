@@ -25,7 +25,7 @@ Start node with `--enable-source-maps` to get proper stacktraces as the library 
 Using AMQP in Node.js:
 
 ```javascript
-import AMQPClient from '@cloudamqp/amqp-client'
+import { AMQPClient } from '@cloudamqp/amqp-client'
 
 async function run() {
   try {
@@ -63,14 +63,14 @@ Using AMQP over WebSockets in a browser:
 <html>
   <head>
     <script type=module>
-      import AMQPClient from './js/amqp-websocket-client.mjs'
+      import { AMQPWebSocketClient } from './js/amqp-websocket-client.mjs'
 
       const textarea = document.getElementById("textarea")
       const input = document.getElementById("message")
 
       const tls = window.location.scheme === "https:"
       const url = `${tls ? "wss" : "ws"}://${window.location.host}`
-      const amqp = new AMQPClient(url, "/", "guest", "guest")
+      const amqp = new AMQPWebSocketClient(url, "/", "guest", "guest")
 
       async function start() {
         try {
