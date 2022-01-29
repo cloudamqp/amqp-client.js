@@ -153,7 +153,7 @@ test('will clear consumer wait timeout on cancel', async t => {
   const ch = await conn.channel()
   const q = await ch.queue("")
   const consumer = await q.subscribe({noAck: false}, () => "")
-  const wait = consumer.wait(1000);
+  const wait = consumer.wait(5000);
   consumer.cancel()
   const ok = await wait
   t.is(ok, undefined)
@@ -236,7 +236,7 @@ test('wait for publish confirms', async t => {
   t.deepEqual(tags, [3,4])
 })
 
-test('can handle rejects', async t => {
+test('can handle returned messages', async t => {
   const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
   const ch = await conn.channel()

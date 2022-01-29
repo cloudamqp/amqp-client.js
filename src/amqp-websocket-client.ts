@@ -11,7 +11,7 @@ export default class AMQPWebSocketClient extends AMQPBaseClient {
   private frameSize = 0
   private frameBuffer: Uint8Array
 
-  /** 
+  /**
    * @param url to the websocket endpoint, example: wss://server/ws/amqp
    */
   constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 4096, heartbeat = 0) {
