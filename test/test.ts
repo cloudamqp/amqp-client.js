@@ -147,6 +147,18 @@ test('can cancel a consumer', t => {
     .then((channel) => t.is(channel.consumers.size, 0))
 })
 
+test('will clear consumer wait timeout on cancel', async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  const consumer = await q.subscribe({noAck: false}, () => "")
+  const wait = consumer.wait(1000);
+  consumer.cancel()
+  const ok = await wait
+  t.is(ok, undefined)
+})
+
 test('can close a channel', async t => {
   const amqp = new AMQPClient("amqp://127.0.0.1")
   const conn = await amqp.connect()
@@ -533,4 +545,32 @@ test("can set frameMax", async t => {
 
 test("can't set too small frameMax", t => {
   t.throws(() => new AMQPClient("amqp://127.0.0.1?frameMax=" + 16))
+})
+
+test("can handle frames split over socket reads", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1?frameMax=" + 4*1024)
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  const body = "a".repeat(5)
+  const msgs = 100000
+  for (let i = 0; i < msgs; i++) {
+    await q.publish(body)
+  }
+  let i = 0
+  const consumer = await q.subscribe({ noAck: true }, () => { if (++i === msgs) consumer.cancel() })
+  await consumer.wait(5000)
+  t.is(i, msgs)
+})
+
+test("have to connect socket before opening channels", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  await t.throwsAsync(() => amqp.channel(), { message: /not connected/ })
+})
+
+test("will raise if socket is closed on send", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  if (amqp.socket) amqp.socket.destroy()
+  await t.throwsAsync(() => conn.channel())
 })

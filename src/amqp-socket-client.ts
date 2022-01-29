@@ -126,7 +126,7 @@ export default class AMQPClient extends AMQPBaseClient {
       if (this.socket)
         this.socket.write(bytes, undefined, (err) => err ? reject(err) : resolve())
       else
-        reject("Socket not connected")
+        reject(new AMQPError("Socket not connected", this))
     })
   }
 
