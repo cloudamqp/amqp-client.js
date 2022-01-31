@@ -1,5 +1,7 @@
 dist/
 docs/
+lib/
+types/
 examples/
 node_modules/
 coverage/
