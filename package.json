@@ -14,7 +14,7 @@
     "node": ">=12.0.0"
   },
   "scripts": {
-    "docs": "typedoc --entryPoints src/index.ts --tsconfig tsconfig.typedoc.json",
+    "docs": "typedoc --entryPoints src/amqp-client.ts",
     "lint": "eslint src",
     "test": "c8 ava",
     "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.ts && git add src/amqp-base-client.ts",
