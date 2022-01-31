@@ -408,6 +408,29 @@ export default abstract class AMQPBaseClient {
                   channel.resolvePromise(consumerTag)
                   break
                 }
+                case 30: { // cancel
+                  const [consumerTag, len] = view.getShortString(i); i += len
+                  const noWait = view.getUint8(i) === 1; i += 1
+
+                  const consumer = channel.consumers.get(consumerTag)
+                  if (consumer) {
+                    consumer.setClosed(new AMQPError("Consumer cancelled by the server", this))
+                    channel.consumers.delete(consumerTag)
+                  }
+                  if (!noWait) {
+                    const frame = new AMQPView(new ArrayBuffer(512))
+                    frame.setUint8(j, 1); j += 1 // type: method
+                    frame.setUint16(j, channel.id); j += 2 // channel
+                    frame.setUint32(j, 0); j += 4 // frameSize
+                    frame.setUint16(j, 60); j += 2 // class: basic
+                    frame.setUint16(j, 31); j += 2 // method: cancelOk
+                    j += frame.setShortString(j, consumerTag) // tag
+                    frame.setUint8(j, 206); j += 1 // frame end byte
+                    frame.setUint32(3, j - 8) // update frameSize
+                    this.send(new Uint8Array(frame.buffer, 0, j))
+                  }
+                  break
+                }
                 case 31: { // cancelOk
                   const [consumerTag, len] = view.getShortString(i); i += len
                   channel.resolvePromise(consumerTag)

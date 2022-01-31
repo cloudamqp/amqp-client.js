@@ -574,3 +574,13 @@ test("will raise if socket is closed on send", async t => {
   if (amqp.socket) amqp.socket.destroy()
   await t.throwsAsync(() => conn.channel())
 })
+
+test("can handle cancel from server", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  const consumer = await q.subscribe({}, () => "")
+  await q.delete()
+  await t.throwsAsync(() => consumer.wait(), { message: /Consumer cancelled by the server/ })
+})
