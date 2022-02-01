@@ -20,7 +20,7 @@
     "lint": "eslint src",
     "test": "c8 ava",
     "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.ts && git add src/amqp-base-client.ts",
-    "build": "tsc && tsc --module commonjs --outDir lib/cjs && tsc --emitDeclarationOnly --removeComments false && rollup -c",
+    "build": "rm -rf dist lib types && tsc && tsc --module commonjs --outDir lib/cjs && tsc --emitDeclarationOnly --removeComments false && rollup -c",
     "prepack": "npm run build",
     "preversion": "npm test",
     "version": "npm run build"
