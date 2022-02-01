@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2022-02-02
+
 ### Changed
 
 - No default exports, only named: `import { AMQPClient } from "@cloudamqp/amqp-client"`
+- Much improved browser bundling support (webpack)
 
 ### Added
 
