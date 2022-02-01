@@ -30,7 +30,8 @@
   "repository": "github:cloudamqp/amqp-client.js",
   "keywords": [
     "amqp",
-    "rabbitmq"
+    "rabbitmq",
+    "amqplib"
   ],
   "author": "CloudAMQP <contact@cloudamqp.com>",
   "license": "Apache-2.0",
