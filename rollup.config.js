@@ -1,18 +1,13 @@
-import typescript from '@rollup/plugin-typescript'
+import sourcemaps from 'rollup-plugin-sourcemaps'
 
-const options = {
-  removeComments: true, // comments only required in declarations
-  declaration: false, // let tsc generate declarations
-  declarationMap: false,
-  declarationDir: null
-}
 export default [
   {
-    input: 'src/amqp-websocket-client.ts',
-    plugins: [typescript({target: "es6", lib: ["es6", "dom"], ...options})],
+    input: 'lib/mjs/amqp-websocket-client.js',
+    plugins: [sourcemaps()],
     output: {
       file: 'dist/amqp-websocket-client.mjs',
-      sourcemap: 'dist/amqp-websocket-client.mjs.map'
+      sourcemap: 'dist/amqp-websocket-client.mjs.map',
+      sourcemapExcludeSources: true
     }
   }
 ]
