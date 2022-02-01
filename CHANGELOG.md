@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- No default exports, only named: `import { AMQPClient } from "@cloudamqp/amqp-client"`
+
 ### Added
 
 - Support basicCancel send from server, AMQPConsumer#wait() will throw an Error if it happens.
