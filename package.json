@@ -19,11 +19,12 @@
     "docs": "typedoc src/index.ts",
     "lint": "eslint src",
     "test": "c8 ava",
-    "prebuild": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.ts && git add src/amqp-base-client.ts",
-    "build": "rm -rf dist lib types && tsc && tsc --module commonjs --outDir lib/cjs && tsc --emitDeclarationOnly --removeComments false && rollup -c",
+    "prebuild": "rm -rf dist lib types",
+    "build": "tsc && tsc --module commonjs --outDir lib/cjs && tsc --emitDeclarationOnly --removeComments false && rollup -c",
+    "postbuild": "echo '{\"type\": \"commonjs\"}' > lib/cjs/package.json",
     "prepack": "npm run build",
     "preversion": "npm test",
-    "version": "npm run build"
+    "version": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.ts && git add src/amqp-base-client.ts"
   },
   "files": [
     "src/",
