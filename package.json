@@ -3,12 +3,14 @@
   "version": "1.3.2",
   "description": "AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)",
   "type": "module",
-  "main": "lib/cjs/amqp-client.js",
+  "main": "lib/cjs/index.js",
   "types": "types/index.d.ts",
-  "browser": "dist/amqp-websocket-client.mjs",
+  "browser": {
+    "AMQPClient": false
+  },
   "exports": {
-    "import": "./lib/mjs/amqp-client.js",
-    "require": "./lib/cjs/amqp-client.js"
+    "import": "./lib/mjs/index.js",
+    "require": "./lib/cjs/index.js"
   },
   "engines": {
     "node": ">=12.0.0"
