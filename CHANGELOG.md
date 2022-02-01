@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support basicCancel send from server, AMQPConsumer#wait() will throw an Error if it happens.
+- Support custom frameMax values, by URL: amqp://localhost/vhost?frameMax=8192
+
 ## [1.3.2] - 2022-01-12
 
 ### Fixed
