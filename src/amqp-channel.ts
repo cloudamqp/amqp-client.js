@@ -837,7 +837,7 @@ export default class AMQPChannel {
       if (consumer) {
         consumer.onMessage(message)
       } else {
-        throw(new AMQPError(`Consumer ${message.consumerTag} on channel ${this.id} doesn't exists`, this.connection))
+        console.warn("Consumer", message.consumerTag, "not available on channel", this.id)
       }
     })
   }
