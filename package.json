@@ -6,7 +6,10 @@
   "main": "lib/cjs/index.js",
   "types": "types/index.d.ts",
   "browser": {
-    "AMQPClient": false
+    "AMQPClient": false,
+    "buffer": false,
+    "net": false,
+    "tls": false
   },
   "exports": {
     "import": "./lib/mjs/index.js",
