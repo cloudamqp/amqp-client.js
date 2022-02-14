@@ -84,7 +84,7 @@ export abstract class AMQPBaseClient {
    * Gracefully close the AMQP connection
    * @param [reason] might be logged by the server
    */
-  close(reason = "", code = 200) {
+  close(reason = "", code = 200): Promise<void> {
     if (this.closed) return this.rejectClosed()
     this.closed = true
     let j = 0
@@ -125,7 +125,7 @@ export abstract class AMQPBaseClient {
     return Promise.reject(new AMQPError("Connection closed", this))
   }
 
-  private rejectConnect(err: Error) {
+  private rejectConnect(err: Error): void {
     if (this.connectPromise) {
       const [, reject] = this.connectPromise
       delete this.connectPromise
@@ -139,7 +139,7 @@ export abstract class AMQPBaseClient {
    * Parse and act on frames in an AMQPView
    * @ignore
    */
-  protected parseFrames(view: AMQPView) {
+  protected parseFrames(view: AMQPView): void {
     // Can possibly be multiple AMQP frames in a single WS frame
     for (let i = 0; i < view.byteLength;) {
       let j = 0 // position in outgoing frame

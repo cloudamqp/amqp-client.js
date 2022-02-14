@@ -275,8 +275,7 @@ export class AMQPView extends DataView {
     return [v, i - byteOffset]
   }
 
-  setField(byteOffset: number, field: Field,
-           littleEndian?: boolean) : number {
+  setField(byteOffset: number, field: Field, littleEndian?: boolean) : number {
     let i = byteOffset
     switch (typeof field) {
       case "string":

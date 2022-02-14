@@ -52,7 +52,7 @@ export class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  private connectSocket() {
+  private connectSocket(): net.Socket {
     const options = {
       host: this.host,
       port: this.port,
@@ -130,7 +130,7 @@ export class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  protected override closeSocket() {
-    if(this.socket) this.socket.end()
+  protected override closeSocket(): void {
+    if (this.socket) this.socket.end()
   }
 }

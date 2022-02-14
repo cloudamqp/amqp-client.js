@@ -13,7 +13,7 @@ export class AMQPChannel {
   readonly connection: AMQPBaseClient
   readonly id: number
   readonly consumers = new Map<string, AMQPConsumer>()
-  readonly promises: [(arg0: any) => void, (err?: Error) => void][] = []
+  readonly promises: [(value?: any) => void, (err?: Error) => void][] = []
   private readonly unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][] = []
   private closed = false
   /** Used for string -> arraybuffer when publishing */
@@ -50,7 +50,7 @@ export class AMQPChannel {
    * Alias for basicQos
    * @param prefetchCount - max inflight messages
    */
-  prefetch(prefetchCount: number) {
+  prefetch(prefetchCount: number): Promise<void> {
     return this.basicQos(prefetchCount)
   }
 
@@ -66,7 +66,7 @@ export class AMQPChannel {
    * Close the channel gracefully
    * @param [reason] might be logged by the server
    */
-  close(reason = "", code = 200) {
+  close(reason = "", code = 200): Promise<void> {
     if (this.closed) return this.rejectClosed()
     this.closed = true
     let j = 0
@@ -232,7 +232,7 @@ export class AMQPChannel {
    * @param deliveryTag - tag of the message
    * @param [requeue=false] - if the message should be requeued or removed
    */
-  basicReject(deliveryTag: number, requeue = false) {
+  basicReject(deliveryTag: number, requeue = false): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = this.buffer
@@ -251,7 +251,7 @@ export class AMQPChannel {
    * Tell the server to redeliver all unacknowledged messages again, or reject and requeue them.
    * @param [requeue=false] - if the message should be requeued or redeliviered to this channel
    */
-  basicRecover(requeue = false) {
+  basicRecover(requeue = false): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = this.buffer
@@ -365,7 +365,7 @@ export class AMQPChannel {
    * @param prefetchSize - number of bytes to limit to (not supported by RabbitMQ)
    * @param global - if the prefetch is limited to the channel, or if false to each consumer
    */
-  basicQos(prefetchCount: number, prefetchSize = 0, global = false) {
+  basicQos(prefetchCount: number, prefetchSize = 0, global = false): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = this.buffer
@@ -386,7 +386,7 @@ export class AMQPChannel {
    * Not supported in RabbitMQ
    * @param active - false to stop the flow, true to accept messages
    */
-  basicFlow(active = true) {
+  basicFlow(active = true): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = this.buffer
@@ -403,7 +403,7 @@ export class AMQPChannel {
   /**
    * Enable publish confirm. The server will then confirm each publish with an Ack or Nack when the message is enqueued.
    */
-  confirmSelect() {
+  confirmSelect(): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = this.buffer
@@ -428,7 +428,7 @@ export class AMQPChannel {
    * @param args - optional custom queue arguments
    * @return fulfilled when confirmed by the server
    */
-  queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {}, args = {}) {
+  queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {}, args = {}): Promise<QueueOk> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
@@ -460,7 +460,7 @@ export class AMQPChannel {
    * @param [params.ifUnused=false] - only delete if the queue doesn't have any consumers
    * @param [params.ifEmpty=false] - only delete if the queue is empty
    */
-  queueDelete(name = "", { ifUnused = false, ifEmpty = false } = {}) {
+  queueDelete(name = "", { ifUnused = false, ifEmpty = false } = {}): Promise<MessageCount> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
@@ -490,7 +490,7 @@ export class AMQPChannel {
    * @param args - optional arguments, e.g. for header exchanges
    * @return fulfilled when confirmed by the server
    */
-  queueBind(queue: string, exchange: string, routingKey: string, args = {}) {
+  queueBind(queue: string, exchange: string, routingKey: string, args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
@@ -519,7 +519,7 @@ export class AMQPChannel {
    * @param args - arguments, e.g. for header exchanges
    * @return fulfilled when confirmed by the server
    */
-  queueUnbind(queue: string, exchange: string, routingKey: string, args = {}) {
+  queueUnbind(queue: string, exchange: string, routingKey: string, args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const unbind = this.buffer
@@ -543,7 +543,7 @@ export class AMQPChannel {
    * @param queue - name of the queue
    * @return fulfilled when confirmed by the server
    */
-  queuePurge(queue: string): Promise<{ messageCount: number }> {
+  queuePurge(queue: string): Promise<MessageCount> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
@@ -573,7 +573,7 @@ export class AMQPChannel {
    * @param args - optional arguments
    * @return Fulfilled when the exchange is created or if it already exists
    */
-  exchangeDeclare(name: string, type: string, { passive = false, durable = true, autoDelete = false, internal = false } = {}, args = {}) {
+  exchangeDeclare(name: string, type: string, { passive = false, durable = true, autoDelete = false, internal = false } = {}, args = {}): Promise<void> {
     const noWait = false
     let j = 0
     const frame = this.buffer
@@ -605,7 +605,7 @@ export class AMQPChannel {
    * @param [param.ifUnused=false] - only delete if the exchange doesn't have any bindings
    * @return Fulfilled when the exchange is deleted or if it's already deleted
    */
-  exchangeDelete(name: string, { ifUnused = false } = {}) {
+  exchangeDelete(name: string, { ifUnused = false } = {}): Promise<void> {
     const noWait = false
     let j = 0
     const frame = this.buffer
@@ -633,7 +633,7 @@ export class AMQPChannel {
    * @param args - optional arguments, e.g. for header exchanges
    * @return fulfilled when confirmed by the server
    */
-  exchangeBind(destination: string, source: string, routingKey = "", args = {}) {
+  exchangeBind(destination: string, source: string, routingKey = "", args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const bind = this.buffer
@@ -661,7 +661,7 @@ export class AMQPChannel {
    * @param args - arguments, e.g. for header exchanges
    * @return fulfilled when confirmed by the server
    */
-  exchangeUnbind(destination: string, source: string, routingKey = "", args = {}) {
+  exchangeUnbind(destination: string, source: string, routingKey = "", args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const unbind = this.buffer
@@ -703,7 +703,7 @@ export class AMQPChannel {
     return this.txMethod(30)
   }
 
-  private txMethod(methodId: number) {
+  private txMethod(methodId: number): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = this.buffer
@@ -720,7 +720,7 @@ export class AMQPChannel {
    * Resolves the next RPC promise
    * @ignore
    */
-  resolvePromise(value?: any) {
+  resolvePromise(value?: unknown): boolean {
     const promise  = this.promises.shift()
     if (promise) {
       const [resolve, ] = promise
@@ -734,7 +734,7 @@ export class AMQPChannel {
    * Rejects the next RPC promise
    * @return true if a promise was rejected, otherwise false
    */
-  private rejectPromise(err?: Error) {
+  private rejectPromise(err?: Error): boolean {
     const promise  = this.promises.shift()
     if (promise) {
       const [, reject] = promise
@@ -765,7 +765,7 @@ export class AMQPChannel {
    * @ignore
    * @param [err] - why the channel was closed
    */
-  setClosed(err?: Error) {
+  setClosed(err?: Error): void {
     if (!this.closed) {
       this.closed = true
       this.consumers.forEach((consumer) => consumer.setClosed(err))
@@ -791,7 +791,7 @@ export class AMQPChannel {
    * @param multiple - true if all unconfirmed publishes up to this deliveryTag should be resolved or just this one
    * @param nack - true if negative confirm, hence reject the unconfirmed publish(es)
    */
-  publishConfirmed(deliveryTag: number, multiple: boolean, nack: boolean) {
+  publishConfirmed(deliveryTag: number, multiple: boolean, nack: boolean): void {
     // is queueMicrotask() needed here?
     const idx = this.unconfirmedPublishes.findIndex(([tag,]) => tag === deliveryTag)
     if (idx !== -1) {
@@ -814,7 +814,7 @@ export class AMQPChannel {
    * @ignore
    * @param message
    */
-  onMessageReady(message: AMQPMessage) {
+  onMessageReady(message: AMQPMessage): void {
     if (this.delivery) {
       delete this.delivery
       this.deliver(message)
@@ -831,7 +831,7 @@ export class AMQPChannel {
    * Deliver a message to a consumer
    * @ignore
    */
-  deliver(message: AMQPMessage) {
+  deliver(message: AMQPMessage): void {
     queueMicrotask(() => {
       const consumer = this.consumers.get(message.consumerTag)
       if (consumer) {
@@ -841,4 +841,14 @@ export class AMQPChannel {
       }
     })
   }
+}
+
+type QueueOk = {
+  name: string,
+  messageCount: number,
+  consumerCount: number
+}
+
+type MessageCount = {
+  messageCount: number
 }

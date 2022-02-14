@@ -31,7 +31,7 @@ export class AMQPConsumer {
    * @param [timeout] wait for this many milliseconds and then return regardless
    * @return Fulfilled when the consumer/channel/connection is closed by the client. Rejected if the timeout is hit.
    */
-  wait(timeout?: number) {
+  wait(timeout?: number): Promise<void> {
     if (this.closedError) return Promise.reject(this.closedError)
     if (this.closed) return Promise.resolve()
     return new Promise((resolve, reject) => {
@@ -56,7 +56,7 @@ export class AMQPConsumer {
    * @ignore
    * @param [err] - why the consumer was closed
    */
-  setClosed(err?: Error) {
+  setClosed(err?: Error): void {
     this.closed = true
     if (err) this.closedError = err
     if (this.timeoutId) clearTimeout(this.timeoutId)
