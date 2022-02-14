@@ -7,9 +7,6 @@ import { AMQPProperties, Field } from './amqp-properties.js'
  * @ignore
  */
 export class AMQPView extends DataView {
-  private static decoder = new TextDecoder()
-  private static encoder = new TextEncoder()
-
   getUint64(byteOffset: number, littleEndian?: boolean) : number {
     // split 64-bit number into two 32-bit (4-byte) parts
     const left =  this.getUint32(byteOffset, littleEndian)
@@ -44,7 +41,7 @@ export class AMQPView extends DataView {
       return [text, len + 1]
     } else {
       const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
-      const text = AMQPView.decoder.decode(view)
+      const text = new TextDecoder().decode(view)
       return [text, len + 1]
     }
   }
@@ -58,7 +55,7 @@ export class AMQPView extends DataView {
       Buffer.from(this.buffer, this.byteOffset + byteOffset, len).write(string)
       return len + 1
     } else {
-      const utf8 = AMQPView.encoder.encode(string)
+      const utf8 = new TextEncoder().encode(string)
       const len = utf8.byteLength
       if (len > 255) throw new Error(`Short string too long, ${len} bytes: ${string.substring(0, 255)}...`)
       this.setUint8(byteOffset, len)
@@ -77,7 +74,7 @@ export class AMQPView extends DataView {
       return [text, len + 4]
     } else {
       const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, len)
-      const text = AMQPView.decoder.decode(view)
+      const text = new TextDecoder().decode(view)
       return [text, len + 4]
     }
   }
@@ -90,7 +87,7 @@ export class AMQPView extends DataView {
       Buffer.from(this.buffer, this.byteOffset + byteOffset, len).write(string)
       return len + 4
     } else {
-      const utf8 = AMQPView.encoder.encode(string)
+      const utf8 = new TextEncoder().encode(string)
       const len = utf8.byteLength
       this.setUint32(byteOffset, len, littleEndian)
       byteOffset += 4

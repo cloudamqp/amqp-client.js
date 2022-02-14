@@ -31,8 +31,6 @@ export class AMQPMessage {
   replyCode?: number
   replyText?: string
 
-  static decoder = new TextDecoder()
-
   /**
    * @param channel - Channel this message was delivered on
    */
@@ -44,7 +42,14 @@ export class AMQPMessage {
    * Converts the message (which is deliviered as an uint8array) to a string
    */
   bodyToString() {
-    return AMQPMessage.decoder.decode(this.body)
+    if (this.body) {
+      if (typeof Buffer !== "undefined")
+        return Buffer.from(this.body).toString()
+      else
+        return new TextDecoder().decode(this.body)
+    } else {
+      return this.body
+    }
   }
 
   bodyString() {
