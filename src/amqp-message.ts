@@ -41,18 +41,18 @@ export class AMQPMessage {
   /**
    * Converts the message (which is deliviered as an uint8array) to a string
    */
-  bodyToString() {
+  bodyToString(): string|null {
     if (this.body) {
       if (typeof Buffer !== "undefined")
         return Buffer.from(this.body).toString()
       else
         return new TextDecoder().decode(this.body)
     } else {
-      return this.body
+      return null
     }
   }
 
-  bodyString() {
+  bodyString(): string|null {
     return this.bodyToString()
   }
 
