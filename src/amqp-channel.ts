@@ -386,7 +386,7 @@ export class AMQPChannel {
    * Not supported in RabbitMQ
    * @param active - false to stop the flow, true to accept messages
    */
-  basicFlow(active = true): Promise<void> {
+  basicFlow(active = true): Promise<boolean> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = this.buffer
