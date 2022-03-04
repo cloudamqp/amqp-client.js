@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2022-03-04
+
+### Fixed
+
+- Frame errors because frame buffer was reused
+
+### Changed
+
+- Don't depend on TextEncoder in AMQPMessage
+
+### Added
+
+- Explicit return types on all methods for faster typescript compilation
+
 ## [2.0.0] - 2022-02-02
 
 ### Changed
