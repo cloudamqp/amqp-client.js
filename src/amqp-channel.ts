@@ -431,7 +431,7 @@ export class AMQPChannel {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
-    const declare = this.buffer
+    const declare = new AMQPView(new ArrayBuffer(4096))
     declare.setUint8(j, 1); j += 1 // type: method
     declare.setUint16(j, this.id); j += 2 // channel: 1
     declare.setUint32(j, 0); j += 4 // frameSize
@@ -493,7 +493,7 @@ export class AMQPChannel {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
-    const bind = this.buffer
+    const bind = new AMQPView(new ArrayBuffer(4096))
     bind.setUint8(j, 1); j += 1 // type: method
     bind.setUint16(j, this.id); j += 2 // channel: 1
     bind.setUint32(j, 0); j += 4 // frameSize
@@ -521,7 +521,7 @@ export class AMQPChannel {
   queueUnbind(queue: string, exchange: string, routingKey: string, args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
-    const unbind = this.buffer
+    const unbind = new AMQPView(new ArrayBuffer(4096))
     unbind.setUint8(j, 1); j += 1 // type: method
     unbind.setUint16(j, this.id); j += 2 // channel: 1
     unbind.setUint32(j, 0); j += 4 // frameSize
@@ -546,7 +546,7 @@ export class AMQPChannel {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
-    const purge = this.buffer
+    const purge = new AMQPView(new ArrayBuffer(512))
     purge.setUint8(j, 1); j += 1 // type: method
     purge.setUint16(j, this.id); j += 2 // channel: 1
     purge.setUint32(j, 0); j += 4 // frameSize
@@ -635,7 +635,7 @@ export class AMQPChannel {
   exchangeBind(destination: string, source: string, routingKey = "", args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
-    const bind = this.buffer
+    const bind = new AMQPView(new ArrayBuffer(4096))
     bind.setUint8(j, 1); j += 1 // type: method
     bind.setUint16(j, this.id); j += 2 // channel: 1
     bind.setUint32(j, 0); j += 4 // frameSize
@@ -663,7 +663,7 @@ export class AMQPChannel {
   exchangeUnbind(destination: string, source: string, routingKey = "", args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
     let j = 0
-    const unbind = this.buffer
+    const unbind = new AMQPView(new ArrayBuffer(4096))
     unbind.setUint8(j, 1); j += 1 // type: method
     unbind.setUint16(j, this.id); j += 2 // channel: 1
     unbind.setUint32(j, 0); j += 4 // frameSize
