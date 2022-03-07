@@ -9,18 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      rabbitmq:
-        image: rabbitmq:latest
-        ports:
-          - 5672:5672/tcp
-        # needed because the rabbitmq container does not provide a healthcheck
-        options: >-
-          --health-cmd "rabbitmqctl node_health_check"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     strategy:
       fail-fast: false
       matrix:
@@ -28,6 +16,32 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
+    - name: Install RabbitMQ
+      run: sudo apt-get update && sudo apt-get install -y rabbitmq-server
+    - name: Stop RabbitMQ
+      run: sudo systemctl stop rabbitmq-server
+
+    - name: Install github.com/FiloSottile/mkcert
+      run: brew install mkcert
+    - name: Create local CA
+      run: sudo CAROOT=/etc/rabbitmq $(brew --prefix)/bin/mkcert -install
+    - name: Create certificate
+      run: |
+        sudo $(brew --prefix)/bin/mkcert -key-file /etc/rabbitmq/localhost-key.pem -cert-file /etc/rabbitmq/localhost.pem localhost
+        sudo chmod +r /etc/rabbitmq/localhost-key.pem
+    - name: Create RabbitMQ config
+      run: |
+        sudo tee /etc/rabbitmq/rabbitmq.conf <<'EOF'
+        listeners.ssl.default  = 5671
+        ssl_options.cacertfile = /etc/rabbitmq/rootCA.pem
+        ssl_options.certfile   = /etc/rabbitmq/localhost.pem
+        ssl_options.keyfile    = /etc/rabbitmq/localhost-key.pem
+        EOF
+    - name: Start RabbitMQ
+      run: sudo systemctl start rabbitmq-server
+    - name: Verify RabbitMQ started correctly
+      run: while true; do sudo rabbitmq-diagnostics status 2>/dev/null && break; echo -n .; sleep 2; done
+
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v2
@@ -36,5 +50,5 @@ jobs:
     - run: npm install
     - run: npm test
       env:
-        AMQPS_URL: ${{ secrets.AMQP_URL }}
+        AMQPS_URL: amqps://localhost
     - run: npm run lint
