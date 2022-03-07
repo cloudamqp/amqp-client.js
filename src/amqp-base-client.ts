@@ -570,7 +570,7 @@ export abstract class AMQPBaseClient {
           break
         }
         case 8: { // heartbeat
-          const heartbeat = new Uint8Array([1, 0, 0, 0, 0, 0, 0, 206])
+          const heartbeat = new Uint8Array([8, 0, 0, 0, 0, 0, 0, 206])
           this.send(heartbeat).catch(err => console.warn("Error while sending heartbeat", err))
           break
         }

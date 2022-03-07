@@ -584,3 +584,11 @@ test("can handle cancel from server", async t => {
   await q.delete()
   await t.throwsAsync(() => consumer.wait(), { message: /Consumer cancelled by the server/ })
 })
+
+test("can handle heartbeats", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1?heartbeat=1")
+  const conn = await amqp.connect()
+  const wait = new Promise((resolv) => setTimeout(resolv, 2000))
+  await wait
+  t.is(conn.closed, false)
+})
