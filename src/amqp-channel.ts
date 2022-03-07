@@ -15,7 +15,7 @@ export class AMQPChannel {
   readonly consumers = new Map<string, AMQPConsumer>()
   readonly promises: [(value?: any) => void, (err?: Error) => void][] = []
   private readonly unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][] = []
-  private closed = false
+  closed = false
   /** Used for string -> arraybuffer when publishing */
   private static textEncoder = new TextEncoder()
   /** Frame buffer, reuse when publishes to avoid repated allocations */
