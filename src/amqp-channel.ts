@@ -37,7 +37,7 @@ export class AMQPChannel {
   /**
    * Declare a queue and return an AMQPQueue instance.
    */
-  queue(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {}, args = {}): Promise<AMQPQueue> {
+  queue(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {} as QueueParams, args = {}): Promise<AMQPQueue> {
     return new Promise((resolve, reject) => {
       this.queueDeclare(name, {passive, durable, autoDelete, exclusive}, args)
         .then(({name}) => resolve(new AMQPQueue(this, name)))
@@ -427,7 +427,7 @@ export class AMQPChannel {
    * @param args - optional custom queue arguments
    * @return fulfilled when confirmed by the server
    */
-  queueDeclare(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {}, args = {}): Promise<QueueOk> {
+  queueDeclare(name = "", { passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "" } = {} as QueueParams, args = {}): Promise<QueueOk> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     let j = 0
@@ -572,7 +572,7 @@ export class AMQPChannel {
    * @param args - optional arguments
    * @return Fulfilled when the exchange is created or if it already exists
    */
-  exchangeDeclare(name: string, type: string, { passive = false, durable = true, autoDelete = false, internal = false } = {}, args = {}): Promise<void> {
+  exchangeDeclare(name: string, type: string, { passive = false, durable = true, autoDelete = false, internal = false } = {} as ExchangeParams, args = {}): Promise<void> {
     const noWait = false
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(4096))
@@ -842,12 +842,50 @@ export class AMQPChannel {
   }
 }
 
-type QueueOk = {
+export type QueueOk = {
   name: string,
   messageCount: number,
   consumerCount: number
 }
 
-type MessageCount = {
+export type MessageCount = {
   messageCount: number
+}
+
+export type ExchangeParams = {
+  /**
+   * if the exchange name doesn't exist the channel will be closed with an error, fulfilled if the exchange name does exists
+   */
+  passive?: boolean,
+  /**
+   * if the exchange should survive server restarts
+   */
+  durable?: boolean,
+  /**
+   * if the exchange should be deleted when the last binding from it is deleted
+   */
+  autoDelete?: boolean,
+  /**
+   * if exchange is internal to the server. Client's can't publish to internal exchanges.
+   */
+  internal?: boolean
+}
+
+export type QueueParams = {
+  /**
+   * if the queue name doesn't exist the channel will be closed with an error, fulfilled if the queue name does exists
+   */
+  passive?: boolean,
+  /**
+   * if the queue should survive server restarts
+   */
+  durable?: boolean,
+  /**
+   * if the queue should be deleted when the last consumer of the queue disconnects
+   */
+  autoDelete?: boolean,
+  /**
+   * if the queue should be deleted when the channel is closed
+   */
+  exclusive?: boolean
 }
