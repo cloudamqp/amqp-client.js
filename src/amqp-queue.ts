@@ -1,5 +1,5 @@
 import { AMQPMessage } from './amqp-message.js'
-import { AMQPChannel } from './amqp-channel.js'
+import { AMQPChannel, ConsumeParams } from './amqp-channel.js'
 import { AMQPProperties } from './amqp-properties.js'
 import { AMQPConsumer } from './amqp-consumer.js'
 
@@ -63,7 +63,7 @@ export class AMQPQueue {
    * @param [params.args={}] - custom arguments
    * @param {function(AMQPMessage) : void} callback - Function to be called for each received message
    */
-  subscribe({noAck = true, exclusive = false, tag = "", args = {}} = {},
+  subscribe({ noAck = true, exclusive = false, tag = "", args = {} } = {} as ConsumeParams,
             callback: (msg: AMQPMessage) => void) : Promise<AMQPConsumer> {
     return this.channel.basicConsume(this.name, {noAck, exclusive, tag, args}, callback)
   }

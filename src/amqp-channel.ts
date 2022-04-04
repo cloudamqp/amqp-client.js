@@ -889,3 +889,27 @@ export type QueueParams = {
    */
   exclusive?: boolean
 }
+
+/* * @param [param.tag=""] - tag of the consumer, will be server generated if left empty
+   * @param [param.noAck=true] - if messages are removed from the server upon delivery, or have to be acknowledged
+   * @param [param.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
+   * @param [param.args={}] - custom arguments */
+
+export type ConsumeParams = {
+  /**
+   * tag of the consumer, will be server generated if left empty
+   */
+  tag?: string,
+  /**
+   * if messages are removed from the server upon delivery, or have to be acknowledged
+   */
+  noAck?: boolean,
+  /**
+   * if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
+   */
+  exclusive?: boolean,
+  /**
+   * custom arguments
+   */
+  args?: Record<string, any>
+};
