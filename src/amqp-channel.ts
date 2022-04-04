@@ -572,7 +572,7 @@ export class AMQPChannel {
    * @param args - optional arguments
    * @return Fulfilled when the exchange is created or if it already exists
    */
-  exchangeDeclare(name: string, type: string, { passive = false, durable = true, autoDelete = false, internal = false } = {} as ExchangeParams, args = {}): Promise<void> {
+  exchangeDeclare(name: string, type: ExchangeType, { passive = false, durable = true, autoDelete = false, internal = false } = {} as ExchangeParams, args = {}): Promise<void> {
     const noWait = false
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(4096))
@@ -851,6 +851,8 @@ export type QueueOk = {
 export type MessageCount = {
   messageCount: number
 }
+
+export type ExchangeType = 'direct' | 'fanout' | 'topic' | 'headers' | string;
 
 export type ExchangeParams = {
   /**
