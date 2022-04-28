@@ -41,7 +41,7 @@ export abstract class AMQPBaseClient {
     if (platform) this.platform = platform
     this.channels = [new AMQPChannel(this, 0)]
     this.closed = false
-    this.onerror = (...args: any[]) => console.error("amqp-client connection closed", args)
+    this.onerror = (reason: string) => console.error("amqp-client connection closed", reason)
     if (frameMax < 4096) throw new Error("frameMax must be 4096 or larger")
     this.frameMax = frameMax
     if (heartbeat < 0) throw new Error("heartbeat must be positive")
