@@ -23,6 +23,8 @@ export abstract class AMQPBaseClient {
   channelMax = 0
   frameMax: number
   heartbeat: number
+  onerror: (reason: string) => void
+
   /**
    * @param name - name of the connection, set in client properties
    * @param platform - used in client properties
@@ -39,6 +41,7 @@ export abstract class AMQPBaseClient {
     if (platform) this.platform = platform
     this.channels = [new AMQPChannel(this, 0)]
     this.closed = false
+    this.onerror = (...args: any[]) => console.error("amqp-client connection closed", args)
     if (frameMax < 4096) throw new Error("frameMax must be 4096 or larger")
     this.frameMax = frameMax
     if (heartbeat < 0) throw new Error("heartbeat must be positive")
@@ -270,6 +273,7 @@ export abstract class AMQPBaseClient {
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
                     .catch(err => console.warn("Error while sending Connection#CloseOk", err))
+                  this.onerror(err)
                   this.rejectConnect(err)
                   break
                 }
