@@ -1,5 +1,6 @@
 import { AMQPBaseClient } from './amqp-base-client.js'
 import { AMQPView } from './amqp-view.js'
+import { AMQPError } from './amqp-error.js'
 
 /** 
  * WebSocket client for AMQP 0-9-1 servers
@@ -33,7 +34,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       socket.onclose = reject
       socket.onerror = reject
       socket.onopen = () => {
-        socket.onerror = this.onerror
+        socket.onerror = (ev: Event) => this.onerror(new AMQPError(ev.toString(), this))
         socket.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
       }
     })
