@@ -32,7 +32,10 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       this.connectPromise = [resolve, reject]
       socket.onclose = reject
       socket.onerror = reject
-      socket.onopen = () => socket.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
+      socket.onopen = () => {
+        socket.onerror = this.onerror
+        socket.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
+      }
     })
   }
 
