@@ -40,7 +40,7 @@ export abstract class AMQPBaseClient {
     if (name) this.name = name // connection name
     if (platform) this.platform = platform
     this.channels = [new AMQPChannel(this, 0)]
-    this.closed = false
+    this.closed = true
     this.onerror = (error: AMQPError) => console.error("amqp-client connection closed", error.message)
     if (frameMax < 4096) throw new Error("frameMax must be 4096 or larger")
     this.frameMax = frameMax
@@ -244,6 +244,7 @@ export abstract class AMQPBaseClient {
                 }
                 case 41: { // openok
                   i += 1 // reserved1
+                  this.closed = false
                   const promise  = this.connectPromise
                   if (promise) {
                     const [resolve, ] = promise
