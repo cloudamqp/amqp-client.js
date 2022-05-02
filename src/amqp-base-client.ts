@@ -18,7 +18,7 @@ export abstract class AMQPBaseClient {
   channels: AMQPChannel[]
   protected connectPromise?: [(conn: AMQPBaseClient) => void, (err: Error) => void]
   protected closePromise?: [(value?: void) => void, (err: Error) => void]
-  closed = false
+  closed = true
   blocked?: string
   channelMax = 0
   frameMax: number
@@ -40,7 +40,6 @@ export abstract class AMQPBaseClient {
     if (name) this.name = name // connection name
     if (platform) this.platform = platform
     this.channels = [new AMQPChannel(this, 0)]
-    this.closed = true
     this.onerror = (error: AMQPError) => console.error("amqp-client connection closed", error.message)
     if (frameMax < 4096) throw new Error("frameMax must be 4096 or larger")
     this.frameMax = frameMax
