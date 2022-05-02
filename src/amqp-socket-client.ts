@@ -49,10 +49,6 @@ export class AMQPClient extends AMQPBaseClient {
     })
     return new Promise((resolve, reject) => {
       socket.on('error', (err) => reject(new AMQPError(err.message, this)))
-      socket.on('connect', () => {
-        socket.on('error', (err) => this.onerror(new AMQPError(err.message, this)))
-        socket.on('close', (hadError: boolean) => { if (!hadError) this.onerror(new AMQPError("Socket closed", this)) })
-      })
       this.connectPromise = [resolve, reject]
     })
   }
@@ -67,6 +63,12 @@ export class AMQPClient extends AMQPBaseClient {
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
     const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)
     conn.on('data', this.onRead.bind(this))
+    conn.on('connect', () => {
+      conn.on('error', (err) => this.onerror(new AMQPError(err.message, this)))
+      conn.on('close', (hadError: boolean) => {
+        if (!hadError && !this.closed) this.onerror(new AMQPError("Socket closed", this))
+      })
+    })
     return conn
   }
 

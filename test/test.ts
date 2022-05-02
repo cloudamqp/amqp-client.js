@@ -592,3 +592,24 @@ test("can handle heartbeats", async t => {
   await wait
   t.is(conn.closed, false)
 })
+
+test("has an onerror callback", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  conn.onerror = (err) => {
+    t.regex(err.message, /invalid exchange type/)
+  }
+  await t.throwsAsync(ch.exchangeDeclare("none", "none"))
+})
+
+test("onerror is not called when conn is closed by client", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  conn.onerror = () => {
+    t.fail("onerror should not be called when gracefully closed")
+  }
+  await conn.close()
+  await new Promise((resolv) => setTimeout(resolv, 10))
+  t.pass()
+})
