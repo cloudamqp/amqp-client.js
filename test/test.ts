@@ -565,7 +565,7 @@ test("can handle frames split over socket reads", async t => {
 
 test("have to connect socket before opening channels", async t => {
   const amqp = new AMQPClient("amqp://127.0.0.1")
-  await t.throwsAsync(() => amqp.channel(), { message: /not connected/ })
+  await t.throwsAsync(() => amqp.channel(), { message: /Connection closed/ })
 })
 
 test("will raise if socket is closed on send", async t => {
