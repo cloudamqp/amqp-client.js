@@ -9,7 +9,7 @@ import * as tls from 'tls'
  * AMQP 0-9-1 client over TCP socket.
  */
 export class AMQPClient extends AMQPBaseClient {
-  socket?: net.Socket
+  socket?: net.Socket | undefined
   readonly tls : boolean
   readonly host : string
   readonly port : number
@@ -44,6 +44,7 @@ export class AMQPClient extends AMQPBaseClient {
     const socket = this.connectSocket()
     Object.defineProperty(this, 'socket', {
       value: socket,
+      writable: true,
       enumerable: false // hide it from console.log etc.
     })
     return new Promise((resolve, reject) => {
@@ -123,14 +124,20 @@ export class AMQPClient extends AMQPBaseClient {
    */
   override send(bytes: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.socket)
+      if (!this.socket)
+        return reject(new AMQPError("Socket not connected", this))
+      try {
         this.socket.write(bytes, undefined, (err) => err ? reject(err) : resolve())
-      else
-        reject(new AMQPError("Socket not connected", this))
+      } catch (err) {
+        this.closeSocket()
+        reject(err)
+      }
     })
   }
 
   protected override closeSocket(): void {
+    this.closed = true
     if (this.socket) this.socket.end()
+    this.socket = undefined
   }
 }
