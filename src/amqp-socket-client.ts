@@ -24,8 +24,8 @@ export class AMQPClient extends AMQPBaseClient {
   constructor(url: string) {
     const u = new URL(url)
     const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
-    const username = u.username || "guest"
-    const password = u.password || "guest"
+    const username = decodeURIComponent(u.username) || "guest"
+    const password = decodeURIComponent(u.password) || "guest"
     const name = u.searchParams.get("name") || ""
     const frameMax = parseInt(u.searchParams.get("frameMax") || "4096")
     const heartbeat = parseInt(u.searchParams.get("heartbeat") || "0")
