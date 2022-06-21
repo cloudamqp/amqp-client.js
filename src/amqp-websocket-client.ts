@@ -6,7 +6,7 @@ import { AMQPView } from './amqp-view.js'
  */
 export class AMQPWebSocketClient extends AMQPBaseClient {
   readonly url: string
-  private socket?: WebSocket
+  private socket?: WebSocket | undefined
   private framePos = 0
   private frameSize = 0
   private frameBuffer: Uint8Array
@@ -47,6 +47,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
           this.socket.send(bytes)
           resolve()
         } catch (err) {
+          this.closeSocket()
           reject(err)
         }
       } else {
@@ -56,7 +57,9 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   }
 
   protected override closeSocket() {
+    this.closed = true
     if (this.socket) this.socket.close()
+    this.socket = undefined
   }
 
   private handleMessage(event: MessageEvent) {
