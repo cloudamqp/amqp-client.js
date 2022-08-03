@@ -46,7 +46,7 @@ export class AMQPQueue {
    * @param properties - publish properties
    * @return fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
-  publish(body: string|Uint8Array|ArrayBuffer, properties: AMQPProperties = {}): Promise<AMQPQueue> {
+  publish(body: string|Uint8Array|ArrayBuffer|Buffer|null, properties: AMQPProperties = {}): Promise<AMQPQueue> {
     return new Promise<AMQPQueue>((resolve, reject) => {
       this.channel.basicPublish("", this.name, body, properties)
         .then(() => resolve(this))
