@@ -22,7 +22,7 @@ export class AMQPMessage {
   routingKey = ""
   properties : AMQPProperties = {}
   bodySize = 0
-  body?: Uint8Array
+  body: Uint8Array | null = null
   bodyPos = 0
   deliveryTag = 0
   consumerTag = ""
