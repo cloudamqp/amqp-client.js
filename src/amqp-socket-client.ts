@@ -16,7 +16,7 @@ export class AMQPClient extends AMQPBaseClient {
   private readonly insecure : boolean
   private framePos: number
   private frameSize: number
-  private frameBuffer: Buffer
+  private readonly frameBuffer: Buffer
 
   /**
    * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
@@ -38,6 +38,9 @@ export class AMQPClient extends AMQPBaseClient {
     this.framePos = 0
     this.frameSize = 0
     this.frameBuffer = Buffer.allocUnsafe(frameMax)
+    Object.defineProperty(this, 'frameBuffer', {
+      enumerable: false // hide it from console.log etc.
+    })
   }
 
   override connect(): Promise<AMQPBaseClient> {
