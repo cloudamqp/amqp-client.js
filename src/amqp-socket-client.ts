@@ -60,7 +60,7 @@ export class AMQPClient extends AMQPBaseClient {
     const options = {
       host: this.host,
       port: this.port,
-      servername: this.host,
+      servername: net.isIP(this.host) ? "" : this.host,
       rejectUnauthorized: !this.insecure
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
