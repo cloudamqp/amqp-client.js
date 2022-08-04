@@ -765,6 +765,7 @@ export class AMQPChannel {
    * @param [err] - why the channel was closed
    */
   setClosed(err?: Error): void {
+    err ||= new Error("Connection closed by client")
     if (!this.closed) {
       this.closed = true
       this.consumers.forEach((consumer) => consumer.setClosed(err))
