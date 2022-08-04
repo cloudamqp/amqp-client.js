@@ -772,7 +772,9 @@ export class AMQPChannel {
       this.consumers.clear()
       // Empty and reject all RPC promises
       while(this.rejectPromise(err)) { 1 }
+      // Reject and clear all unconfirmed publishes
       this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
+      this.unconfirmedPublishes.length = 0
     }
   }
 
