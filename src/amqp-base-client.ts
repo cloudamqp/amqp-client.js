@@ -24,6 +24,10 @@ export abstract class AMQPBaseClient {
   frameMax: number
   heartbeat: number
   onerror: (error: AMQPError) => void
+  /** Used for string -> arraybuffer when publishing */
+  readonly textEncoder = new TextEncoder()
+  // Buffer pool for publishes, let multiple microtasks publish at the same time but save on allocations
+  readonly bufferPool: AMQPView[] = []
 
   /**
    * @param name - name of the connection, set in client properties

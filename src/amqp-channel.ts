@@ -16,10 +16,6 @@ export class AMQPChannel {
   readonly promises: [(value?: any) => void, (err?: Error) => void][] = []
   private readonly unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][] = []
   closed = false
-  /** Used for string -> arraybuffer when publishing */
-  private static textEncoder = new TextEncoder()
-  /** Frame buffer, reuse when publishes to avoid repated allocations */
-  private readonly buffer: AMQPView
   confirmId = 0
   delivery?: AMQPMessage
   getMessage?: AMQPMessage
@@ -31,7 +27,6 @@ export class AMQPChannel {
   constructor(connection: AMQPBaseClient, id: number) {
     this.connection = connection
     this.id = id
-    this.buffer = new AMQPView(new ArrayBuffer(connection.frameMax))
   }
 
   /**
@@ -288,13 +283,14 @@ export class AMQPChannel {
     } else if (data === null) {
       body = new Uint8Array(0)
     } else if (typeof data === "string") {
-      body = AMQPChannel.textEncoder.encode(data)
+      body = this.connection.textEncoder.encode(data)
     } else {
       throw new TypeError(`Invalid type ${typeof data} for parameter data`)
     }
 
     let j = 0
-    const buffer = this.buffer
+    // get a buffer from the pool or create a new, it will later be returned to the pool for reuse
+    const buffer = this.connection.bufferPool.pop() || new AMQPView(new ArrayBuffer(this.connection.frameMax))
     buffer.setUint8(j, 1); j += 1 // type: method
     buffer.setUint16(j, this.id); j += 2 // channel
     j += 4 // frame size, update later
@@ -346,6 +342,7 @@ export class AMQPChannel {
       bodyPos += frameSize
       j = 0
     }
+    this.connection.bufferPool.push(buffer) // return buffer to buffer pool for later reuse
     // if publish confirm is enabled, put a promise on a queue if the sends were ok
     // the promise on the queue will be fullfilled by the read loop when an ack/nack
     // comes from the server

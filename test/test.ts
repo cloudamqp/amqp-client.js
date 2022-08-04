@@ -613,3 +613,54 @@ test("onerror is not called when conn is closed by client", async t => {
   await new Promise((resolv) => setTimeout(resolv, 10))
   t.pass()
 })
+
+test("will throw on too large headers", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1?frameMax=4096")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await t.throwsAsync(() => ch.basicPublish("", "x".repeat(255), null, {"headers": {a: Array(4000).fill(1)}}),
+                      { instanceOf: RangeError })
+  await t.throwsAsync(() => ch.basicPublish("", "", null, {"headers": {a: "x".repeat(5000)}}),
+                      { instanceOf: RangeError })
+})
+
+test("will split body over multiple frames", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1?frameMax=4096")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  await ch.confirmSelect()
+  await q.publish("x".repeat(5000))
+  const msg = await q.get()
+  if (msg)
+    if (msg.body)
+      t.is(msg.body.length, 5000)
+    else
+      t.fail("no body")
+  else
+    t.fail("no msg")
+})
+
+test("can republish in consume block without race condition", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await ch.prefetch(0)
+  const q = await ch.queue("")
+  await ch.confirmSelect()
+  await q.publish("x".repeat(500))
+  const consumer = await q.subscribe({noAck: false}, async (msg) => {
+    if (msg.deliveryTag < 10000) {
+      await Promise.all([
+        q.publish(msg.body),
+        q.publish(msg.body),
+        msg.ack()
+      ])
+    } else if (msg.deliveryTag === 10000) {
+      await consumer.cancel()
+    }
+  })
+  await t.notThrowsAsync(() => consumer.wait())
+  await t.notThrowsAsync(() => conn.close())
+  console.log(conn.bufferPool.length)
+})
