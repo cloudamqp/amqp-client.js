@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2022-03-07
+
+### Added
+
+- AMQPClient#onerror, will be called whenever ther connection is closed, override it to create reconnect logic.
+- Export types for queue, exchange and consume parameters
+
+### Fixed
+
+- Only skip TLS certificate validation if the `insecure` query parameter is included in the URL
+- Use a pool of buffers so that multiple microtasks can publish simultaneously
+- Don't set an IP as SNI hostname, only proper hostnames
+- Decode username/password in URL properly
+
+### Changed
+
+- Allow publishing of `null` and let AMQPMessage#body be null when a body is missing
+
 ## [2.0.3] - 2022-03-07
 
 ### Fixed
