@@ -34,7 +34,7 @@ export class AMQPClient extends AMQPBaseClient {
     this.tls = u.protocol === "amqps:"
     this.host = u.hostname || "localhost"
     this.port = parseInt(u.port) || (this.tls ? 5671 : 5672)
-    this.insecure = u.searchParams.get("insecure") !== undefined
+    this.insecure = u.searchParams.get("insecure") !== null
     this.framePos = 0
     this.frameSize = 0
     this.frameBuffer = Buffer.allocUnsafe(frameMax)
