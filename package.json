@@ -12,6 +12,7 @@
     "tls": false
   },
   "exports": {
+    "type": "module",
     "import": "./lib/mjs/index.js",
     "require": "./lib/cjs/index.js"
   },
