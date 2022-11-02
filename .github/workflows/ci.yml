@@ -21,6 +21,8 @@ jobs:
     - name: Stop RabbitMQ
       run: sudo systemctl stop rabbitmq-server
 
+    - name: Set up Homebrew
+      uses: Homebrew/actions/setup-homebrew@master
     - name: Install github.com/FiloSottile/mkcert
       run: brew install mkcert
     - name: Create local CA
