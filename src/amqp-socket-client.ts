@@ -4,7 +4,6 @@ import { AMQPView } from './amqp-view.js'
 import { Buffer } from 'buffer'
 import * as net from 'net'
 import * as tls from 'tls'
-import fs from 'fs'
 
 type SSLOptions = { cert: Buffer; key: Buffer, passphrase?: string, ca?: Buffer[], pfx?: Buffer };
 
