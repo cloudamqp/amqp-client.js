@@ -47,7 +47,7 @@ export class AMQPClient extends AMQPBaseClient {
   }
 
   override connect(): Promise<AMQPBaseClient> {
-    const socket = this.connectSocket();
+    const socket = this.connectSocket()
     Object.defineProperty(this, 'socket', {
       value: socket,
       writable: true,
