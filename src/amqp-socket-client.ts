@@ -14,6 +14,7 @@ export class AMQPClient extends AMQPBaseClient {
   readonly tls : boolean
   readonly host : string
   readonly port : number
+  readonly tlsOptions : TlsOptions | undefined
   private readonly insecure : boolean
   private framePos: number
   private frameSize: number
@@ -22,7 +23,7 @@ export class AMQPClient extends AMQPBaseClient {
   /**
    * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
    */
-  constructor(url: string) {
+  constructor(url: string, tlsOptions?: TlsOptions) {
     const u = new URL(url)
     const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
     const username = decodeURIComponent(u.username) || "guest"
@@ -33,6 +34,7 @@ export class AMQPClient extends AMQPBaseClient {
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
     super(vhost, username, password, name, platform, frameMax, heartbeat)
     this.tls = u.protocol === "amqps:"
+    this.tlsOptions = tlsOptions
     this.host = u.hostname || "localhost"
     this.port = parseInt(u.port) || (this.tls ? 5671 : 5672)
     this.insecure = u.searchParams.get("insecure") !== null
@@ -44,8 +46,8 @@ export class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  override connect(tlsOptions?: TlsOptions): Promise<AMQPBaseClient> {
-    const socket = this.connectSocket(tlsOptions);
+  override connect(): Promise<AMQPBaseClient> {
+    const socket = this.connectSocket();
     Object.defineProperty(this, 'socket', {
       value: socket,
       writable: true,
@@ -57,13 +59,13 @@ export class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  private connectSocket(tlsOptions?: TlsOptions): net.Socket {
+  private connectSocket(): net.Socket {
     const options = {
       host: this.host,
       port: this.port,
       servername: net.isIP(this.host) ? "" : this.host,
       rejectUnauthorized: !this.insecure,
-      ...tlsOptions
+      ...this.tlsOptions
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
     const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)
