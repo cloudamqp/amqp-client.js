@@ -44,8 +44,8 @@ export class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  override connect(sslOptions?: TlsOptions): Promise<AMQPBaseClient> {
-    const socket = this.connectSocket(sslOptions);
+  override connect(tlsOptions?: TlsOptions): Promise<AMQPBaseClient> {
+    const socket = this.connectSocket(tlsOptions);
     Object.defineProperty(this, 'socket', {
       value: socket,
       writable: true,
@@ -57,16 +57,16 @@ export class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  private connectSocket(sslOptions?: TlsOptions): net.Socket {
+  private connectSocket(tlsOptions?: TlsOptions): net.Socket {
     const options = {
       host: this.host,
       port: this.port,
       servername: net.isIP(this.host) ? "" : this.host,
       rejectUnauthorized: !this.insecure,
+      ...tlsOptions
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
-    const tlsOptions = sslOptions ? { ...options, ...sslOptions } : options;
-    const conn = this.tls ? tls.connect(tlsOptions, sendStart) : net.connect(options, sendStart)
+    const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)
     conn.on('data', this.onRead.bind(this))
     conn.on('connect', () => {
       conn.on('error', (err) => this.onerror(new AMQPError(err.message, this)))
