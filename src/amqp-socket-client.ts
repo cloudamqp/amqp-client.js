@@ -2,10 +2,9 @@ import { AMQPBaseClient } from './amqp-base-client.js'
 import { AMQPError } from './amqp-error.js'
 import { AMQPView } from './amqp-view.js'
 import { Buffer } from 'buffer'
+import { TlsOptions } from './amqp-properties.js'
 import * as net from 'net'
 import * as tls from 'tls'
-
-type SSLOptions = { cert: Buffer; key: Buffer, passphrase?: string, ca?: Buffer[], pfx?: Buffer };
 
 /**
  * AMQP 0-9-1 client over TCP socket.
@@ -45,7 +44,7 @@ export class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  override connect(sslOptions?: SSLOptions): Promise<AMQPBaseClient> {
+  override connect(sslOptions?: TlsOptions): Promise<AMQPBaseClient> {
     const socket = this.connectSocket(sslOptions);
     Object.defineProperty(this, 'socket', {
       value: socket,
@@ -58,7 +57,7 @@ export class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  private connectSocket(sslOptions?: SSLOptions): net.Socket {
+  private connectSocket(sslOptions?: TlsOptions): net.Socket {
     const options = {
       host: this.host,
       port: this.port,

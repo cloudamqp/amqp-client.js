@@ -24,3 +24,7 @@ export type AMQPProperties = {
 }
 
 export type Field = string | boolean | bigint | number | undefined | null | object;
+
+type AcceptedTypes = string | string[] | Buffer | Buffer[]; 
+
+export type TlsOptions = { cert: AcceptedTypes; key: AcceptedTypes, passphrase?: string, ca?: AcceptedTypes, pfx?: AcceptedTypes };
