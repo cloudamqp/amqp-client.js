@@ -4,6 +4,9 @@ import { AMQPView } from './amqp-view.js'
 import { Buffer } from 'buffer'
 import * as net from 'net'
 import * as tls from 'tls'
+import fs from 'fs'
+
+type SSLOptions = { cert: Buffer; key: Buffer, passphrase?: string, ca?: Buffer[], pfx?: Buffer };
 
 /**
  * AMQP 0-9-1 client over TCP socket.
@@ -43,8 +46,8 @@ export class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  override connect(): Promise<AMQPBaseClient> {
-    const socket = this.connectSocket()
+  override connect(sslOptions?: SSLOptions): Promise<AMQPBaseClient> {
+    const socket = this.connectSocket(sslOptions);
     Object.defineProperty(this, 'socket', {
       value: socket,
       writable: true,
@@ -56,15 +59,16 @@ export class AMQPClient extends AMQPBaseClient {
     })
   }
 
-  private connectSocket(): net.Socket {
+  private connectSocket(sslOptions?: SSLOptions): net.Socket {
     const options = {
       host: this.host,
       port: this.port,
       servername: net.isIP(this.host) ? "" : this.host,
-      rejectUnauthorized: !this.insecure
+      rejectUnauthorized: !this.insecure,
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
-    const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)
+    const tlsOptions = sslOptions ? { ...options, ...sslOptions } : options;
+    const conn = this.tls ? tls.connect(tlsOptions, sendStart) : net.connect(options, sendStart)
     conn.on('data', this.onRead.bind(this))
     conn.on('connect', () => {
       conn.on('error', (err) => this.onerror(new AMQPError(err.message, this)))
