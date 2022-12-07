@@ -1,8 +1,8 @@
 import { AMQPBaseClient } from './amqp-base-client.js'
 import { AMQPError } from './amqp-error.js'
+import { AMQPTlsOptions } from './amqp-tls-options'
 import { AMQPView } from './amqp-view.js'
 import { Buffer } from 'buffer'
-import { TlsOptions } from './amqp-properties.js'
 import * as net from 'net'
 import * as tls from 'tls'
 
@@ -23,7 +23,7 @@ export class AMQPClient extends AMQPBaseClient {
   /**
    * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
    */
-  constructor(url: string, tlsOptions?: TlsOptions) {
+  constructor(url: string, tlsOptions?: AMQPTlsOptions) {
     const u = new URL(url)
     const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
     const username = decodeURIComponent(u.username) || "guest"
