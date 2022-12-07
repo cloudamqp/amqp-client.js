@@ -14,7 +14,7 @@ export class AMQPClient extends AMQPBaseClient {
   readonly tls : boolean
   readonly host : string
   readonly port : number
-  readonly tlsOptions : TlsOptions | undefined
+  readonly tlsOptions : AMQPTlsOptions | undefined
   private readonly insecure : boolean
   private framePos: number
   private frameSize: number
