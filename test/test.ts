@@ -664,3 +664,17 @@ test("can republish in consume block without race condition", async t => {
   await t.notThrowsAsync(() => conn.close())
   console.log(conn.bufferPool.length)
 })
+
+test("raises when channelMax is reached", async t => {
+  const amqp = new AMQPClient("amqp://127.0.0.1")
+  const conn = await amqp.connect()
+  for (let i = 0; i < conn.channelMax; i++) {
+    await conn.channel()
+  }
+  const error = await t.throwsAsync(conn.channel())
+  t.is(error.message, 'Max number of channels reached');
+
+  // make sure other channels still work
+  const ch1 = await conn.channel(1)
+  await t.notThrowsAsync(ch1.basicQos(10))
+})
