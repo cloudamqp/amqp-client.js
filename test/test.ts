@@ -466,13 +466,6 @@ test('set basic flow on channel', async () => {
   await expect(ch.basicFlow(true)).resolves.toBeDefined()
 })
 
-test('can resolve promise on channel', async () => {
-  const amqp = getNewClient()
-  const conn = await amqp.connect()
-  const ch = await conn.channel()
-  expect(ch.resolvePromise()).toBeFalsy()
-})
-
 test('confirming unknown deliveryTag', async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
@@ -593,9 +586,9 @@ test("has an onerror callback", async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   let errMessage: string | null = null
-  conn.onerror = vi.fn((err) => errMessage = err.message)
+  ch.onerror = vi.fn((reason) => errMessage = reason)
   await expect(ch.exchangeDeclare("none", "none")).rejects.toThrow()
-  expect(conn.onerror).toBeCalled()
+  expect(ch.onerror).toBeCalled()
   expect(errMessage).toMatch(/invalid exchange type/)
 })
 

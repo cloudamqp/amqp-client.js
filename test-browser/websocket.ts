@@ -462,13 +462,6 @@ test('set basic flow on channel', async () => {
   await expect(ch.basicFlow(true)).resolves.toBeDefined()
 })
 
-test('can resolve promise on channel', async () => {
-  const amqp = getNewClient()
-  const conn = await amqp.connect()
-  const ch = await conn.channel()
-  expect(ch.resolvePromise()).toBeFalsy()
-})
-
 test('confirming unknown deliveryTag', async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
