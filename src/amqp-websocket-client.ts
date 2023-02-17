@@ -78,7 +78,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
         if (this.framePos !== 0) {
           const len = buf.byteLength - bufPos
           this.frameBuffer.set(new Uint8Array(buf, bufPos), this.framePos)
-          this.frameSize = new DataView(this.frameBuffer).getInt32(bufPos + 3) + 8
+          this.frameSize = new DataView(this.frameBuffer.buffer).getInt32(bufPos + 3) + 8
           this.framePos += len
           bufPos += len
           continue
