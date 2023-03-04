@@ -266,6 +266,7 @@ export class AMQPChannel {
    * @param exchange - the exchange to publish to, the exchange must exists
    * @param routingKey - routing key
    * @param data - the data to be published, can be a string or an uint8array
+   * @param properties - properties to be published
    * @param [mandatory] - if the message should be returned if there's no queue to be delivered to
    * @param [immediate] - if the message should be returned if it can't be delivered to a consumer immediately (not supported in RabbitMQ)
    * @return - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
