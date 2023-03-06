@@ -28,11 +28,11 @@ export class AMQPChannel {
   constructor(connection: AMQPBaseClient, id: number) {
     this.connection = connection
     this.id = id
-    this.onerror = (reason: string) => this.console?.error(`channel ${this.id} closed: ${reason}`)
+    this.onerror = (reason: string) => this.logger?.error(`channel ${this.id} closed: ${reason}`)
   }
 
-  private get console() {
-    return this.connection.console;
+  private get logger() {
+    return this.connection.logger;
   }
 
   /**
@@ -59,7 +59,7 @@ export class AMQPChannel {
    * @param message returned from server
    */
   onReturn(message: AMQPMessage) {
-    this.console?.error("Message returned from server", message)
+    this.logger?.error("Message returned from server", message)
   }
 
   /**
@@ -813,7 +813,7 @@ export class AMQPChannel {
           resolve(tag)
       })
     } else {
-      this.console?.warn("Cant find unconfirmed deliveryTag", deliveryTag, "multiple:", multiple, "nack:", nack)
+      this.logger?.warn("Cant find unconfirmed deliveryTag", deliveryTag, "multiple:", multiple, "nack:", nack)
     }
   }
 
@@ -845,7 +845,7 @@ export class AMQPChannel {
       if (consumer) {
         consumer.onMessage(message)
       } else {
-        this.console?.warn("Consumer", message.consumerTag, "not available on channel", this.id)
+        this.logger?.warn("Consumer", message.consumerTag, "not available on channel", this.id)
       }
     })
   }

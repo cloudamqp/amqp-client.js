@@ -23,7 +23,7 @@ export class AMQPClient extends AMQPBaseClient {
   /**
    * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
    */
-  constructor(url: string, tlsOptions?: AMQPTlsOptions, $console: typeof console | null = console) {
+  constructor(url: string, tlsOptions?: AMQPTlsOptions) {
     const u = new URL(url)
     const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
     const username = decodeURIComponent(u.username) || "guest"
@@ -32,7 +32,7 @@ export class AMQPClient extends AMQPBaseClient {
     const frameMax = parseInt(u.searchParams.get("frameMax") || "4096")
     const heartbeat = parseInt(u.searchParams.get("heartbeat") || "0")
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
-    super(vhost, username, password, name, platform, frameMax, heartbeat, $console)
+    super(vhost, username, password, name, platform, frameMax, heartbeat)
     this.tls = u.protocol === "amqps:"
     this.tlsOptions = tlsOptions
     this.host = u.hostname || "localhost"

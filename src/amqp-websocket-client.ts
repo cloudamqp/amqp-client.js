@@ -15,8 +15,8 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   /**
    * @param url to the websocket endpoint, example: wss://server/ws/amqp
    */
-  constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 4096, heartbeat = 0, $console: typeof console | null = console) {
-    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat, $console)
+  constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 4096, heartbeat = 0) {
+    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat)
     this.url = url
     this.frameBuffer = new Uint8Array(frameMax)
   }
