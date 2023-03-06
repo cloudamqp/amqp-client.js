@@ -24,6 +24,7 @@ export abstract class AMQPBaseClient {
   frameMax: number
   heartbeat: number
   onerror: (error: AMQPError) => void
+  readonly console: typeof console | null
   /** Used for string -> arraybuffer when publishing */
   readonly textEncoder = new TextEncoder()
   // Buffer pool for publishes, let multiple microtasks publish at the same time but save on allocations
@@ -33,10 +34,11 @@ export abstract class AMQPBaseClient {
    * @param name - name of the connection, set in client properties
    * @param platform - used in client properties
    */
-  constructor(vhost: string, username: string, password: string, name?: string, platform?: string, frameMax = 4096, heartbeat = 0) {
+  constructor(vhost: string, username: string, password: string, name?: string, platform?: string, frameMax = 4096, heartbeat = 0, $console: typeof console | null = console) {
     this.vhost = vhost
     this.username = username
     this.password = ""
+    this.console = $console
     Object.defineProperty(this, 'password', {
       value: password,
       enumerable: false // hide it from console.log etc.
@@ -44,7 +46,7 @@ export abstract class AMQPBaseClient {
     if (name) this.name = name // connection name
     if (platform) this.platform = platform
     this.channels = [new AMQPChannel(this, 0)]
-    this.onerror = (error: AMQPError) => console.error("amqp-client connection closed", error.message)
+    this.onerror = (error: AMQPError) => this.console?.error("amqp-client connection closed", error.message)
     if (frameMax < 4096) throw new Error("frameMax must be 4096 or larger")
     this.frameMax = frameMax
     if (heartbeat < 0) throw new Error("heartbeat must be positive")
@@ -163,7 +165,7 @@ export abstract class AMQPBaseClient {
 
       const channel = this.channels[channelId]
       if (!channel) {
-        console.warn("AMQP channel", channelId, "not open")
+        this.console?.warn("AMQP channel", channelId, "not open")
         i += frameSize + 1
         continue
       }
@@ -262,7 +264,7 @@ export abstract class AMQPBaseClient {
                   const [text, strLen] = view.getShortString(i); i += strLen
                   const classId = view.getUint16(i); i += 2
                   const methodId = view.getUint16(i); i += 2
-                  console.debug("connection closed by server", code, text, classId, methodId)
+                  this.console?.debug("connection closed by server", code, text, classId, methodId)
 
                   const msg = `connection closed: ${text} (${code})`
                   const err = new AMQPError(msg, this)
@@ -277,7 +279,7 @@ export abstract class AMQPBaseClient {
                   closeOk.setUint16(j, 51); j += 2 // method: closeok
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
-                    .catch(err => console.warn("Error while sending Connection#CloseOk", err))
+                    .catch(err => this.console?.warn("Error while sending Connection#CloseOk", err))
                   this.onerror(err)
                   this.rejectConnect(err)
                   break
@@ -296,18 +298,18 @@ export abstract class AMQPBaseClient {
                 }
                 case 60: { // blocked
                   const [reason, len] = view.getShortString(i); i += len
-                  console.warn("AMQP connection blocked:", reason)
+                  this.console?.warn("AMQP connection blocked:", reason)
                   this.blocked = reason
                   break
                 }
                 case 61: { // unblocked
-                  console.info("AMQP connection unblocked")
+                  this.console?.info("AMQP connection unblocked")
                   delete this.blocked
                   break
                 }
                 default:
                   i += frameSize - 4
-                  console.error("unsupported class/method id", classId, methodId)
+                  this.console?.error("unsupported class/method id", classId, methodId)
               }
               break
             }
@@ -328,7 +330,7 @@ export abstract class AMQPBaseClient {
                   const [text, strLen] = view.getShortString(i); i += strLen
                   const classId = view.getUint16(i); i += 2
                   const methodId = view.getUint16(i); i += 2
-                  console.debug("channel", channelId, "closed", code, text, classId, methodId)
+                  this.console?.debug("channel", channelId, "closed", code, text, classId, methodId)
 
                   const msg = `channel ${channelId} closed: ${text} (${code})`
                   const err = new AMQPError(msg, this)
@@ -343,7 +345,7 @@ export abstract class AMQPBaseClient {
                   closeOk.setUint16(j, 41); j += 2 // method: closeok
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
-                    .catch(err => console.error("Error while sending Channel#closeOk", err))
+                    .catch(err => this.console?.error("Error while sending Channel#closeOk", err))
                   break
                 }
                 case 41: { // closeOk
@@ -354,7 +356,7 @@ export abstract class AMQPBaseClient {
                 }
                 default:
                   i += frameSize - 4 // skip rest of frame
-                  console.error("unsupported class/method id", classId, methodId)
+                  this.console?.error("unsupported class/method id", classId, methodId)
               }
               break
             }
@@ -369,7 +371,7 @@ export abstract class AMQPBaseClient {
                 }
                 default:
                   i += frameSize - 4 // skip rest of frame
-                  console.error("unsupported class/method id", classId, methodId)
+                  this.console?.error("unsupported class/method id", classId, methodId)
               }
               break
             }
@@ -402,7 +404,7 @@ export abstract class AMQPBaseClient {
                 }
                 default:
                   i += frameSize - 4
-                  console.error("unsupported class/method id", classId, methodId)
+                  this.console?.error("unsupported class/method id", classId, methodId)
               }
               break
             }
@@ -511,7 +513,7 @@ export abstract class AMQPBaseClient {
                 }
                 default:
                   i += frameSize - 4
-                  console.error("unsupported class/method id", classId, methodId)
+                  this.console?.error("unsupported class/method id", classId, methodId)
               }
               break
             }
@@ -524,7 +526,7 @@ export abstract class AMQPBaseClient {
                 }
                 default:
                   i += frameSize - 4
-                  console.error("unsupported class/method id", classId, methodId)
+                  this.console?.error("unsupported class/method id", classId, methodId)
               }
               break
             }
@@ -538,13 +540,13 @@ export abstract class AMQPBaseClient {
                 }
                 default:
                   i += frameSize - 4
-                  console.error("unsupported class/method id", classId, methodId)
+                  this.console?.error("unsupported class/method id", classId, methodId)
               }
               break
             }
             default:
               i += frameSize - 2
-              console.error("unsupported class id", classId)
+              this.console?.error("unsupported class id", classId)
           }
           break
         }
@@ -560,7 +562,7 @@ export abstract class AMQPBaseClient {
             if (bodySize === 0)
               channel.onMessageReady(message)
           } else {
-            console.warn("Header frame but no message")
+            this.console?.warn("Header frame but no message")
           }
           break
         }
@@ -574,17 +576,17 @@ export abstract class AMQPBaseClient {
             if (message.bodyPos === message.bodySize)
               channel.onMessageReady(message)
           } else {
-            console.warn("Body frame but no message")
+            this.console?.warn("Body frame but no message")
           }
           break
         }
         case 8: { // heartbeat
           const heartbeat = new Uint8Array([8, 0, 0, 0, 0, 0, 0, 206])
-          this.send(heartbeat).catch(err => console.warn("Error while sending heartbeat", err))
+          this.send(heartbeat).catch(err => this.console?.warn("Error while sending heartbeat", err))
           break
         }
         default:
-          console.error("invalid frame type:", type)
+          this.console?.error("invalid frame type:", type)
           i += frameSize
       }
       i += 1 // frame end
