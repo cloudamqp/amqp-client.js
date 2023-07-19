@@ -150,7 +150,10 @@ export class AMQPClient extends AMQPBaseClient {
 
   protected override closeSocket(): void {
     this.closed = true
-    if (this.socket) this.socket.end()
+    if (this.socket) {
+      this.socket.end()
+      this.socket.destroy()
+    }
     this.socket = undefined
   }
 }
