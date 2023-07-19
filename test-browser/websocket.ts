@@ -17,8 +17,6 @@ test('can parse the url correctly', () => {
   const client = new AMQPWebSocketClient({ url: `ws://${hostname}:${port}/ws/amqp`, username: username, password: password, vhost: vhost, name: name });
   expect(client.username).toEqual(username);
   expect(client.password).toEqual(password);
-  //expect(client.host).toEqual(hostname);
-  //expect(client.port).toEqual(port);
   expect(client.vhost).toEqual(vhost);
   expect(client.name).toEqual(name);
 })
@@ -574,7 +572,7 @@ test("can handle cancel from server", async () => {
 }, 10_000)
 
 test("can handle heartbeats", async () => {
-  const amqp = new AMQPWebSocketClient("ws://127.0.0.1:15670/ws/amqp?heartbeat=1")
+  const amqp = new AMQPWebSocketClient({url: "ws://127.0.0.1:15670/ws/amqp", heartbeat: 1})
   const conn = await amqp.connect()
   const wait = new Promise((resolv) => setTimeout(resolv, 2000))
   await wait
