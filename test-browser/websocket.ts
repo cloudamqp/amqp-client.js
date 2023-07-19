@@ -538,8 +538,7 @@ test("can't set too small frameMax", () => {
   expect(() => getNewClient({ frameMax: 16 })).toThrow()
 })
 
-// TODO: throws unhandled exception, stopping the rest of the test
-test.skip("can handle frames split over socket reads", async () => {
+test("can handle frames split over socket reads", async () => {
   const amqp = getNewClient({ frameMax: 4*1024 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -553,7 +552,7 @@ test.skip("can handle frames split over socket reads", async () => {
   const consumer = await q.subscribe({ noAck: true }, () => { if (++i === msgs) consumer.cancel() })
   await consumer.wait(20_000)
   expect(i).toEqual(msgs)
-}, 40_000)
+}, 60_000)
 
 test("have to connect socket before opening channels", async () => {
   const amqp = getNewClient()
@@ -635,8 +634,7 @@ test("will split body over multiple frames", async () => {
   assert.fail("no msg")
 })
 
-// TODO: fails intermittently, throws unhandled exception, stopping the rest of the test
-test.skip("can republish in consume block without race condition", async () => {
+test("can republish in consume block without race condition", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
