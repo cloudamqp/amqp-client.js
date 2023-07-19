@@ -25,6 +25,7 @@ export abstract class AMQPBaseClient {
   channelMax = 0
   frameMax: number
   heartbeat: number
+  lastDataReceived: number | undefined = undefined
   onerror: (error: AMQPError) => void
   logger: Logger | null | undefined = console
   /** Used for string -> arraybuffer when publishing */
@@ -85,6 +86,7 @@ export abstract class AMQPBaseClient {
   close(reason = "", code = 200): Promise<void> {
     if (this.closed) return this.rejectClosed()
     this.closed = true
+    this.lastDataReceived = undefined
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -605,6 +607,19 @@ export abstract class AMQPBaseClient {
           i += frameSize
       }
       i += 1 // frame end
+    }
+    this.lastDataReceived = performance.now()
+  }
+
+  /**
+   * Get the time since since connection or last data received
+   * @returns milliseconds; Infinity if disconnected
+   */
+  durationSinceLastData(): number {
+    if (typeof this.lastDataReceived === 'number') {
+      return performance.now() - this.lastDataReceived;
+    } else {
+      return Infinity
     }
   }
 }

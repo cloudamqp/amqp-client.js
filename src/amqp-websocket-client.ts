@@ -50,6 +50,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     this.socket = socket
     socket.binaryType = "arraybuffer"
     socket.onmessage = this.handleMessage.bind(this)
+    this.lastDataReceived = performance.now()
     return new Promise((resolve, reject) => {
       this.connectPromise = [resolve, reject]
       socket.addEventListener('close', reject)
