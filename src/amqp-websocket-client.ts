@@ -97,8 +97,8 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       if (this.frameSize === 0) {
         // first 7 bytes of a frame was split over two reads, this reads the second part
         if (this.framePos !== 0) {
-          const len = buf.byteLength - bufPos
-          this.frameBuffer.set(new Uint8Array(buf, bufPos), this.framePos)
+          const len = 7 - this.framePos
+          this.frameBuffer.set(new Uint8Array(buf, bufPos, len), this.framePos)
           this.frameSize = new DataView(this.frameBuffer.buffer).getInt32(bufPos + 3) + 8
           this.framePos += len
           bufPos += len

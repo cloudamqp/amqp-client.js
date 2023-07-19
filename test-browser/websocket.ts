@@ -533,7 +533,6 @@ test("can't set too small frameMax", () => {
   expect(() => new AMQPWebSocketClient({ url: "ws://127.0.0.1:3002/ws/amqp", frameMax: 16})).toThrow()
 })
 
-// TODO: fails
 test("can handle frames split over socket reads", async () => {
   const amqp = new AMQPWebSocketClient({ url: "ws://127.0.0.1:3002/ws/amqp", frameMax: 4*1024 })
   const conn = await amqp.connect()
@@ -626,7 +625,6 @@ test("will split body over multiple frames", async () => {
   assert.fail("no msg")
 })
 
-// TODO: fails intermittently
 test("can republish in consume block without race condition", async () => {
   const amqp = new AMQPWebSocketClient("ws://127.0.0.1:3002/ws/amqp")
   const conn = await amqp.connect()
