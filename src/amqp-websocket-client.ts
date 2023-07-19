@@ -2,6 +2,16 @@ import { AMQPBaseClient } from './amqp-base-client.js'
 import { AMQPView } from './amqp-view.js'
 import { AMQPError } from './amqp-error.js'
 
+interface AMQPWebSocketInit {
+  url: string
+  vhost?: string
+  username?: string
+  password?: string
+  name?: string
+  frameMax?: number
+  heartbeat?: number
+}
+
 /** 
  * WebSocket client for AMQP 0-9-1 servers
  */
@@ -15,7 +25,18 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   /**
    * @param url to the websocket endpoint, example: wss://server/ws/amqp
    */
-  constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 4096, heartbeat = 0) {
+  constructor(url: string, vhost?: string, username?: string, password?: string, name?: string, frameMax?: number, heartbeat?: number);
+  constructor(init: AMQPWebSocketInit);
+  constructor(url: string | AMQPWebSocketInit, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 4096, heartbeat = 0) {
+    if (typeof url === 'object') {
+      vhost = url.vhost ?? vhost
+      username = url.username ?? username
+      password = url.password ?? password
+      name = url.name ?? name
+      frameMax = url.frameMax ?? frameMax
+      heartbeat = url.heartbeat ?? heartbeat
+      url = url.url
+    }
     super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat)
     this.url = url
     this.frameBuffer = new Uint8Array(frameMax)
