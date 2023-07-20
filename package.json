@@ -50,7 +50,7 @@
   },
   "homepage": "https://github.com/cloudamqp/amqp-client.js#readme",
   "devDependencies": {
-    "@types/node": "^17.0.1",
+    "@types/node": "^16.18.37",
     "@typescript-eslint/eslint-plugin": "^5.8.0",
     "@typescript-eslint/parser": "^5.8.0",
     "@vitest/browser": "^0.33.0",
@@ -59,9 +59,9 @@
     "playwright": "^1.36.1",
     "rollup": "^2.39.1",
     "rollup-plugin-sourcemaps": "^0.6.3",
-    "ts-node": "^10.4.0",
+    "ts-node": "^10.8.0",
     "typedoc": "^0.22.10",
-    "typescript": "^4.5.4",
+    "typescript": "^4.6.4",
     "vitest": "^0.33.0"
   },
   "ava": {
