@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Breaking change: Removed support for end-of-life versions of Node.js. A minimum of Node.js 16 is now required.
+
 ## [2.1.1] - 2022-12-13
 
 ### Added
