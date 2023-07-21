@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Call socket.destroy() when closing socket to fix intermitent condition where onerror is called when conn is closed by client.
 - Pass the correct array buffer to dataview when reading framesize (related to [#55](https://github.com/cloudamqp/amqp-client.js/issues/55))
-- Raise `AMQPError` when `channelMax` is reached (related to [#43](https://github.com/cloudamqp/amqp-client.js/issues/43)
-- Add `Channel#onerror` callback (related to [#40](https://github.com/cloudamqp/amqp-client.js/issues/40)
+- Raise `AMQPError` when `channelMax` is reached (related to [#43](https://github.com/cloudamqp/amqp-client.js/issues/43))
+- Add `Channel#onerror` callback (related to [#40](https://github.com/cloudamqp/amqp-client.js/issues/40))
 
 ### Changed
 
