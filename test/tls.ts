@@ -1,9 +1,13 @@
-import test from 'ava';
+import { expect, test, beforeEach } from "vitest";
 import { AMQPClient } from '../src/amqp-socket-client.js';
 
-test('can connect with TLS', t => {
+beforeEach(() => {
+  expect.hasAssertions()
+})
+
+test('can connect with TLS', () => {
   const amqp = new AMQPClient(process.env["AMQPS_URL"] || "amqps://127.0.0.1?insecure=true")
   return amqp.connect()
     .then(conn => conn.channel())
-    .then(ch => t.is(ch.connection.channels.length, 2)) // 2 because channel 0 is counted
+    .then(ch => expect(ch.connection.channels.length).toBe(2)) // 2 because channel 0 is counted
 })
