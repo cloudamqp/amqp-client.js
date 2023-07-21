@@ -13,6 +13,7 @@ export class AMQPChannel {
   readonly connection: AMQPBaseClient
   readonly id: number
   readonly consumers = new Map<string, AMQPConsumer>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly promises: [(value?: any) => void, (err?: Error) => void][] = []
   private readonly unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][] = []
   closed = false
@@ -748,6 +749,7 @@ export class AMQPChannel {
    * @param frame with data
    * @param frameSize - bytes the frame actually is
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private sendRpc(frame: AMQPView, frameSize: number): Promise<any> {
     return new Promise((resolve, reject) => {
       this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
@@ -918,5 +920,5 @@ export type ConsumeParams = {
   /**
    * custom arguments
    */
-  args?: Record<string, any>
+  args?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 };
