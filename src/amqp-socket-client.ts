@@ -1,6 +1,6 @@
 import { AMQPBaseClient } from './amqp-base-client.js'
 import { AMQPError } from './amqp-error.js'
-import { AMQPTlsOptions } from './amqp-tls-options'
+import { AMQPTlsOptions } from './amqp-tls-options.js'
 import { AMQPView } from './amqp-view.js'
 import { Buffer } from 'buffer'
 import * as net from 'net'
