@@ -12,10 +12,18 @@
     "tls": false
   },
   "exports": {
-    "types": "./types/index.d.ts",
-    "import": "./lib/mjs/index.js",
-    "require": "./lib/cjs/index.js"
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./lib/mjs/index.js",
+      "require": "./lib/cjs/index.js"
+    },
+    "./*": {
+      "types": "./types/*.d.ts",
+      "import": "./lib/mjs/*.js",
+      "require": "./lib/cjs/*.js"
+    }
   },
+  "sideEffects": false,
   "engines": {
     "node": ">=16.0.0"
   },
@@ -63,16 +71,5 @@
     "typedoc": "^0.22.10",
     "typescript": "^4.6.4",
     "vitest": "^0.33.0"
-  },
-  "ava": {
-    "extensions": {
-      "ts": "module"
-    },
-    "nonSemVerExperiments": {
-      "configurableModuleFormat": true
-    },
-    "nodeArguments": [
-      "--loader=ts-node/esm"
-    ]
   }
 }
