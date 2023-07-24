@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pass the correct array buffer to dataview when reading framesize (related to [#55](https://github.com/cloudamqp/amqp-client.js/issues/55))
 - Raise `AMQPError` when `channelMax` is reached (fixes [#43](https://github.com/cloudamqp/amqp-client.js/issues/43))
 - Add `Channel#onerror` callback (fixes [#40](https://github.com/cloudamqp/amqp-client.js/issues/40))
-- Correctly handle frame headers split across reads in the WebSocket client. ([#68](https://github.com/cloudamqp/amqp-client.js/issues/68), fixes [#55](https://github.com/cloudamqp/amqp-client.js/issues/55))
+- Correctly handle frame headers split across reads in the WebSocket client ([#68](https://github.com/cloudamqp/amqp-client.js/issues/68), fixes [#55](https://github.com/cloudamqp/amqp-client.js/issues/55))
 
 ### Changed
 
