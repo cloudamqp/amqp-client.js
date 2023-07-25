@@ -1,4 +1,5 @@
 {
+  "ignorePatterns": ["types/", "dist/", "lib/"],
   "env": {
     "es2020": true,
     "browser": true
@@ -12,6 +13,7 @@
   },
   "plugins": ["@typescript-eslint"],
   "rules": {
-    "no-console": "off"
+    "no-console": "off",
+    "@typescript-eslint/consistent-type-imports": "error"
   }
 }
