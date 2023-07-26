@@ -286,6 +286,7 @@ export abstract class AMQPBaseClient {
                     .catch(err => console.warn("Error while sending Connection#CloseOk", err))
                   this.onerror(err)
                   this.rejectConnect(err)
+                  this.onUpdateSecretOk?.()
                   break
                 }
                 case 51: { // closeOk
@@ -313,8 +314,7 @@ export abstract class AMQPBaseClient {
                 }
                 case 71: { // update-secret-ok
                   console.info("AMQP connection update secret ok")
-                  const cb = this.onUpdateSecretOk
-                  if (cb) cb()
+                  this.onUpdateSecretOk?.()
                   delete this.onUpdateSecretOk
                   break
                 }
