@@ -2,7 +2,7 @@ import { AMQPChannel } from './amqp-channel.js'
 import { AMQPError } from './amqp-error.js'
 import { AMQPMessage } from './amqp-message.js'
 import { AMQPView } from './amqp-view.js'
-import { Logger } from './types'
+import type { Logger } from './types.js'
 
 const VERSION = '3.0.0'
 
