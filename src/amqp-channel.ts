@@ -13,8 +13,7 @@ export class AMQPChannel {
   readonly connection: AMQPBaseClient
   readonly id: number
   readonly consumers = new Map<string, AMQPConsumer>()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly promises: [(value?: any) => void, (err?: Error) => void][] = []
+  private rpcQueue: Promise<unknown> = Promise.resolve(true)
   private readonly unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][] = []
   closed = false
   confirmId = 0
@@ -30,6 +29,19 @@ export class AMQPChannel {
     this.connection = connection
     this.id = id
     this.onerror = (reason: string) => console.error(`channel ${this.id} closed: ${reason}`)
+  }
+
+  open(): Promise<AMQPChannel> {
+    let j = 0
+    const channelOpen = new AMQPView(new ArrayBuffer(13))
+    channelOpen.setUint8(j, 1); j += 1 // type: method
+    channelOpen.setUint16(j, this.id); j += 2 // channel id
+    channelOpen.setUint32(j, 5); j += 4 // frameSize
+    channelOpen.setUint16(j, 20); j += 2 // class: channel
+    channelOpen.setUint16(j, 10); j += 2 // method: open
+    channelOpen.setUint8(j, 0); j += 1 // reserved1
+    channelOpen.setUint8(j, 206); j += 1 // frame end byte
+    return this.sendRpc(channelOpen, j)
   }
 
   /**
@@ -717,34 +729,6 @@ export class AMQPChannel {
   }
 
   /**
-   * Resolves the next RPC promise
-   * @ignore
-   */
-  resolvePromise(value?: unknown): boolean {
-    const promise  = this.promises.shift()
-    if (promise) {
-      const [resolve, ] = promise
-      resolve(value)
-      return true
-    }
-    return false
-  }
-
-  /**
-   * Rejects the next RPC promise
-   * @return true if a promise was rejected, otherwise false
-   */
-  private rejectPromise(err?: Error): boolean {
-    const promise  = this.promises.shift()
-    if (promise) {
-      const [, reject] = promise
-      reject(err)
-      return true
-    }
-    return false
-  }
-
-  /**
    * Send a RPC request, will resolve a RPC promise when RPC response arrives
    * @param frame with data
    * @param frameSize - bytes the frame actually is
@@ -752,9 +736,14 @@ export class AMQPChannel {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private sendRpc(frame: AMQPView, frameSize: number): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
-        .then(() => this.promises.push([resolve, reject]))
-        .catch(reject)
+      this.rpcQueue = this.rpcQueue.then(() => {
+        this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
+          .then(() => {
+            this.resolveRPC = resolve
+            this.rejectRPC = reject
+          })
+          .catch(reject)
+      })
     })
   }
 
@@ -773,8 +762,7 @@ export class AMQPChannel {
       this.closed = true
       this.consumers.forEach((consumer) => consumer.setClosed(err))
       this.consumers.clear()
-      // Empty and reject all RPC promises
-      while(this.rejectPromise(err)) { 1 }
+      this.rejectRPC(err)
       // Reject and clear all unconfirmed publishes
       this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
       this.unconfirmedPublishes.length = 0
@@ -826,12 +814,24 @@ export class AMQPChannel {
       this.deliver(message)
     } else if (this.getMessage) {
       delete this.getMessage
-      this.resolvePromise(message)
+      this.resolveRPC(message)
     } else {
       delete this.returned
       this.onReturn(message)
     }
   }
+
+  /**
+   * Resolvs next RPC command
+   * @ignore
+   */
+  resolveRPC(value?: unknown) : void { value }
+
+  /**
+   * Reject next RPC command
+   * @ignore
+   */
+  rejectRPC(err?: Error) : void { err }
 
   /**
    * Deliver a message to a consumer

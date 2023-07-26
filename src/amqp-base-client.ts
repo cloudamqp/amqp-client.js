@@ -70,21 +70,7 @@ export abstract class AMQPBaseClient {
 
     const channel = new AMQPChannel(this, id)
     this.channels[id] = channel
-
-    let j = 0
-    const channelOpen = new AMQPView(new ArrayBuffer(13))
-    channelOpen.setUint8(j, 1); j += 1 // type: method
-    channelOpen.setUint16(j, id); j += 2 // channel id
-    channelOpen.setUint32(j, 5); j += 4 // frameSize
-    channelOpen.setUint16(j, 20); j += 2 // class: channel
-    channelOpen.setUint16(j, 10); j += 2 // method: open
-    channelOpen.setUint8(j, 0); j += 1 // reserved1
-    channelOpen.setUint8(j, 206); j += 1 // frame end byte
-    return new Promise((resolve, reject) => {
-      this.send(new Uint8Array(channelOpen.buffer, 0, 13))
-        .then(() => channel.promises.push([resolve, reject]))
-        .catch(reject)
-    })
+    return channel.open()
   }
 
   /**
@@ -315,12 +301,12 @@ export abstract class AMQPBaseClient {
               switch (methodId) {
                 case 11: { // openok
                   i += 4 // reserved1 (long string)
-                  channel.resolvePromise(channel)
+                  channel.resolveRPC(channel)
                   break
                 }
                 case 21: { // flowOk
                   const active = view.getUint8(i) !== 0; i += 1
-                  channel.resolvePromise(active)
+                  channel.resolveRPC(active)
                   break
                 }
                 case 40: { // close
@@ -349,7 +335,7 @@ export abstract class AMQPBaseClient {
                 case 41: { // closeOk
                   channel.setClosed()
                   delete this.channels[channelId]
-                  channel.resolvePromise()
+                  channel.resolveRPC()
                   break
                 }
                 default:
@@ -364,7 +350,7 @@ export abstract class AMQPBaseClient {
                 case 21: // deleteOk
                 case 31: // bindOk
                 case 51: { // unbindOk
-                  channel.resolvePromise()
+                  channel.resolveRPC()
                   break
                 }
                 default:
@@ -379,25 +365,25 @@ export abstract class AMQPBaseClient {
                   const [name, strLen] = view.getShortString(i); i += strLen
                   const messageCount = view.getUint32(i); i += 4
                   const consumerCount = view.getUint32(i); i += 4
-                  channel.resolvePromise({ name, messageCount, consumerCount })
+                  channel.resolveRPC({ name, messageCount, consumerCount })
                   break
                 }
                 case 21: { // bindOk
-                  channel.resolvePromise()
+                  channel.resolveRPC()
                   break
                 }
                 case 31: { // purgeOk
                   const messageCount = view.getUint32(i); i += 4
-                  channel.resolvePromise({ messageCount })
+                  channel.resolveRPC({ messageCount })
                   break
                 }
                 case 41: { // deleteOk
                   const messageCount = view.getUint32(i); i += 4
-                  channel.resolvePromise({ messageCount })
+                  channel.resolveRPC({ messageCount })
                   break
                 }
                 case 51: { // unbindOk
-                  channel.resolvePromise()
+                  channel.resolveRPC()
                   break
                 }
                 default:
@@ -409,12 +395,12 @@ export abstract class AMQPBaseClient {
             case 60: { // basic
               switch (methodId) {
                 case 11: { // qosOk
-                  channel.resolvePromise()
+                  channel.resolveRPC()
                   break
                 }
                 case 21: { // consumeOk
                   const [consumerTag, len] = view.getShortString(i); i += len
-                  channel.resolvePromise(consumerTag)
+                  channel.resolveRPC(consumerTag)
                   break
                 }
                 case 30: { // cancel
@@ -442,7 +428,7 @@ export abstract class AMQPBaseClient {
                 }
                 case 31: { // cancelOk
                   const [consumerTag, len] = view.getShortString(i); i += len
-                  channel.resolvePromise(consumerTag)
+                  channel.resolveRPC(consumerTag)
                   break
                 }
                 case 50: { // return
@@ -490,7 +476,7 @@ export abstract class AMQPBaseClient {
                 }
                 case 72: { // getEmpty
                   const [ , len]= view.getShortString(i); i += len // reserved1
-                  channel.resolvePromise(null)
+                  channel.resolveRPC(null)
                   break
                 }
                 case 80: { // confirm ack
@@ -500,7 +486,7 @@ export abstract class AMQPBaseClient {
                   break
                 }
                 case 111: { // recoverOk
-                  channel.resolvePromise()
+                  channel.resolveRPC()
                   break
                 }
                 case 120: { // confirm nack
@@ -519,7 +505,7 @@ export abstract class AMQPBaseClient {
               switch (methodId) {
                 case 11: { // selectOk
                   channel.confirmId = 1
-                  channel.resolvePromise()
+                  channel.resolveRPC()
                   break
                 }
                 default:
@@ -533,7 +519,7 @@ export abstract class AMQPBaseClient {
                 case 11: // selectOk
                 case 21: // commitOk
                 case 31: { // rollbackOk
-                  channel.resolvePromise()
+                  channel.resolveRPC()
                   break
                 }
                 default:
