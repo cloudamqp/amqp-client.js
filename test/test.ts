@@ -667,3 +667,9 @@ test("raises when channelMax is reached", async () => {
   const ch1 = await conn.channel(1)
   await expect(ch1.basicQos(10)).resolves.toBeUndefined()
 }, 10_000)
+
+test('can update-secret', async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  await expect(conn.updateSecret("foobar", "no reason")).resolves.toBeUndefined()
+})

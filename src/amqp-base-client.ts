@@ -18,6 +18,7 @@ export abstract class AMQPBaseClient {
   channels: AMQPChannel[]
   protected connectPromise?: [(conn: AMQPBaseClient) => void, (err: Error) => void]
   protected closePromise?: [(value?: void) => void, (err: Error) => void]
+  protected onUpdateSecretOk?: (value?: void) => void
   closed = true
   blocked?: string
   channelMax = 0
@@ -96,6 +97,25 @@ export abstract class AMQPBaseClient {
     return new Promise((resolve, reject) => {
       this.send(new Uint8Array(frame.buffer, 0, j))
         .then(() => this.closePromise = [resolve, reject])
+        .catch(reject)
+    })
+  }
+
+  updateSecret(newSecret : string, reason : string) {
+    let j = 0
+    const frame = new AMQPView(new ArrayBuffer(4096))
+    frame.setUint8(j, 1); j += 1 // type: method
+    frame.setUint16(j, 0); j += 2 // channel: 0
+    frame.setUint32(j, 0); j += 4 // frameSize
+    frame.setUint16(j, 10); j += 2 // class: connection
+    frame.setUint16(j, 70); j += 2 // method: update-secret
+    j += frame.setLongString(j, newSecret) // new secret
+    j += frame.setShortString(j, reason) // reason
+    frame.setUint8(j, 206); j += 1 // frame end byte
+    frame.setUint32(3, j - 8) // update frameSize
+    return new Promise((resolve, reject) => {
+      this.send(new Uint8Array(frame.buffer, 0, j))
+        .then(() => this.onUpdateSecretOk = resolve)
         .catch(reject)
     })
   }
@@ -266,6 +286,7 @@ export abstract class AMQPBaseClient {
                     .catch(err => console.warn("Error while sending Connection#CloseOk", err))
                   this.onerror(err)
                   this.rejectConnect(err)
+                  this.onUpdateSecretOk?.()
                   break
                 }
                 case 51: { // closeOk
@@ -289,6 +310,12 @@ export abstract class AMQPBaseClient {
                 case 61: { // unblocked
                   console.info("AMQP connection unblocked")
                   delete this.blocked
+                  break
+                }
+                case 71: { // update-secret-ok
+                  console.info("AMQP connection update secret ok")
+                  this.onUpdateSecretOk?.()
+                  delete this.onUpdateSecretOk
                   break
                 }
                 default:
