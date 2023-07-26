@@ -663,3 +663,8 @@ test("raises when channelMax is reached", async () => {
   const ch1 = await conn.channel(1)
   await expect(ch1.basicQos(10)).resolves.toBeUndefined()
 }, 20_000)
+
+test('should fail to connect to an AMQP port', async () => {
+  const amqp = new AMQPWebSocketClient("ws://127.0.0.1:5672/ws/amqp")
+  await expect(amqp.connect()).rejects.toThrow()
+})

@@ -675,6 +675,6 @@ test('can update-secret', async () => {
 })
 
 test.only('should fail to connect to HTTP', async () => {
-  const amqp = new AMQPClient("amqp://127.0.0.1:15672")
+  const amqp = new AMQPClient("amqp://127.0.0.1:15672?heartbeat=1")
   await expect(amqp.connect()).rejects.toThrow()
 })
