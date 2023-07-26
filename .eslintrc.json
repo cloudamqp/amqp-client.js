@@ -1,4 +1,5 @@
 {
+  "ignorePatterns": ["types/", "dist/", "lib/"],
   "env": {
     "es2020": true,
     "browser": true
@@ -10,5 +11,8 @@
     "ecmaVersion": 2020,
     "sourceType": "module"
   },
-  "plugins": ["@typescript-eslint"]
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "@typescript-eslint/consistent-type-imports": "error"
+  }
 }

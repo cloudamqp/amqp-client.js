@@ -2,6 +2,16 @@ import { AMQPBaseClient } from './amqp-base-client.js'
 import { AMQPView } from './amqp-view.js'
 import { AMQPError } from './amqp-error.js'
 
+interface AMQPWebSocketInit {
+  url: string
+  vhost?: string
+  username?: string
+  password?: string
+  name?: string
+  frameMax?: number
+  heartbeat?: number
+}
+
 /** 
  * WebSocket client for AMQP 0-9-1 servers
  */
@@ -15,7 +25,18 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   /**
    * @param url to the websocket endpoint, example: wss://server/ws/amqp
    */
-  constructor(url: string, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 4096, heartbeat = 0) {
+  constructor(url: string, vhost?: string, username?: string, password?: string, name?: string, frameMax?: number, heartbeat?: number);
+  constructor(init: AMQPWebSocketInit);
+  constructor(url: string | AMQPWebSocketInit, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 4096, heartbeat = 0) {
+    if (typeof url === 'object') {
+      vhost = url.vhost ?? vhost
+      username = url.username ?? username
+      password = url.password ?? password
+      name = url.name ?? name
+      frameMax = url.frameMax ?? frameMax
+      heartbeat = url.heartbeat ?? heartbeat
+      url = url.url
+    }
     super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat)
     this.url = url
     this.frameBuffer = new Uint8Array(frameMax)
@@ -76,8 +97,8 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       if (this.frameSize === 0) {
         // first 7 bytes of a frame was split over two reads, this reads the second part
         if (this.framePos !== 0) {
-          const len = buf.byteLength - bufPos
-          this.frameBuffer.set(new Uint8Array(buf, bufPos), this.framePos)
+          const len = 7 - this.framePos
+          this.frameBuffer.set(new Uint8Array(buf, bufPos, len), this.framePos)
           this.frameSize = new DataView(this.frameBuffer.buffer).getInt32(bufPos + 3) + 8
           this.framePos += len
           bufPos += len

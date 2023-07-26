@@ -5,7 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0] - 2023-07-24
+
+### Added
+
+- New overload for `AMQPWebSocketClient` constructor to allow setting optional parameters through an init object ([#71](https://github.com/cloudamqp/amqp-client.js/issues/71))
+
+### Fixed
+
+- Call socket.destroy() when closing socket to fix intermitent condition where onerror is called when conn is closed by client ([#72](https://github.com/cloudamqp/amqp-client.js/issues/72))
+- Pass the correct array buffer to dataview when reading framesize (related to [#55](https://github.com/cloudamqp/amqp-client.js/issues/55))
+- Raise `AMQPError` when `channelMax` is reached (fixes [#43](https://github.com/cloudamqp/amqp-client.js/issues/43))
+- Add `Channel#onerror` callback (fixes [#40](https://github.com/cloudamqp/amqp-client.js/issues/40))
+- Correctly handle frame headers split across reads in the WebSocket client ([#68](https://github.com/cloudamqp/amqp-client.js/issues/68), fixes [#55](https://github.com/cloudamqp/amqp-client.js/issues/55))
+
+### Changed
+
+- Breaking change: Removed support for end-of-life versions of Node.js. A minimum of Node.js 16 is now required. ([#70](https://github.com/cloudamqp/amqp-client.js/pull/70))
 
 ## [2.1.1] - 2022-12-13
 

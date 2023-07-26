@@ -1,0 +1,35 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_logs:/var/log/rabbitmq
+      - ./.etc_rabbitmq:/etc/rabbitmq
+    ports:
+      - "5671:5671"
+      - "5672:5672"
+      #- "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  websocket-relay:
+    image: cloudamqp/websocket-tcp-relay:v1.0.6
+    ports:
+      - "15670:15670"
+    links:
+      - rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: ["--port", "15670", "--upstream", "tcp://rabbitmq:5672"]
+
+volumes:
+  rabbitmq_data:
+  rabbitmq_logs:

@@ -1,6 +1,6 @@
 {
   "name": "@cloudamqp/amqp-client",
-  "version": "2.1.1",
+  "version": "3.0.0",
   "description": "AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)",
   "type": "module",
   "main": "lib/cjs/index.js",
@@ -12,17 +12,26 @@
     "tls": false
   },
   "exports": {
-    "types": "./types/index.d.ts",
-    "import": "./lib/mjs/index.js",
-    "require": "./lib/cjs/index.js"
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./lib/mjs/index.js",
+      "require": "./lib/cjs/index.js"
+    },
+    "./*": {
+      "types": "./types/*.d.ts",
+      "import": "./lib/mjs/*.js",
+      "require": "./lib/cjs/*.js"
+    }
   },
+  "sideEffects": false,
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=16.0.0"
   },
   "scripts": {
     "docs": "typedoc src/index.ts",
     "lint": "eslint src",
-    "test": "c8 ava",
+    "test": "vitest run --coverage",
+    "test-browser": "vitest --config ./vitest.config.browser.ts",
     "prebuild": "rm -rf dist lib types",
     "build": "tsc && tsc --module commonjs --outDir lib/cjs && tsc --emitDeclarationOnly --removeComments false && rollup -c",
     "postbuild": "echo '{\"type\": \"commonjs\"}' > lib/cjs/package.json",
@@ -49,27 +58,18 @@
   },
   "homepage": "https://github.com/cloudamqp/amqp-client.js#readme",
   "devDependencies": {
-    "@types/node": "^17.0.1",
+    "@types/node": "^16.18.37",
     "@typescript-eslint/eslint-plugin": "^5.8.0",
     "@typescript-eslint/parser": "^5.8.0",
-    "ava": "^3.15.0",
-    "c8": "^7.10.0",
+    "@vitest/browser": "^0.33.0",
+    "@vitest/coverage-v8": "^0.33.0",
     "eslint": "^8.5.0",
+    "playwright": "^1.36.1",
     "rollup": "^2.39.1",
     "rollup-plugin-sourcemaps": "^0.6.3",
-    "ts-node": "^10.4.0",
+    "ts-node": "^10.8.0",
     "typedoc": "^0.22.10",
-    "typescript": "^4.5.4"
-  },
-  "ava": {
-    "extensions": {
-      "ts": "module"
-    },
-    "nonSemVerExperiments": {
-      "configurableModuleFormat": true
-    },
-    "nodeArguments": [
-      "--loader=ts-node/esm"
-    ]
+    "typescript": "^4.6.4",
+    "vitest": "^0.33.0"
   }
 }

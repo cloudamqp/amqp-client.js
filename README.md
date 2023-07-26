@@ -68,7 +68,7 @@ Using AMQP over WebSockets in a browser:
       const textarea = document.getElementById("textarea")
       const input = document.getElementById("message")
 
-      const tls = window.location.scheme === "https:"
+      const tls = window.location.protocol === "https:"
       const url = `${tls ? "wss" : "ws"}://${window.location.host}`
       const amqp = new AMQPWebSocketClient(url, "/", "guest", "guest")
 
