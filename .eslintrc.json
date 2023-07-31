@@ -13,7 +13,6 @@
   },
   "plugins": ["@typescript-eslint"],
   "rules": {
-    "no-console": "off",
     "@typescript-eslint/consistent-type-imports": "error"
   }
 }

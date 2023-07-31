@@ -15,8 +15,10 @@ export class AMQPView extends DataView {
     // combine the two 32-bit values
     const combined = littleEndian ? left + 2**32 * right : 2**32 * left + right
 
-    if (!Number.isSafeInteger(combined))
+    if (!Number.isSafeInteger(combined)) {
+      // eslint-disable-next-line no-console
       console.warn(combined, 'exceeds MAX_SAFE_INTEGER. Precision may be lost')
+    }
 
     return combined
   }
