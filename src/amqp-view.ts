@@ -272,7 +272,7 @@ export class AMQPView extends DataView {
         break
       }
       default:
-        throw `Field type '${k}' not supported`
+        throw new Error(`Field type '${k}' not supported`)
     }
     return [v, i - byteOffset]
   }
@@ -333,7 +333,7 @@ export class AMQPView extends DataView {
         }
         break
       default:
-        throw `Unsupported field type '${field}'`
+        throw new Error(`Unsupported field type '${field}'`)
     }
     return i - byteOffset
   }

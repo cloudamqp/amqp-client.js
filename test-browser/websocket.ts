@@ -593,7 +593,7 @@ test("onerror is not called when conn is closed by client", async () => {
   const conn = await amqp.connect()
   const callbackPromise = new Promise((done, reject) => {
   conn.onerror = vi.fn(
-      (err: AMQPError) => reject(`onerror should not be called when gracefully closed. Error was: ${err.message}`)
+      (err: AMQPError) => reject(new Error(`onerror should not be called when gracefully closed. Error was: ${err.message}`))
   )
     setTimeout(done, 10)
   })

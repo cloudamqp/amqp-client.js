@@ -13,6 +13,8 @@
   },
   "plugins": ["@typescript-eslint"],
   "rules": {
-    "@typescript-eslint/consistent-type-imports": "error"
+    "@typescript-eslint/consistent-type-imports": "error",
+    "prefer-promise-reject-errors": "error",
+    "no-throw-literal": "error"
   }
 }
