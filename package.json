@@ -29,7 +29,7 @@
   },
   "scripts": {
     "docs": "typedoc src/index.ts",
-    "lint": "eslint src",
+    "lint": "eslint .",
     "test": "vitest run --coverage",
     "test-browser": "vitest --config ./vitest.config.browser.ts",
     "prebuild": "rm -rf dist lib types",
