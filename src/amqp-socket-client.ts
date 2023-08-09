@@ -98,7 +98,7 @@ export class AMQPClient extends AMQPBaseClient {
         // first 7 bytes of a frame was split over two reads, this reads the second part
         if (this.framePos !== 0) {
           const copied = buf.copy(this.frameBuffer, this.framePos, bufPos, bufPos + 7 - this.framePos)
-          if (copied === 0) throw `Copied 0 bytes framePos=${this.framePos} bufPos=${bufPos} bytesWritten=${bufLen}`
+          if (copied === 0) throw new AMQPError(`Copied 0 bytes framePos=${this.framePos} bufPos=${bufPos} bytesWritten=${bufLen}`, this)
           this.frameSize = this.frameBuffer.readInt32BE(bufPos + 3) + 8
           this.framePos += copied
           bufPos += copied
@@ -107,7 +107,7 @@ export class AMQPClient extends AMQPBaseClient {
         // frame header is split over reads, copy to frameBuffer
         if (bufPos + 3 + 4 > bufLen) {
           const copied = buf.copy(this.frameBuffer, this.framePos, bufPos, bufLen)
-          if (copied === 0) throw `Copied 0 bytes framePos=${this.framePos} bufPos=${bufPos} bytesWritten=${bufLen}`
+          if (copied === 0) throw new AMQPError(`Copied 0 bytes framePos=${this.framePos} bufPos=${bufPos} bytesWritten=${bufLen}`, this)
           this.framePos += copied
           break
         }
@@ -127,7 +127,7 @@ export class AMQPClient extends AMQPBaseClient {
       const leftOfFrame = this.frameSize - this.framePos
       const copyBytes = Math.min(leftOfFrame, bufLen - bufPos)
       const copied = buf.copy(this.frameBuffer, this.framePos, bufPos, bufPos + copyBytes)
-      if (copied === 0) throw `Copied 0 bytes, please report this bug, frameSize=${this.frameSize} framePos=${this.framePos} bufPos=${bufPos} copyBytes=${copyBytes} bytesWritten=${bufLen}`
+      if (copied === 0) throw new AMQPError(`Copied 0 bytes, please report this bug, frameSize=${this.frameSize} framePos=${this.framePos} bufPos=${bufPos} copyBytes=${copyBytes} bytesWritten=${bufLen}`, this)
       this.framePos += copied
       bufPos += copied
       if (this.framePos === this.frameSize) {

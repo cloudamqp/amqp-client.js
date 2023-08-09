@@ -76,7 +76,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
           reject(err)
         }
       } else {
-        reject("Socket not connected")
+        reject(new AMQPError("Socket not connected", this))
       }
     })
   }
