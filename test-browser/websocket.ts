@@ -41,7 +41,7 @@ test("can publish and consume", () => {
       .then((conn) => conn.channel())
       .then((ch) => ch.queue(""))
       .then((q) => q.publish("hello world"))
-      .then((q) => q.subscribe({noAck: false}, (msg) => {
+      .then((q) => q.subscribe({ noAck: false }, (msg) => {
         msg.ack()
         resolve(msg)
       }))
@@ -56,7 +56,7 @@ test("can nack a message", () => {
       .then((conn) => conn.channel())
       .then((ch) => ch.queue(""))
       .then((q) => q.publish("hello world"))
-      .then((q) => q.subscribe({noAck: false}, (msg) => {
+      .then((q) => q.subscribe({ noAck: false }, (msg) => {
         msg.nack()
         resolve(msg)
       }))
@@ -71,7 +71,7 @@ test("can reject a message", () => {
       .then((conn) => conn.channel())
       .then((ch) => ch.queue(""))
       .then((q) => q.publish("hello world"))
-      .then((q) => q.subscribe({noAck: false}, (msg) => {
+      .then((q) => q.subscribe({ noAck: false }, (msg) => {
         msg.reject()
         resolve(msg)
       }))
@@ -111,7 +111,7 @@ test("can get message from a queue", async () => {
   const ch = await conn.channel()
   const q = await ch.queue("")
   await q.publish("message")
-  const msg = await q.get({noAck: true})
+  const msg = await q.get({ noAck: true })
   expect((msg as AMQPMessage).bodyString()).toEqual("message")
 })
 
@@ -127,7 +127,7 @@ test("will throw an error after consumer timeout", async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({noAck: false}, () => "")
+  const consumer = await q.subscribe({ noAck: false }, () => "")
   await expect(consumer.wait(1)).rejects.toThrow()
 })
 
@@ -136,7 +136,7 @@ test("will throw an error if consumer is closed", async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({noAck: false}, () => "")
+  const consumer = await q.subscribe({ noAck: false }, () => "")
   consumer.setClosed(new Error("testing"))
   try {
     await consumer.wait(1)
@@ -150,7 +150,7 @@ test("can cancel a consumer", () => {
   return amqp.connect()
     .then((conn) => conn.channel())
     .then((ch) => ch.queue(""))
-    .then((q) => q.subscribe({noAck: false}, console.log))
+    .then((q) => q.subscribe({ noAck: false }, console.log))
     .then((consumer) => consumer.cancel())
     .then((channel) => expect(channel.consumers.size).toEqual(0))
 })
@@ -160,7 +160,7 @@ test("will clear consumer wait timeout on cancel", async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({noAck: false}, () => "")
+  const consumer = await q.subscribe({ noAck: false }, () => "")
   const wait = consumer.wait(5000)
   consumer.cancel()
   await expect(wait).resolves.toBeUndefined()
@@ -257,7 +257,7 @@ test("can handle nacks on confirm channel", async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
 
-  const q = await ch.queue("", {}, {"x-overflow": "reject-publish", "x-max-length": 0})
+  const q = await ch.queue("", {}, { "x-overflow": "reject-publish", "x-max-length": 0 })
   await ch.confirmSelect()
   await expect(q.publish("body")).rejects.toThrow("Message rejected")
 })
@@ -606,8 +606,8 @@ test("will throw on too large headers", async () => {
   const amqp = getNewClient({ frameMax: 4096 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
-  await expect(ch.basicPublish("", "x".repeat(255), null, {"headers": {a: Array(4000).fill(1)}})).rejects.toThrow(RangeError)
-  await expect(ch.basicPublish("", "", null, {"headers": {a: "x".repeat(5000)}})).rejects.toThrow(RangeError)
+  await expect(ch.basicPublish("", "x".repeat(255), null, { "headers": { a: Array(4000).fill(1) } })).rejects.toThrow(RangeError)
+  await expect(ch.basicPublish("", "", null, { "headers": { a: "x".repeat(5000) } })).rejects.toThrow(RangeError)
 })
 
 test("will split body over multiple frames", async () => {
@@ -635,7 +635,7 @@ test("can republish in consume block without race condition", async () => {
   const q = await ch.queue("")
   await ch.confirmSelect()
   await q.publish("x".repeat(500))
-  const consumer = await q.subscribe({noAck: false}, async (msg) => {
+  const consumer = await q.subscribe({ noAck: false }, async (msg) => {
     if (msg.deliveryTag < 10000) {
       await Promise.all([
         q.publish(msg.body),

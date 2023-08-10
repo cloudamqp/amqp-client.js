@@ -51,10 +51,10 @@ export class AMQPChannel {
   /**
    * Declare a queue and return an AMQPQueue instance.
    */
-  queue(name = "", {passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === ""} = {} as QueueParams, args = {}): Promise<AMQPQueue> {
+  queue(name = "", { passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "" } = {} as QueueParams, args = {}): Promise<AMQPQueue> {
     return new Promise((resolve, reject) => {
-      this.queueDeclare(name, {passive, durable, autoDelete, exclusive}, args)
-        .then(({name}) => resolve(new AMQPQueue(this, name)))
+      this.queueDeclare(name, { passive, durable, autoDelete, exclusive }, args)
+        .then(({ name }) => resolve(new AMQPQueue(this, name)))
         .catch(reject)
     })
   }
@@ -132,7 +132,7 @@ export class AMQPChannel {
    * @param [param.args={}] - custom arguments
    * @param {function(AMQPMessage) : void} callback - will be called for each message delivered to this consumer
    */
-  basicConsume(queue: string, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback: (msg: AMQPMessage) => void): Promise<AMQPConsumer> {
+  basicConsume(queue: string, { tag = "", noAck = true, exclusive = false, args = {} } = {}, callback: (msg: AMQPMessage) => void): Promise<AMQPConsumer> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const noWait = false

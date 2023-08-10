@@ -5,8 +5,8 @@ async function run() {
   const conn = await amqp.connect()
   let ch = await conn.channel()
   await ch.prefetch(100)
-  let q = await ch.queue("stream1", {}, {"x-queue-type": "stream" })
-  const consumer = await q.subscribe({noAck: false, args: {"x-stream-offset": "first"}}, (msg) => {
+  let q = await ch.queue("stream1", {}, { "x-queue-type": "stream" })
+  const consumer = await q.subscribe({ noAck: false, args: { "x-stream-offset": "first" } }, (msg) => {
     console.log(msg.bodyString())
     msg.ack()
   })
