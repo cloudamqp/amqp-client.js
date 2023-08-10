@@ -1,10 +1,10 @@
-import { AMQPChannel } from './amqp-channel.js'
-import { AMQPError } from './amqp-error.js'
-import { AMQPMessage } from './amqp-message.js'
-import { AMQPView } from './amqp-view.js'
-import type { Logger } from './types.js'
+import { AMQPChannel } from "./amqp-channel.js"
+import { AMQPError } from "./amqp-error.js"
+import { AMQPMessage } from "./amqp-message.js"
+import { AMQPView } from "./amqp-view.js"
+import type { Logger } from "./types.js"
 
-const VERSION = '3.0.0'
+const VERSION = "3.0.0"
 
 /**
  * Base class for AMQPClients.
@@ -40,7 +40,7 @@ export abstract class AMQPBaseClient {
     this.vhost = vhost
     this.username = username
     this.password = ""
-    Object.defineProperty(this, 'password', {
+    Object.defineProperty(this, "password", {
       value: password,
       enumerable: false // hide it from console.log etc.
     })

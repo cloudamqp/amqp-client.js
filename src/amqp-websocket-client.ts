@@ -1,6 +1,6 @@
-import { AMQPBaseClient } from './amqp-base-client.js'
-import { AMQPView } from './amqp-view.js'
-import { AMQPError } from './amqp-error.js'
+import { AMQPBaseClient } from "./amqp-base-client.js"
+import { AMQPView } from "./amqp-view.js"
+import { AMQPError } from "./amqp-error.js"
 
 interface AMQPWebSocketInit {
   url: string
@@ -28,7 +28,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   constructor(url: string, vhost?: string, username?: string, password?: string, name?: string, frameMax?: number, heartbeat?: number)
   constructor(init: AMQPWebSocketInit)
   constructor(url: string | AMQPWebSocketInit, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 4096, heartbeat = 0) {
-    if (typeof url === 'object') {
+    if (typeof url === "object") {
       vhost = url.vhost ?? vhost
       username = url.username ?? username
       password = url.password ?? password
@@ -139,7 +139,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   }
 
   static platform(): string {
-    if (typeof(window) !== 'undefined')
+    if (typeof(window) !== "undefined")
       return window.navigator.userAgent
     else
       return `${process.release.name} ${process.version} ${process.platform} ${process.arch}`

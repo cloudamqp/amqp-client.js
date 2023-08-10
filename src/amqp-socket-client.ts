@@ -1,10 +1,10 @@
-import { AMQPBaseClient } from './amqp-base-client.js'
-import { AMQPError } from './amqp-error.js'
-import type { AMQPTlsOptions } from './amqp-tls-options.js'
-import { AMQPView } from './amqp-view.js'
-import { Buffer } from 'buffer'
-import * as net from 'net'
-import * as tls from 'tls'
+import { AMQPBaseClient } from "./amqp-base-client.js"
+import { AMQPError } from "./amqp-error.js"
+import type { AMQPTlsOptions } from "./amqp-tls-options.js"
+import { AMQPView } from "./amqp-view.js"
+import { Buffer } from "buffer"
+import * as net from "net"
+import * as tls from "tls"
 
 /**
  * AMQP 0-9-1 client over TCP socket.
@@ -41,14 +41,14 @@ export class AMQPClient extends AMQPBaseClient {
     this.framePos = 0
     this.frameSize = 0
     this.frameBuffer = Buffer.allocUnsafe(frameMax)
-    Object.defineProperty(this, 'frameBuffer', {
+    Object.defineProperty(this, "frameBuffer", {
       enumerable: false // hide it from console.log etc.
     })
   }
 
   override connect(): Promise<AMQPBaseClient> {
     const socket = this.connectSocket()
-    Object.defineProperty(this, 'socket', {
+    Object.defineProperty(this, "socket", {
       value: socket,
       writable: true,
       enumerable: false // hide it from console.log etc.
@@ -58,8 +58,8 @@ export class AMQPClient extends AMQPBaseClient {
     // enable TCP keepalive if AMQP heartbeats are disabled
     if (this.heartbeat === 0) socket.setKeepAlive(true, 60)
     return new Promise((resolve, reject) => {
-      socket.on('timeout', () => reject(new AMQPError("timeout", this)))
-      socket.on('error', (err) => reject(new AMQPError(err.message, this)))
+      socket.on("timeout", () => reject(new AMQPError("timeout", this)))
+      socket.on("error", (err) => reject(new AMQPError(err.message, this)))
       const onConnect = (conn : AMQPBaseClient) => {
         socket.setTimeout(this.heartbeat * 1000) // reset timeout if heartbeats are disabled
         resolve(conn)
@@ -78,10 +78,10 @@ export class AMQPClient extends AMQPBaseClient {
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
     const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)
-    conn.on('data', this.onRead.bind(this))
-    conn.on('connect', () => {
-      conn.on('error', (err) => this.onerror(new AMQPError(err.message, this)))
-      conn.on('close', (hadError: boolean) => {
+    conn.on("data", this.onRead.bind(this))
+    conn.on("connect", () => {
+      conn.on("error", (err) => this.onerror(new AMQPError(err.message, this)))
+      conn.on("close", (hadError: boolean) => {
         if (!hadError && !this.closed) this.onerror(new AMQPError("Socket closed", this))
       })
     })

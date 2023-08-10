@@ -1,6 +1,6 @@
-import { AMQPError } from './amqp-error.js'
-import type { AMQPChannel } from './amqp-channel.js'
-import type { AMQPMessage } from './amqp-message.js'
+import { AMQPError } from "./amqp-error.js"
+import type { AMQPChannel } from "./amqp-channel.js"
+import type { AMQPMessage } from "./amqp-message.js"
 
 /**
  * A consumer, subscribed to a queue

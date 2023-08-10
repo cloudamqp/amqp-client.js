@@ -1,4 +1,4 @@
-import type { AMQPProperties, Field } from './amqp-properties.js'
+import type { AMQPProperties, Field } from "./amqp-properties.js"
 
 /**
  * An extended DataView, with AMQP protocol specific methods.
@@ -17,7 +17,7 @@ export class AMQPView extends DataView {
 
     if (!Number.isSafeInteger(combined)) {
       // eslint-disable-next-line no-console
-      console.warn(combined, 'exceeds MAX_SAFE_INTEGER. Precision may be lost')
+      console.warn(combined, "exceeds MAX_SAFE_INTEGER. Precision may be lost")
     }
 
     return combined
@@ -249,23 +249,23 @@ export class AMQPView extends DataView {
     let v
     let len
     switch (type) {
-      case 't': v = this.getUint8(i) === 1; i += 1; break
-      case 'b': v = this.getInt8(i); i += 1; break
-      case 'B': v = this.getUint8(i); i += 1; break
-      case 's': v = this.getInt16(i, littleEndian); i += 2; break
-      case 'u': v = this.getUint16(i, littleEndian); i += 2; break
-      case 'I': v = this.getInt32(i, littleEndian); i += 4; break
-      case 'i': v = this.getUint32(i, littleEndian); i += 4; break
-      case 'l': v = this.getInt64(i, littleEndian); i += 8; break
-      case 'f': v = this.getFloat32(i, littleEndian); i += 4; break
-      case 'd': v = this.getFloat64(i, littleEndian); i += 8; break
-      case 'S': [v, len] = this.getLongString(i, littleEndian); i += len; break
-      case 'F': [v, len] = this.getTable(i, littleEndian); i += len; break
-      case 'A': [v, len] = this.getArray(i, littleEndian); i += len; break
-      case 'x': [v, len] = this.getByteArray(i, littleEndian); i += len; break
-      case 'T': v = new Date(this.getInt64(i, littleEndian) * 1000); i += 8; break
-      case 'V': v = null; break
-      case 'D': {
+      case "t": v = this.getUint8(i) === 1; i += 1; break
+      case "b": v = this.getInt8(i); i += 1; break
+      case "B": v = this.getUint8(i); i += 1; break
+      case "s": v = this.getInt16(i, littleEndian); i += 2; break
+      case "u": v = this.getUint16(i, littleEndian); i += 2; break
+      case "I": v = this.getInt32(i, littleEndian); i += 4; break
+      case "i": v = this.getUint32(i, littleEndian); i += 4; break
+      case "l": v = this.getInt64(i, littleEndian); i += 8; break
+      case "f": v = this.getFloat32(i, littleEndian); i += 4; break
+      case "d": v = this.getFloat64(i, littleEndian); i += 8; break
+      case "S": [v, len] = this.getLongString(i, littleEndian); i += len; break
+      case "F": [v, len] = this.getTable(i, littleEndian); i += len; break
+      case "A": [v, len] = this.getArray(i, littleEndian); i += len; break
+      case "x": [v, len] = this.getByteArray(i, littleEndian); i += len; break
+      case "T": v = new Date(this.getInt64(i, littleEndian) * 1000); i += 8; break
+      case "V": v = null; break
+      case "D": {
         const scale = this.getUint8(i); i += 1
         const value = this.getUint32(i, littleEndian); i += 4
         v = value / 10**scale
@@ -281,54 +281,54 @@ export class AMQPView extends DataView {
     let i = byteOffset
     switch (typeof field) {
       case "string":
-        this.setUint8(i, 'S'.charCodeAt(0)); i += 1
+        this.setUint8(i, "S".charCodeAt(0)); i += 1
         i += this.setLongString(i, field as string, littleEndian)
         break
       case "boolean":
-        this.setUint8(i, 't'.charCodeAt(0)); i += 1
+        this.setUint8(i, "t".charCodeAt(0)); i += 1
         this.setUint8(i, field ? 1 : 0); i += 1
         break
       case "bigint":
-        this.setUint8(i, 'l'.charCodeAt(0)); i += 1
+        this.setUint8(i, "l".charCodeAt(0)); i += 1
         this.setBigInt64(i, field as bigint, littleEndian); i += 8
         break
       case "number":
         if (Number.isInteger(field)) {
           if (-(2**32) < field && field < 2**32) {
-            this.setUint8(i, 'I'.charCodeAt(0)); i += 1
+            this.setUint8(i, "I".charCodeAt(0)); i += 1
             this.setInt32(i, field, littleEndian); i += 4
           } else {
-            this.setUint8(i, 'l'.charCodeAt(0)); i += 1
+            this.setUint8(i, "l".charCodeAt(0)); i += 1
             this.setInt64(i, field, littleEndian); i += 8
           }
         } else { // float
           if (-(2**32) < field && field < 2**32) {
-            this.setUint8(i, 'f'.charCodeAt(0)); i += 1
+            this.setUint8(i, "f".charCodeAt(0)); i += 1
             this.setFloat32(i, field, littleEndian); i += 4
           } else {
-            this.setUint8(i, 'd'.charCodeAt(0)); i += 1
+            this.setUint8(i, "d".charCodeAt(0)); i += 1
             this.setFloat64(i, field, littleEndian); i += 8
           }
         }
         break
       case "object":
         if (Array.isArray(field)) {
-          this.setUint8(i, 'A'.charCodeAt(0)); i += 1
+          this.setUint8(i, "A".charCodeAt(0)); i += 1
           i += this.setArray(i, field, littleEndian)
         } else if (field instanceof Uint8Array) {
-          this.setUint8(i, 'x'.charCodeAt(0)); i += 1
+          this.setUint8(i, "x".charCodeAt(0)); i += 1
           i += this.setByteArray(i, field)
         } else if (field instanceof ArrayBuffer) {
-          this.setUint8(i, 'x'.charCodeAt(0)); i += 1
+          this.setUint8(i, "x".charCodeAt(0)); i += 1
           i += this.setByteArray(i, new Uint8Array(field))
         } else if (field instanceof Date) {
-          this.setUint8(i, 'T'.charCodeAt(0)); i += 1
+          this.setUint8(i, "T".charCodeAt(0)); i += 1
           const unixEpoch = Math.floor(Number(field) / 1000)
           this.setInt64(i, unixEpoch, littleEndian); i += 8
         } else if (field === null || field === undefined) {
-          this.setUint8(i, 'V'.charCodeAt(0)); i += 1
+          this.setUint8(i, "V".charCodeAt(0)); i += 1
         } else { // hopefully it's a hash like object
-          this.setUint8(i, 'F'.charCodeAt(0)); i += 1
+          this.setUint8(i, "F".charCodeAt(0)); i += 1
           i += this.setTable(i, field as Record<string, Field>, littleEndian)
         }
         break

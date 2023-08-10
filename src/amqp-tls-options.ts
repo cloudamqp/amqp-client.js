@@ -1,4 +1,4 @@
-import type { TlsOptions } from 'tls'
+import type { TlsOptions } from "tls"
 
 /** Additional TLS options, for more info check https://nodejs.org/api/tls.html#tlscreatesecurecontextoptions 
  *  @cert Cert chains in PEM format. One cert chain should be provided per private key.

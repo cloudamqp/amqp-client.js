@@ -1,7 +1,7 @@
-import type { AMQPMessage } from './amqp-message.js'
-import type { AMQPChannel, ConsumeParams } from './amqp-channel.js'
-import type { AMQPProperties } from './amqp-properties.js'
-import type { AMQPConsumer } from './amqp-consumer.js'
+import type { AMQPMessage } from "./amqp-message.js"
+import type { AMQPChannel, ConsumeParams } from "./amqp-channel.js"
+import type { AMQPProperties } from "./amqp-properties.js"
+import type { AMQPConsumer } from "./amqp-consumer.js"
 
 /**
  * Convience class for queues

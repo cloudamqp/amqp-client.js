@@ -1,4 +1,4 @@
-import { AMQPClient } from '../lib/mjs/amqp-client.js'
+import { AMQPClient } from "../lib/mjs/amqp-client.js"
 
 async function run() {
   const amqp = new AMQPClient("amqp://localhost")
