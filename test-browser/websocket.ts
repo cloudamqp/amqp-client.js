@@ -237,7 +237,7 @@ test("wait for publish confirms", async () => {
     ch.basicPublish("amq.fanout", "rk", "body"),
     ch.basicPublish("amq.fanout", "rk", "body")
   ])
-  expect(tags).toEqual([3,4])
+  expect(tags).toEqual([3, 4])
 })
 
 test("can handle returned messages", async () => {
