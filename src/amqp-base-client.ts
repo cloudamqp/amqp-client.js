@@ -164,9 +164,9 @@ export abstract class AMQPBaseClient {
       try {
         const frameEnd = view.getUint8(i + frameSize)
         if (frameEnd !== 206)
-          throw(new AMQPError(`Invalid frame end ${frameEnd}, expected 206`, this))
+          throw new AMQPError(`Invalid frame end ${frameEnd}, expected 206`, this)
       } catch (e) {
-        throw(new AMQPError(`Frame end out of range, frameSize=${frameSize}, pos=${i}, byteLength=${view.byteLength}`, this))
+        throw new AMQPError(`Frame end out of range, frameSize=${frameSize}, pos=${i}, byteLength=${view.byteLength}`, this)
       }
 
       const channel = this.channels[channelId]
