@@ -628,7 +628,7 @@ test("will split body over multiple frames", async () => {
     else
       assert.fail("no body")
   else
-  assert.fail("no msg")
+    assert.fail("no msg")
 })
 
 test("can republish in consume block without race condition", async () => {

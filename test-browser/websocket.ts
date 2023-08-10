@@ -592,9 +592,9 @@ test("onerror is not called when conn is closed by client", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const callbackPromise = new Promise((done, reject) => {
-  conn.onerror = vi.fn(
+    conn.onerror = vi.fn(
       (err: AMQPError) => reject(`onerror should not be called when gracefully closed. Error was: ${err.message}`)
-  )
+    )
     setTimeout(done, 10)
   })
   await conn.close()
@@ -624,7 +624,7 @@ test("will split body over multiple frames", async () => {
     else
       assert.fail("no body")
   else
-  assert.fail("no msg")
+    assert.fail("no msg")
 })
 
 test("can republish in consume block without race condition", async () => {
