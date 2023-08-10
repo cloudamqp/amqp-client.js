@@ -42,10 +42,10 @@ test("can publish and consume", () => {
   const amqp = getNewClient()
   return new Promise<AMQPMessage>((resolve, reject) => {
     amqp.connect()
-      .then(conn => conn.channel())
-      .then(ch => ch.queue(""))
-      .then(q => q.publish("hello world"))
-      .then(q => q.subscribe({noAck: false}, msg => {
+      .then((conn) => conn.channel())
+      .then((ch) => ch.queue(""))
+      .then((q) => q.publish("hello world"))
+      .then((q) => q.subscribe({noAck: false}, (msg) => {
         msg.ack()
         resolve(msg)
       }))
@@ -57,10 +57,10 @@ test("can nack a message", () => {
   const amqp = getNewClient()
   return new Promise<AMQPMessage>((resolve, reject) => {
     amqp.connect()
-      .then(conn => conn.channel())
-      .then(ch => ch.queue(""))
-      .then(q => q.publish("hello world"))
-      .then(q => q.subscribe({noAck: false}, msg => {
+      .then((conn) => conn.channel())
+      .then((ch) => ch.queue(""))
+      .then((q) => q.publish("hello world"))
+      .then((q) => q.subscribe({noAck: false}, (msg) => {
         msg.nack()
         resolve(msg)
       }))
@@ -72,10 +72,10 @@ test("can reject a message", () => {
   const amqp = getNewClient()
   return new Promise<AMQPMessage>((resolve, reject) => {
     amqp.connect()
-      .then(conn => conn.channel())
-      .then(ch => ch.queue(""))
-      .then(q => q.publish("hello world"))
-      .then(q => q.subscribe({noAck: false}, msg => {
+      .then((conn) => conn.channel())
+      .then((ch) => ch.queue(""))
+      .then((q) => q.publish("hello world"))
+      .then((q) => q.subscribe({noAck: false}, (msg) => {
         msg.reject()
         resolve(msg)
       }))

@@ -285,7 +285,7 @@ export abstract class AMQPBaseClient {
                   closeOk.setUint16(j, 51); j += 2 // method: closeok
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
-                    .catch(err => this.logger?.warn("Error while sending Connection#CloseOk", err))
+                    .catch((err) => this.logger?.warn("Error while sending Connection#CloseOk", err))
                   this.onerror(err)
                   this.rejectConnect(err)
                   this.onUpdateSecretOk?.()
@@ -358,7 +358,7 @@ export abstract class AMQPBaseClient {
                   closeOk.setUint16(j, 41); j += 2 // method: closeok
                   closeOk.setUint8(j, 206); j += 1 // frame end byte
                   this.send(new Uint8Array(closeOk.buffer, 0, j))
-                    .catch(err => this.logger?.error("Error while sending Channel#closeOk", err))
+                    .catch((err) => this.logger?.error("Error while sending Channel#closeOk", err))
                   break
                 }
                 case 41: { // closeOk
@@ -595,7 +595,7 @@ export abstract class AMQPBaseClient {
         }
         case 8: { // heartbeat
           const heartbeat = new Uint8Array([8, 0, 0, 0, 0, 0, 0, 206])
-          this.send(heartbeat).catch(err => this.logger?.warn("Error while sending heartbeat", err))
+          this.send(heartbeat).catch((err) => this.logger?.warn("Error while sending heartbeat", err))
           break
         }
         default:
