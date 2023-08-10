@@ -1,5 +1,5 @@
-import { expect, test, beforeEach } from "vitest";
-import { AMQPClient } from '../src/amqp-socket-client.js';
+import { expect, test, beforeEach } from "vitest"
+import { AMQPClient } from '../src/amqp-socket-client.js'
 
 beforeEach(() => {
   expect.hasAssertions()

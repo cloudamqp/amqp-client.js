@@ -10,4 +10,4 @@ import type { TlsOptions } from 'tls'
  *  @passphrase Shared passphrase used for a single private key and/or a PFX.
  *  @ca Optionally override the trusted CA certificates. Default is to trust the well-known CAs curated by Mozilla.
 */
-export type AMQPTlsOptions = Pick<TlsOptions, "key" | "cert" | "pfx" | "passphrase" | "ca">;
+export type AMQPTlsOptions = Pick<TlsOptions, "key" | "cert" | "pfx" | "passphrase" | "ca">

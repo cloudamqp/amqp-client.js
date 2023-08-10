@@ -1,7 +1,7 @@
-import { assert, expect, test, beforeEach, vi } from "vitest";
-import { AMQPClient } from '../src/amqp-socket-client.js';
-import { AMQPMessage } from '../src/amqp-message.js';
-import type { AMQPError } from "../src/amqp-error.js";
+import { assert, expect, test, beforeEach, vi } from "vitest"
+import { AMQPClient } from '../src/amqp-socket-client.js'
+import { AMQPMessage } from '../src/amqp-message.js'
+import type { AMQPError } from "../src/amqp-error.js"
 
 function getNewClient(init?: {frameMax?: number, heartbeat?: number}): AMQPClient {
   const url = new URL("amqp://127.0.0.1")
@@ -22,13 +22,13 @@ test('can parse the url correctly', () => {
   const port = 5672
   const vhost = 'my_host'
   const name = 'test'
-  const client = new AMQPClient(`amqp://${username}:${password}@${hostname}:${port}/${vhost}?name=${name}`);
-  expect(client.username).toEqual(username);
-  expect(client.password).toEqual(password);
-  expect(client.host).toEqual(hostname);
-  expect(client.port).toEqual(port);
-  expect(client.vhost).toEqual(vhost);
-  expect(client.name).toEqual(name);
+  const client = new AMQPClient(`amqp://${username}:${password}@${hostname}:${port}/${vhost}?name=${name}`)
+  expect(client.username).toEqual(username)
+  expect(client.password).toEqual(password)
+  expect(client.host).toEqual(hostname)
+  expect(client.port).toEqual(port)
+  expect(client.vhost).toEqual(vhost)
+  expect(client.name).toEqual(name)
 })
 
 test('can open a connection and a channel', () => {
@@ -143,7 +143,7 @@ test('will throw an error if consumer is closed', async () => {
   const consumer = await q.subscribe({noAck: false}, () => "")
   consumer.setClosed(new Error("testing"))
   try {
-    await consumer.wait(1);
+    await consumer.wait(1)
   } catch (error) {
     expect((error as Error).message).toEqual("testing")
   }
@@ -165,7 +165,7 @@ test('will clear consumer wait timeout on cancel', async () => {
   const ch = await conn.channel()
   const q = await ch.queue("")
   const consumer = await q.subscribe({noAck: false}, () => "")
-  const wait = consumer.wait(5000);
+  const wait = consumer.wait(5000)
   consumer.cancel()
   await expect(wait).resolves.toBeUndefined()
 })
@@ -661,7 +661,7 @@ test("raises when channelMax is reached", async () => {
   for (let i = 0; i < conn.channelMax; i++) {
     await conn.channel()
   }
-  await expect(conn.channel()).rejects.toThrow('Max number of channels reached');
+  await expect(conn.channel()).rejects.toThrow('Max number of channels reached')
 
   // make sure other channels still work
   const ch1 = await conn.channel(1)

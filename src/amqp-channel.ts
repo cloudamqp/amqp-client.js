@@ -32,7 +32,7 @@ export class AMQPChannel {
   }
 
   private get logger() {
-    return this.connection.logger;
+    return this.connection.logger
   }
 
   open(): Promise<AMQPChannel> {
@@ -334,7 +334,7 @@ export class AMQPChannel {
     buffer.setUint16(j, 0); j += 2 // weight
     buffer.setUint32(j, 0); j += 4 // bodysize (upper 32 of 64 bits)
     buffer.setUint32(j, body.byteLength); j += 4 // bodysize
-    j += buffer.setProperties(j, properties); // properties
+    j += buffer.setProperties(j, properties) // properties
     buffer.setUint8(j, 206); j += 1 // frame end byte
     buffer.setUint32(headerStart + 3, j - headerStart - 8) // update frameSize
 
@@ -863,7 +863,7 @@ export type MessageCount = {
   messageCount: number
 }
 
-export type ExchangeType = 'direct' | 'fanout' | 'topic' | 'headers' | string;
+export type ExchangeType = 'direct' | 'fanout' | 'topic' | 'headers' | string
 
 export type ExchangeParams = {
   /**
@@ -925,4 +925,4 @@ export type ConsumeParams = {
    * custom arguments
    */
   args?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-};
+}
