@@ -293,7 +293,7 @@ export class AMQPChannel {
     if (this.connection.blocked)
       return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))
 
-    let body : Uint8Array
+    let body: Uint8Array
     if (typeof Buffer !== "undefined" && data instanceof Buffer) {
       body = data
     } else if (data instanceof Uint8Array) {
@@ -829,13 +829,13 @@ export class AMQPChannel {
    * Resolvs next RPC command
    * @ignore
    */
-  resolveRPC(value?: unknown) : void { value }
+  resolveRPC(value?: unknown): void { value }
 
   /**
    * Reject next RPC command
    * @ignore
    */
-  rejectRPC(err?: Error) : void { err }
+  rejectRPC(err?: Error): void { err }
 
   /**
    * Deliver a message to a consumer

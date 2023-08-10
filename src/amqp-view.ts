@@ -7,7 +7,7 @@ import type { AMQPProperties, Field } from "./amqp-properties.js"
  * @ignore
  */
 export class AMQPView extends DataView {
-  getUint64(byteOffset: number, littleEndian?: boolean) : number {
+  getUint64(byteOffset: number, littleEndian?: boolean): number {
     // split 64-bit number into two 32-bit (4-byte) parts
     const left =  this.getUint32(byteOffset, littleEndian)
     const right = this.getUint32(byteOffset + 4, littleEndian)
@@ -23,15 +23,15 @@ export class AMQPView extends DataView {
     return combined
   }
 
-  setUint64(byteOffset: number, value: number, littleEndian?: boolean) : void {
+  setUint64(byteOffset: number, value: number, littleEndian?: boolean): void {
     this.setBigUint64(byteOffset, BigInt(value), littleEndian)
   }
 
-  getInt64(byteOffset: number, littleEndian?: boolean) : number {
+  getInt64(byteOffset: number, littleEndian?: boolean): number {
     return Number(this.getBigInt64(byteOffset, littleEndian))
   }
 
-  setInt64(byteOffset: number, value: number, littleEndian?: boolean) : void {
+  setInt64(byteOffset: number, value: number, littleEndian?: boolean): void {
     this.setBigInt64(byteOffset, BigInt(value), littleEndian)
   }
 
@@ -48,7 +48,7 @@ export class AMQPView extends DataView {
     }
   }
 
-  setShortString(byteOffset: number, string: string) : number {
+  setShortString(byteOffset: number, string: string): number {
     if (typeof Buffer !== "undefined") {
       const len = Buffer.byteLength(string)
       if (len > 255) throw new Error(`Short string too long, ${len} bytes: ${string.substring(0, 255)}...`)
@@ -81,7 +81,7 @@ export class AMQPView extends DataView {
     }
   }
 
-  setLongString(byteOffset: number, string: string, littleEndian?: boolean) : number {
+  setLongString(byteOffset: number, string: string, littleEndian?: boolean): number {
     if (typeof Buffer !== "undefined") {
       const len = Buffer.byteLength(string)
       this.setUint32(byteOffset, len, littleEndian)
@@ -230,7 +230,7 @@ export class AMQPView extends DataView {
     return [table, len + 4]
   }
 
-  setTable(byteOffset: number, table : Record<string, Field>, littleEndian?: boolean) : number {
+  setTable(byteOffset: number, table: Record<string, Field>, littleEndian?: boolean): number {
     // skip the first 4 bytes which are for the size
     let i = byteOffset + 4
     for (const [key, value] of Object.entries(table)) {
@@ -277,7 +277,7 @@ export class AMQPView extends DataView {
     return [v, i - byteOffset]
   }
 
-  setField(byteOffset: number, field: Field, littleEndian?: boolean) : number {
+  setField(byteOffset: number, field: Field, littleEndian?: boolean): number {
     let i = byteOffset
     switch (typeof field) {
       case "string":
@@ -349,7 +349,7 @@ export class AMQPView extends DataView {
     return [v, len + 4]
   }
 
-  setArray(byteOffset: number, array: Field[], littleEndian?: boolean) : number {
+  setArray(byteOffset: number, array: Field[], littleEndian?: boolean): number {
     const start = byteOffset
     byteOffset += 4 // update the length later
     array.forEach((e) => {
@@ -365,7 +365,7 @@ export class AMQPView extends DataView {
     return [v, len + 4]
   }
 
-  setByteArray(byteOffset: number, data: Uint8Array, littleEndian?: boolean) : number {
+  setByteArray(byteOffset: number, data: Uint8Array, littleEndian?: boolean): number {
     this.setUint32(byteOffset, data.byteLength, littleEndian); byteOffset += 4
     const view = new Uint8Array(this.buffer, this.byteOffset + byteOffset, data.byteLength)
     view.set(data)

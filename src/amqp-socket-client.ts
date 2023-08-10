@@ -60,7 +60,7 @@ export class AMQPClient extends AMQPBaseClient {
     return new Promise((resolve, reject) => {
       socket.on("timeout", () => reject(new AMQPError("timeout", this)))
       socket.on("error", (err) => reject(new AMQPError(err.message, this)))
-      const onConnect = (conn : AMQPBaseClient) => {
+      const onConnect = (conn: AMQPBaseClient) => {
         socket.setTimeout(this.heartbeat * 1000) // reset timeout if heartbeats are disabled
         resolve(conn)
       }

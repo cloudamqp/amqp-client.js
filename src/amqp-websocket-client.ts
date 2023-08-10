@@ -88,7 +88,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   }
 
   private handleMessage(event: MessageEvent) {
-    const buf : ArrayBuffer = event.data
+    const buf: ArrayBuffer = event.data
     const bufView = new DataView(buf)
     // A socket read can contain 0 or more frames, so find frame boundries
     let bufPos = 0

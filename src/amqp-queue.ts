@@ -21,7 +21,7 @@ export class AMQPQueue {
   /**
    * Bind the queue to an exchange
    */
-  bind(exchange: string, routingKey = "", args = {}) : Promise<AMQPQueue> {
+  bind(exchange: string, routingKey = "", args = {}): Promise<AMQPQueue> {
     return new Promise<AMQPQueue>((resolve, reject) => {
       this.channel.queueBind(this.name, exchange, routingKey, args)
         .then(() => resolve(this))
@@ -32,7 +32,7 @@ export class AMQPQueue {
   /**
    * Delete a binding between this queue and an exchange
    */
-  unbind(exchange: string, routingKey = "", args = {}) : Promise<AMQPQueue> {
+  unbind(exchange: string, routingKey = "", args = {}): Promise<AMQPQueue> {
     return new Promise<AMQPQueue>((resolve, reject) => {
       this.channel.queueUnbind(this.name, exchange, routingKey, args)
         .then(() => resolve(this))
@@ -63,7 +63,7 @@ export class AMQPQueue {
    * @param [params.args={}] - custom arguments
    * @param {function(AMQPMessage) : void} callback - Function to be called for each received message
    */
-  subscribe({ noAck = true, exclusive = false, tag = "", args = {} } = {} as ConsumeParams, callback: (msg: AMQPMessage) => void) : Promise<AMQPConsumer> {
+  subscribe({ noAck = true, exclusive = false, tag = "", args = {} } = {} as ConsumeParams, callback: (msg: AMQPMessage) => void): Promise<AMQPConsumer> {
     return this.channel.basicConsume(this.name, { noAck, exclusive, tag, args }, callback)
   }
 

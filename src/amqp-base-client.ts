@@ -103,7 +103,7 @@ export abstract class AMQPBaseClient {
     })
   }
 
-  updateSecret(newSecret : string, reason : string) {
+  updateSecret(newSecret: string, reason: string) {
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(4096))
     frame.setUint8(j, 1); j += 1 // type: method
