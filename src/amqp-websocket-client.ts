@@ -57,7 +57,9 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       socket.addEventListener('open', () => {
         socket.addEventListener('error', (ev: Event) => this.onerror(new AMQPError(ev.toString(), this)))
         socket.addEventListener('close', (ev: CloseEvent) => {
-          if (!ev.wasClean && !this.closed) this.onerror(new AMQPError(`connection not cleanly closed (${ev.code})`, this))
+          const clientClosed = this.closed
+          this.closed = true
+          if (!ev.wasClean && !clientClosed) this.onerror(new AMQPError(`connection not cleanly closed (${ev.code})`, this))
         })
         socket.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
       })

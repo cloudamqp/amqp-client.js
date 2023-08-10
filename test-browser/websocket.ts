@@ -213,6 +213,17 @@ test('connection error raises on publish', async () => {
   await expect(q.publish("foobar")).rejects.toThrow()
 })
 
+test('closed socket closes client', async () => {
+  const amqp = getNewClient()
+  await amqp.connect()
+  const socket = amqp["socket"]
+  assert(socket, "Socket must be created")
+  const closed = new Promise((resolve) => socket.addEventListener('close', resolve))
+  socket.close()
+  await closed
+  expect(amqp.closed).toBe(true)
+})
+
 test('wait for publish confirms', async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
