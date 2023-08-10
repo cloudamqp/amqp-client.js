@@ -83,7 +83,9 @@ export class AMQPClient extends AMQPBaseClient {
     conn.on('connect', () => {
       conn.on('error', (err) => this.onerror(new AMQPError(err.message, this)))
       conn.on('close', (hadError: boolean) => {
-        if (!hadError && !this.closed) this.onerror(new AMQPError("Socket closed", this))
+        const clientClosed = this.closed
+        this.closed = true
+        if (!hadError && !clientClosed) this.onerror(new AMQPError("Socket closed", this))
       })
     })
     return conn
