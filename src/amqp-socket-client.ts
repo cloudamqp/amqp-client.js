@@ -11,11 +11,11 @@ import * as tls from "tls"
  */
 export class AMQPClient extends AMQPBaseClient {
   socket?: net.Socket | undefined
-  readonly tls : boolean
-  readonly host : string
-  readonly port : number
-  readonly tlsOptions : AMQPTlsOptions | undefined
-  private readonly insecure : boolean
+  readonly tls: boolean
+  readonly host: string
+  readonly port: number
+  readonly tlsOptions: AMQPTlsOptions | undefined
+  private readonly insecure: boolean
   private framePos: number
   private frameSize: number
   private readonly frameBuffer: Buffer

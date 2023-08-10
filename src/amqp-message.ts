@@ -20,7 +20,7 @@ export class AMQPMessage {
   channel: AMQPChannel
   exchange = ""
   routingKey = ""
-  properties : AMQPProperties = {}
+  properties: AMQPProperties = {}
   bodySize = 0
   body: Uint8Array | null = null
   bodyPos = 0
