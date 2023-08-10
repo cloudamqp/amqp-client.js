@@ -32,7 +32,7 @@ export class AMQPQueue {
   /**
    * Delete a binding between this queue and an exchange
    */
-  unbind(exchange: string, routingKey = "", args = {}) : Promise<AMQPQueue>{
+  unbind(exchange: string, routingKey = "", args = {}) : Promise<AMQPQueue> {
     return new Promise<AMQPQueue>((resolve, reject) => {
       this.channel.queueUnbind(this.name, exchange, routingKey, args)
         .then(() => resolve(this))
