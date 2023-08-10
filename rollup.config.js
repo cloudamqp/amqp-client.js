@@ -7,7 +7,7 @@ export default [
     output: {
       file: "dist/amqp-websocket-client.mjs",
       sourcemap: "dist/amqp-websocket-client.mjs.map",
-      sourcemapExcludeSources: true
-    }
-  }
+      sourcemapExcludeSources: true,
+    },
+  },
 ]

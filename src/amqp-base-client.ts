@@ -42,7 +42,7 @@ export abstract class AMQPBaseClient {
     this.password = ""
     Object.defineProperty(this, "password", {
       value: password,
-      enumerable: false // hide it from console.log etc.
+      enumerable: false, // hide it from console.log etc.
     })
     if (name) this.name = name // connection name
     if (platform) this.platform = platform
@@ -206,7 +206,7 @@ export abstract class AMQPBaseClient {
                       "exchange_exchange_bindings": true,
                       "per_consumer_qos": true,
                       "publisher_confirms": true,
-                    }
+                    },
                   }
                   j += startOk.setTable(j, clientProps) // client properties
                   j += startOk.setShortString(j, "PLAIN") // mechanism

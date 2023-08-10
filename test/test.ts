@@ -406,7 +406,7 @@ test("can publish all type of properties", async () => {
     appId: "appid",
     userId: "guest",
     type: "type",
-    timestamp: new Date(Math.round(Date.now() / 1000) * 1000) // amqp timestamps does only have second resolution
+    timestamp: new Date(Math.round(Date.now() / 1000) * 1000), // amqp timestamps does only have second resolution
   }
   await q.publish("", properties)
   const msg = await q.get()

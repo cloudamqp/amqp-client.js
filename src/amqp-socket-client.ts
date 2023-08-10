@@ -42,7 +42,7 @@ export class AMQPClient extends AMQPBaseClient {
     this.frameSize = 0
     this.frameBuffer = Buffer.allocUnsafe(frameMax)
     Object.defineProperty(this, "frameBuffer", {
-      enumerable: false // hide it from console.log etc.
+      enumerable: false, // hide it from console.log etc.
     })
   }
 
@@ -51,7 +51,7 @@ export class AMQPClient extends AMQPBaseClient {
     Object.defineProperty(this, "socket", {
       value: socket,
       writable: true,
-      enumerable: false // hide it from console.log etc.
+      enumerable: false, // hide it from console.log etc.
     })
     // enable socket read timeout during connection establishment
     socket.setTimeout((this.heartbeat || 60) * 1000)
@@ -74,7 +74,7 @@ export class AMQPClient extends AMQPBaseClient {
       port: this.port,
       servername: net.isIP(this.host) ? "" : this.host,
       rejectUnauthorized: !this.insecure,
-      ...this.tlsOptions
+      ...this.tlsOptions,
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
     const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)
