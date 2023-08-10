@@ -3,7 +3,7 @@ import { AMQPClient } from "../src/amqp-socket-client.js"
 import { AMQPMessage } from "../src/amqp-message.js"
 import type { AMQPError } from "../src/amqp-error.js"
 
-function getNewClient(init?: {frameMax?: number, heartbeat?: number}): AMQPClient {
+function getNewClient(init?: { frameMax?: number, heartbeat?: number }): AMQPClient {
   const url = new URL("amqp://127.0.0.1")
   if (init?.frameMax != null) url.searchParams.append("frameMax", init.frameMax.toString())
   if (init?.heartbeat != null) url.searchParams.append("heartbeat", init.heartbeat.toString())
