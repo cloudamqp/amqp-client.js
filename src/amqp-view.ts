@@ -13,7 +13,7 @@ export class AMQPView extends DataView {
     const right = this.getUint32(byteOffset + 4, littleEndian)
 
     // combine the two 32-bit values
-    const combined = littleEndian ? left + 2**32 * right : 2**32 * left + right
+    const combined = littleEndian ? left + 2 ** 32 * right : 2 ** 32 * left + right
 
     if (!Number.isSafeInteger(combined)) {
       // eslint-disable-next-line no-console
@@ -268,7 +268,7 @@ export class AMQPView extends DataView {
       case "D": {
         const scale = this.getUint8(i); i += 1
         const value = this.getUint32(i, littleEndian); i += 4
-        v = value / 10**scale
+        v = value / 10 ** scale
         break
       }
       default:
@@ -294,7 +294,7 @@ export class AMQPView extends DataView {
         break
       case "number":
         if (Number.isInteger(field)) {
-          if (-(2**32) < field && field < 2**32) {
+          if (-(2 ** 32) < field && field < 2 ** 32) {
             this.setUint8(i, "I".charCodeAt(0)); i += 1
             this.setInt32(i, field, littleEndian); i += 4
           } else {
@@ -302,7 +302,7 @@ export class AMQPView extends DataView {
             this.setInt64(i, field, littleEndian); i += 8
           }
         } else { // float
-          if (-(2**32) < field && field < 2**32) {
+          if (-(2 ** 32) < field && field < 2 ** 32) {
             this.setUint8(i, "f".charCodeAt(0)); i += 1
             this.setFloat32(i, field, littleEndian); i += 4
           } else {

@@ -105,7 +105,7 @@ export class AMQPChannel {
    * @param [param.noAck=true] - if message is removed from the server upon delivery, or have to be acknowledged
    * @return - returns null if the queue is empty otherwise a single message
    */
-  basicGet(queue: string, { noAck = true } = {}): Promise<AMQPMessage|null> {
+  basicGet(queue: string, { noAck = true } = {}): Promise<AMQPMessage | null> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(512))
@@ -288,7 +288,7 @@ export class AMQPChannel {
    * @param [immediate] - if the message should be returned if it can't be delivered to a consumer immediately (not supported in RabbitMQ)
    * @return - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
-  async basicPublish(exchange: string, routingKey: string, data: string|Uint8Array|ArrayBuffer|Buffer|null, properties: AMQPProperties = {}, mandatory = false, immediate = false): Promise<number> {
+  async basicPublish(exchange: string, routingKey: string, data: string | Uint8Array | ArrayBuffer | Buffer | null, properties: AMQPProperties = {}, mandatory = false, immediate = false): Promise<number> {
     if (this.closed) return this.rejectClosed()
     if (this.connection.blocked)
       return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))

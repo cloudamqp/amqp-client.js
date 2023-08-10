@@ -491,8 +491,8 @@ export abstract class AMQPBaseClient {
                 case 71: { // getOk
                   const deliveryTag = view.getUint64(i); i += 8
                   const redelivered = view.getUint8(i) === 1; i += 1
-                  const [exchange, exchangeLen]= view.getShortString(i); i += exchangeLen
-                  const [routingKey, routingKeyLen]= view.getShortString(i); i += routingKeyLen
+                  const [exchange, exchangeLen] = view.getShortString(i); i += exchangeLen
+                  const [routingKey, routingKeyLen] = view.getShortString(i); i += routingKeyLen
                   const messageCount = view.getUint32(i); i += 4
                   const message = new AMQPMessage(channel)
                   message.deliveryTag = deliveryTag
@@ -504,7 +504,7 @@ export abstract class AMQPBaseClient {
                   break
                 }
                 case 72: { // getEmpty
-                  const [ , len]= view.getShortString(i); i += len // reserved1
+                  const [ , len] = view.getShortString(i); i += len // reserved1
                   channel.resolveRPC(null)
                   break
                 }

@@ -387,7 +387,7 @@ test("can publish all type of properties", async () => {
   const q = await ch.queue()
   const headers = {
     a: 2, b: true, c: "c", d: 1.5, e: null, f: new Date(1000), g: { a: 1 },
-    i: 2**32 + 1, j: 2.5**33,
+    i: 2 ** 32 + 1, j: 2.5 ** 33,
   }
   const properties = {
     contentType: "application/json",
@@ -402,7 +402,7 @@ test("can publish all type of properties", async () => {
     appId: "appid",
     userId: "guest",
     type: "type",
-    timestamp: new Date(Math.round(Date.now()/1000)*1000) // amqp timestamps does only have second resolution
+    timestamp: new Date(Math.round(Date.now() / 1000) * 1000) // amqp timestamps does only have second resolution
   }
   await q.publish("", properties)
   const msg = await q.get()
@@ -508,7 +508,7 @@ test("can do basicRecover", async () => {
 })
 
 test("can set frameMax", async () => {
-  const amqp = getNewClient({ frameMax: 16*1024 })
+  const amqp = getNewClient({ frameMax: 16 * 1024 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await ch.confirmSelect()
@@ -532,7 +532,7 @@ test("can't set too small frameMax", () => {
 })
 
 test("can handle frames split over socket reads", async () => {
-  const amqp = getNewClient({ frameMax: 4*1024 })
+  const amqp = getNewClient({ frameMax: 4 * 1024 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
