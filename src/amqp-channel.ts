@@ -854,8 +854,8 @@ export class AMQPChannel {
 }
 
 export type QueueOk = {
-  name: string,
-  messageCount: number,
+  name: string
+  messageCount: number
   consumerCount: number
 }
 
@@ -869,15 +869,15 @@ export type ExchangeParams = {
   /**
    * if the exchange name doesn't exist the channel will be closed with an error, fulfilled if the exchange name does exists
    */
-  passive?: boolean,
+  passive?: boolean
   /**
    * if the exchange should survive server restarts
    */
-  durable?: boolean,
+  durable?: boolean
   /**
    * if the exchange should be deleted when the last binding from it is deleted
    */
-  autoDelete?: boolean,
+  autoDelete?: boolean
   /**
    * if exchange is internal to the server. Client's can't publish to internal exchanges.
    */
@@ -888,15 +888,15 @@ export type QueueParams = {
   /**
    * if the queue name doesn't exist the channel will be closed with an error, fulfilled if the queue name does exists
    */
-  passive?: boolean,
+  passive?: boolean
   /**
    * if the queue should survive server restarts
    */
-  durable?: boolean,
+  durable?: boolean
   /**
    * if the queue should be deleted when the last consumer of the queue disconnects
    */
-  autoDelete?: boolean,
+  autoDelete?: boolean
   /**
    * if the queue should be deleted when the channel is closed
    */
@@ -912,15 +912,15 @@ export type ConsumeParams = {
   /**
    * tag of the consumer, will be server generated if left empty
    */
-  tag?: string,
+  tag?: string
   /**
    * if messages are removed from the server upon delivery, or have to be acknowledged
    */
-  noAck?: boolean,
+  noAck?: boolean
   /**
    * if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
    */
-  exclusive?: boolean,
+  exclusive?: boolean
   /**
    * custom arguments
    */
