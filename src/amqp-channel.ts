@@ -798,9 +798,9 @@ export class AMQPChannel {
     // is queueMicrotask() needed here?
     const idx = this.unconfirmedPublishes.findIndex(([tag,]) => tag === deliveryTag)
     if (idx !== -1) {
-      const confirmed = multiple ?
-        this.unconfirmedPublishes.splice(0, idx + 1) :
-        this.unconfirmedPublishes.splice(idx, 1)
+      const confirmed = multiple
+        ? this.unconfirmedPublishes.splice(0, idx + 1)
+        : this.unconfirmedPublishes.splice(idx, 1)
       confirmed.forEach(([tag, resolve, reject]) => {
         if (nack) {
           reject(new Error("Message rejected"))
