@@ -157,11 +157,13 @@ export class AMQPChannel {
     frame.setUint32(3, j - 8) // update frameSize
 
     return new Promise((resolve, reject) => {
-      this.sendRpc(frame, j).then((consumerTag) =>  {
-        const consumer = new AMQPConsumer(this, consumerTag, callback)
-        this.consumers.set(consumerTag, consumer)
-        resolve(consumer)
-      }).catch(reject)
+      this.sendRpc(frame, j)
+        .then((consumerTag) =>  {
+          const consumer = new AMQPConsumer(this, consumerTag, callback)
+          this.consumers.set(consumerTag, consumer)
+          resolve(consumer)
+        })
+        .catch(reject)
     })
   }
 
@@ -185,14 +187,16 @@ export class AMQPChannel {
     frame.setUint32(3, j - 8) // update frameSize
 
     return new Promise((resolve, reject) => {
-      this.sendRpc(frame, j).then((consumerTag) => {
-        const consumer = this.consumers.get(consumerTag)
-        if (consumer) {
-          consumer.setClosed()
-          this.consumers.delete(consumerTag)
-        }
-        resolve(this)
-      }).catch(reject)
+      this.sendRpc(frame, j)
+        .then((consumerTag) => {
+          const consumer = this.consumers.get(consumerTag)
+          if (consumer) {
+            consumer.setClosed()
+            this.consumers.delete(consumerTag)
+          }
+          resolve(this)
+        })
+        .catch(reject)
     })
   }
 
