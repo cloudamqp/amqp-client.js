@@ -259,7 +259,7 @@ export abstract class AMQPBaseClient {
                   this.closed = false
                   const promise  = this.connectPromise
                   if (promise) {
-                    const [resolve, ] = promise
+                    const [resolve,] = promise
                     delete this.connectPromise
                     resolve(this)
                   }
@@ -296,7 +296,7 @@ export abstract class AMQPBaseClient {
                   this.channels = [new AMQPChannel(this, 0)]
                   const promise = this.closePromise
                   if (promise) {
-                    const [resolve, ] = promise
+                    const [resolve,] = promise
                     delete this.closePromise
                     resolve()
                     this.closeSocket()
@@ -504,7 +504,7 @@ export abstract class AMQPBaseClient {
                   break
                 }
                 case 72: { // getEmpty
-                  const [ , len] = view.getShortString(i); i += len // reserved1
+                  const [, len] = view.getShortString(i); i += len // reserved1
                   channel.resolveRPC(null)
                   break
                 }
