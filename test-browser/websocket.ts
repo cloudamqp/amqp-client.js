@@ -618,13 +618,15 @@ test("will split body over multiple frames", async () => {
   await ch.confirmSelect()
   await q.publish("x".repeat(5000))
   const msg = await q.get()
-  if (msg)
-    if (msg.body)
+  if (msg) {
+    if (msg.body) {
       expect(msg.body.length).toEqual(5000)
-    else
+    } else {
       assert.fail("no body")
-  else
+    }
+  } else {
     assert.fail("no msg")
+  }
 })
 
 test("can republish in consume block without race condition", async () => {

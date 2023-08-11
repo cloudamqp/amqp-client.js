@@ -43,10 +43,11 @@ export class AMQPMessage {
    */
   bodyToString(): string | null {
     if (this.body) {
-      if (typeof Buffer !== "undefined")
+      if (typeof Buffer !== "undefined") {
         return Buffer.from(this.body).toString()
-      else
+      } else {
         return new TextDecoder().decode(this.body)
+      }
     } else {
       return null
     }

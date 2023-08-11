@@ -146,8 +146,9 @@ export class AMQPClient extends AMQPBaseClient {
    */
   override send(bytes: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!this.socket)
+      if (!this.socket) {
         return reject(new AMQPError("Socket not connected", this))
+      }
       try {
         this.socket.write(bytes, undefined, (err) => err ? reject(err) : resolve())
       } catch (err) {

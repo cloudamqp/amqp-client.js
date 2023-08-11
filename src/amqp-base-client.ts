@@ -66,8 +66,9 @@ export abstract class AMQPBaseClient {
     }
     // Store channels in an array, set position to null when channel is closed
     // Look for first null value or add one the end
-    if (!id)
+    if (!id) {
       id = this.channels.findIndex((ch) => ch === undefined)
+    }
     if (id === -1) id = this.channels.length
     if (id > this.channelMax) return Promise.reject(new AMQPError("Max number of channels reached", this))
 
@@ -163,8 +164,9 @@ export abstract class AMQPBaseClient {
       const frameSize = view.getUint32(i); i += 4
       try {
         const frameEnd = view.getUint8(i + frameSize)
-        if (frameEnd !== 206)
+        if (frameEnd !== 206) {
           throw new AMQPError(`Invalid frame end ${frameEnd}, expected 206`, this)
+        }
       } catch (e) {
         throw new AMQPError(`Frame end out of range, frameSize=${frameSize}, pos=${i}, byteLength=${view.byteLength}`, this)
       }
@@ -572,8 +574,9 @@ export abstract class AMQPBaseClient {
             message.bodySize = bodySize
             message.properties = properties
             message.body = new Uint8Array(bodySize)
-            if (bodySize === 0)
+            if (bodySize === 0) {
               channel.onMessageReady(message)
+            }
           } else {
             this.logger?.warn("Header frame but no message")
           }
@@ -586,8 +589,9 @@ export abstract class AMQPBaseClient {
             message.body.set(bodyPart, message.bodyPos)
             message.bodyPos += frameSize
             i += frameSize
-            if (message.bodyPos === message.bodySize)
+            if (message.bodyPos === message.bodySize) {
               channel.onMessageReady(message)
+            }
           } else {
             this.logger?.warn("Body frame but no message")
           }

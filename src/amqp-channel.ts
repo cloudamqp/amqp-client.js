@@ -294,8 +294,9 @@ export class AMQPChannel {
    */
   async basicPublish(exchange: string, routingKey: string, data: string | Uint8Array | ArrayBuffer | Buffer | null, properties: AMQPProperties = {}, mandatory = false, immediate = false): Promise<number> {
     if (this.closed) return this.rejectClosed()
-    if (this.connection.blocked)
+    if (this.connection.blocked) {
       return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))
+    }
 
     let body: Uint8Array
     if (typeof Buffer !== "undefined" && data instanceof Buffer) {
@@ -801,10 +802,11 @@ export class AMQPChannel {
         this.unconfirmedPublishes.splice(0, idx + 1) :
         this.unconfirmedPublishes.splice(idx, 1)
       confirmed.forEach(([tag, resolve, reject]) => {
-        if (nack)
+        if (nack) {
           reject(new Error("Message rejected"))
-        else
+        } else {
           resolve(tag)
+        }
       })
     } else {
       this.logger?.warn("Cant find unconfirmed deliveryTag", deliveryTag, "multiple:", multiple, "nack:", nack)
