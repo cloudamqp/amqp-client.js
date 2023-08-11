@@ -390,8 +390,15 @@ test("can publish all type of properties", async () => {
   const ch = await conn.channel()
   const q = await ch.queue()
   const headers = {
-    a: 2, b: true, c: "c", d: 1.5, e: null, f: new Date(1000), g: { a: 1 },
-    i: 2 ** 32 + 1, j: 2.5 ** 33,
+    a: 2,
+    b: true,
+    c: "c",
+    d: 1.5,
+    e: null,
+    f: new Date(1000),
+    g: { a: 1 },
+    i: 2 ** 32 + 1,
+    j: 2.5 ** 33,
   }
   const properties = {
     contentType: "application/json",
