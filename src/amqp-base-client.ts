@@ -103,7 +103,7 @@ export abstract class AMQPBaseClient {
     })
   }
 
-  updateSecret(newSecret : string, reason : string) {
+  updateSecret(newSecret: string, reason: string) {
     let j = 0
     const frame = new AMQPView(new ArrayBuffer(4096))
     frame.setUint8(j, 1); j += 1 // type: method
@@ -164,9 +164,9 @@ export abstract class AMQPBaseClient {
       try {
         const frameEnd = view.getUint8(i + frameSize)
         if (frameEnd !== 206)
-          throw(new AMQPError(`Invalid frame end ${frameEnd}, expected 206`, this))
+          throw (new AMQPError(`Invalid frame end ${frameEnd}, expected 206`, this))
       } catch (e) {
-        throw(new AMQPError(`Frame end out of range, frameSize=${frameSize}, pos=${i}, byteLength=${view.byteLength}`, this))
+        throw (new AMQPError(`Frame end out of range, frameSize=${frameSize}, pos=${i}, byteLength=${view.byteLength}`, this))
       }
 
       const channel = this.channels[channelId]
@@ -257,9 +257,9 @@ export abstract class AMQPBaseClient {
                 case 41: { // openok
                   i += 1 // reserved1
                   this.closed = false
-                  const promise  = this.connectPromise
+                  const promise = this.connectPromise
                   if (promise) {
-                    const [resolve, ] = promise
+                    const [resolve,] = promise
                     delete this.connectPromise
                     resolve(this)
                   }
@@ -296,7 +296,7 @@ export abstract class AMQPBaseClient {
                   this.channels = [new AMQPChannel(this, 0)]
                   const promise = this.closePromise
                   if (promise) {
-                    const [resolve, ] = promise
+                    const [resolve,] = promise
                     delete this.closePromise
                     resolve()
                     this.closeSocket()
@@ -491,8 +491,8 @@ export abstract class AMQPBaseClient {
                 case 71: { // getOk
                   const deliveryTag = view.getUint64(i); i += 8
                   const redelivered = view.getUint8(i) === 1; i += 1
-                  const [exchange, exchangeLen]= view.getShortString(i); i += exchangeLen
-                  const [routingKey, routingKeyLen]= view.getShortString(i); i += routingKeyLen
+                  const [exchange, exchangeLen] = view.getShortString(i); i += exchangeLen
+                  const [routingKey, routingKeyLen] = view.getShortString(i); i += routingKeyLen
                   const messageCount = view.getUint32(i); i += 4
                   const message = new AMQPMessage(channel)
                   message.deliveryTag = deliveryTag
@@ -504,7 +504,7 @@ export abstract class AMQPBaseClient {
                   break
                 }
                 case 72: { // getEmpty
-                  const [ , len]= view.getShortString(i); i += len // reserved1
+                  const [, len] = view.getShortString(i); i += len // reserved1
                   channel.resolveRPC(null)
                   break
                 }
