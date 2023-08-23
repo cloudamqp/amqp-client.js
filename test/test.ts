@@ -3,10 +3,11 @@ import { AMQPClient } from '../src/amqp-socket-client.js';
 import { AMQPMessage } from '../src/amqp-message.js';
 import type { AMQPError } from "../src/amqp-error.js";
 
-function getNewClient(init?: {frameMax?: number, heartbeat?: number}): AMQPClient {
+function getNewClient(init?: { frameMax?: number, heartbeat?: number, channelMax?: number }): AMQPClient {
   const url = new URL("amqp://127.0.0.1")
   if (init?.frameMax != null) url.searchParams.append("frameMax", init.frameMax.toString())
   if (init?.heartbeat != null) url.searchParams.append("heartbeat", init.heartbeat.toString())
+  if (init?.channelMax != null) url.searchParams.append("channelMax", init.channelMax.toString())
 
   return new AMQPClient(url.toString())
 }
@@ -666,6 +667,13 @@ test("raises when channelMax is reached", async () => {
   // make sure other channels still work
   const ch1 = await conn.channel(1)
   await expect(ch1.basicQos(10)).resolves.toBeUndefined()
+}, 10_000)
+
+test("client can negotiate channelMax", async () => {
+  const amqp = getNewClient({ channelMax: 1 })
+  const conn = await amqp.connect()
+  await conn.channel()
+  await expect(conn.channel()).rejects.toThrow('Max number of channels reached');
 }, 10_000)
 
 test('can update-secret', async () => {

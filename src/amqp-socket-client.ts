@@ -31,8 +31,9 @@ export class AMQPClient extends AMQPBaseClient {
     const name = u.searchParams.get("name") || ""
     const frameMax = parseInt(u.searchParams.get("frameMax") || "4096")
     const heartbeat = parseInt(u.searchParams.get("heartbeat") || "0")
+    const channelMax = parseInt(u.searchParams.get("channelMax") || "0")
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
-    super(vhost, username, password, name, platform, frameMax, heartbeat)
+    super(vhost, username, password, name, platform, frameMax, heartbeat, channelMax)
     this.tls = u.protocol === "amqps:"
     this.tlsOptions = tlsOptions
     this.host = u.hostname || "localhost"

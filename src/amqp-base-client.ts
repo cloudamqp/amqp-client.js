@@ -36,7 +36,7 @@ export abstract class AMQPBaseClient {
    * @param name - name of the connection, set in client properties
    * @param platform - used in client properties
    */
-  constructor(vhost: string, username: string, password: string, name?: string, platform?: string, frameMax = 4096, heartbeat = 0) {
+  constructor(vhost: string, username: string, password: string, name?: string, platform?: string, frameMax = 4096, heartbeat = 0, channelMax = 0) {
     this.vhost = vhost
     this.username = username
     this.password = ""
@@ -52,6 +52,8 @@ export abstract class AMQPBaseClient {
     this.frameMax = frameMax
     if (heartbeat < 0) throw new Error("heartbeat must be positive")
     this.heartbeat = heartbeat
+    if (channelMax && channelMax < 0) throw new Error("channelMax must be positive")
+    this.channelMax = channelMax
   }
 
   /**
@@ -222,7 +224,7 @@ export abstract class AMQPBaseClient {
                   const channelMax = view.getUint16(i); i += 2
                   const frameMax = view.getUint32(i); i += 4
                   const heartbeat = view.getUint16(i); i += 2
-                  this.channelMax = channelMax
+                  this.channelMax = this.channelMax === 0 ? channelMax : Math.min(this.channelMax, channelMax)
                   this.frameMax = this.frameMax === 0 ? frameMax : Math.min(this.frameMax, frameMax)
                   this.heartbeat = this.heartbeat === 0 ? 0 : Math.min(this.heartbeat, heartbeat)
 
