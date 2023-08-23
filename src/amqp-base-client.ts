@@ -71,7 +71,7 @@ export abstract class AMQPBaseClient {
     if (!id)
       id = this.channels.findIndex((ch) => ch === undefined)
     if (id === -1) id = this.channels.length
-    if (id > this.channelMax) return Promise.reject(new AMQPError("Max number of channels reached", this))
+    if (id > this.channelMax && this.channelMax > 0) return Promise.reject(new AMQPError("Max number of channels reached", this))
 
     const channel = new AMQPChannel(this, id)
     this.channels[id] = channel
