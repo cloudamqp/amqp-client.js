@@ -11,11 +11,11 @@ import * as tls from 'tls'
  */
 export class AMQPClient extends AMQPBaseClient {
   socket?: net.Socket | undefined
-  readonly tls : boolean
-  readonly host : string
-  readonly port : number
-  readonly tlsOptions : AMQPTlsOptions | undefined
-  private readonly insecure : boolean
+  readonly tls: boolean
+  readonly host: string
+  readonly port: number
+  readonly tlsOptions: AMQPTlsOptions | undefined
+  private readonly insecure: boolean
   private framePos: number
   private frameSize: number
   private readonly frameBuffer: Buffer
@@ -60,7 +60,7 @@ export class AMQPClient extends AMQPBaseClient {
     return new Promise((resolve, reject) => {
       socket.on('timeout', () => reject(new AMQPError("timeout", this)))
       socket.on('error', (err) => reject(new AMQPError(err.message, this)))
-      const onConnect = (conn : AMQPBaseClient) => {
+      const onConnect = (conn: AMQPBaseClient) => {
         socket.setTimeout(this.heartbeat * 1000) // reset timeout if heartbeats are disabled
         resolve(conn)
       }
