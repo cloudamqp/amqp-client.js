@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2023-08-23
+
+## Added
+
+- Support for clients to negotiate channel-max ([#86](https://github.com/cloudamqp/amqp-client.js/pull/86))
+- Raise when WebSocket is not cleanly closed ([#80](https://github.com/cloudamqp/amqp-client.js/pull/80))
+- Make logging configurable ([#79](https://github.com/cloudamqp/amqp-client.js/pull/79))
+- Support for connection.update-secret ([#77](https://github.com/cloudamqp/amqp-client.js/pull/77))
+
+## Fixed
+
+- Channel max 0 should be treated as "unlimited" not 0 ([#86](https://github.com/cloudamqp/amqp-client.js/pull/86))
+- Close sockets not supporting amqp protocol ([#78](https://github.com/cloudamqp/amqp-client.js/pull/78))
+
+## Changed
+
+- Throws and rejects with `Error` as per best practice ([#81](https://github.com/cloudamqp/amqp-client.js/pull/81))
+- Clean ups ([#88](https://github.com/cloudamqp/amqp-client.js/pull/88), [#85](https://github.com/cloudamqp/amqp-client.js/pull/85))
+- Package improvements for bundling and tree-shaking ([#75](https://github.com/cloudamqp/amqp-client.js/pull/75))
+
 ## [3.0.0] - 2023-07-24
 
 ### Added
