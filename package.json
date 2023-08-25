@@ -32,11 +32,10 @@
     "lint": "eslint .",
     "test": "vitest run --coverage",
     "test-browser": "vitest --config ./vitest.config.browser.ts",
-    "prebuild": "rm -rf dist lib types && node -p '`export const VERSION = ${JSON.stringify(require(\"./package.json\").version)} // Generated at prebuild`' > src/version.ts",
+    "prebuild": "rm -rf dist lib types && npm run version",
     "build": "tsc && tsc --module commonjs --outDir lib/cjs && tsc --emitDeclarationOnly --removeComments false && rollup -c",
     "postbuild": "echo '{\"type\": \"commonjs\"}' > lib/cjs/package.json",
     "prepare": "npm run build",
-    "preversion": "npm test",
     "version": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.ts && git add src/amqp-base-client.ts"
   },
   "files": [

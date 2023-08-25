@@ -3,7 +3,8 @@ import { AMQPError } from './amqp-error.js'
 import { AMQPMessage } from './amqp-message.js'
 import { AMQPView } from './amqp-view.js'
 import type { Logger } from './types.js'
-import { VERSION } from './version.js'
+
+const VERSION = '3.1.1'
 
 /**
  * Base class for AMQPClients.
