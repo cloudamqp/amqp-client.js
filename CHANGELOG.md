@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2023-08-25
+
+- Correct version number in `src/amqp-base-client.ts`
+
 ## [3.1.0] - 2023-08-23
+
+_The version number was not updated in `src/amqp-base-client.ts` for this release._
 
 ## Added
 
