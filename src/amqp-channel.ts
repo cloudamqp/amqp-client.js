@@ -863,7 +863,7 @@ export type MessageCount = {
   messageCount: number
 }
 
-export type ExchangeType = 'direct' | 'fanout' | 'topic' | 'headers' | string;
+export type ExchangeType = 'direct' | 'fanout' | 'topic' | 'headers' | string & {};
 
 export type ExchangeParams = {
   /**
