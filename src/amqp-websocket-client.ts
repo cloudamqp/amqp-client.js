@@ -144,8 +144,8 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   }
 
   static platform(): string {
-    if (typeof(window) !== 'undefined')
-      return window.navigator.userAgent
+    if (typeof(navigator) !== 'undefined')
+      return navigator.userAgent
     else
       return `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
   }
