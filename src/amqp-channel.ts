@@ -375,7 +375,7 @@ export class AMQPChannel {
 
   /**
    * Set prefetch limit.
-   * Recommended to set as each unacknowledge message will be store in memory of the client.
+   * Recommended to set as each unacknowledged message will be stored in memory of the client.
    * The server won't deliver more messages than the limit until messages are acknowledged.
    * @param prefetchCount - number of messages to limit to
    * @param prefetchSize - number of bytes to limit to (not supported by RabbitMQ)
