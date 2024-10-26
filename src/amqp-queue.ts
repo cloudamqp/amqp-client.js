@@ -4,7 +4,7 @@ import type { AMQPProperties } from './amqp-properties.js'
 import type { AMQPConsumer } from './amqp-consumer.js'
 
 /**
- * Convience class for queues
+ * Convenience class for queues
  */
 export class AMQPQueue {
   readonly channel: AMQPChannel
