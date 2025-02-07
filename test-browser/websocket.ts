@@ -3,10 +3,12 @@ import { AMQPWebSocketClient } from '../src/amqp-websocket-client.js';
 import { AMQPMessage } from '../src/amqp-message.js';
 import type { AMQPError } from "../src/amqp-error.js";
 
+const WS_URL = import.meta.env.VITE_WS_URL || "ws://127.0.0.1:15670/ws/amqp"
+
 function getNewClient(init?: {frameMax?: number, heartbeat?: number}): AMQPWebSocketClient {
-  return init 
-    ? new AMQPWebSocketClient({ url: "ws://127.0.0.1:15670/ws/amqp", ...init })
-    : new AMQPWebSocketClient("ws://127.0.0.1:15670/ws/amqp")
+  return init
+    ? new AMQPWebSocketClient({ url: WS_URL, ...init })
+    : new AMQPWebSocketClient(WS_URL)
 }
 
 beforeEach(() => {
