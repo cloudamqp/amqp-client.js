@@ -12,7 +12,7 @@ interface AMQPWebSocketInit {
   heartbeat?: number
 }
 
-/** 
+/**
  * WebSocket client for AMQP 0-9-1 servers
  */
 export class AMQPWebSocketClient extends AMQPBaseClient {
