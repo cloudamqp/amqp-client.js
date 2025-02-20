@@ -831,13 +831,13 @@ export class AMQPChannel {
    * Resolvs next RPC command
    * @ignore
    */
-  resolveRPC(value?: unknown) : void { value }
+  resolveRPC(value?: unknown) : unknown | void { return value }
 
   /**
    * Reject next RPC command
    * @ignore
    */
-  rejectRPC(err?: Error) : void { err }
+  rejectRPC(err?: Error) : Error | void { return err }
 
   /**
    * Deliver a message to a consumer

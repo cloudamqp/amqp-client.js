@@ -59,11 +59,10 @@
   "homepage": "https://github.com/cloudamqp/amqp-client.js#readme",
   "devDependencies": {
     "@types/node": "*",
-    "@typescript-eslint/eslint-plugin": "*",
-    "@typescript-eslint/parser": "*",
     "@vitest/browser": "*",
     "@vitest/coverage-v8": "*",
     "eslint": "*",
+    "typescript-eslint": "*",
     "playwright": "*",
     "rollup": "*",
     "rollup-plugin-sourcemaps": "*",
