@@ -72,6 +72,7 @@ export class AMQPClient extends AMQPBaseClient {
     socket.setTimeout((this.heartbeat || 60) * 1000)
     // enable TCP keepalive if AMQP heartbeats are disabled
     if (this.heartbeat === 0) socket.setKeepAlive(true, 60)
+    this.lastDataReceived = performance.now()
     return new Promise((resolve, reject) => {
       rejectConnection = reject;
       socket.on('timeout', () => reject(new AMQPError("timeout", this)))
