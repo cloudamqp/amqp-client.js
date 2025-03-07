@@ -6,7 +6,7 @@ import type { AMQPProperties, Field } from './amqp-properties.js'
  * Get methods returns the value read and how many bytes it used.
  * @ignore
  */
-export class AMQPView extends DataView {
+export class AMQPView extends DataView<Uint8Array['buffer']>  {
   getUint64(byteOffset: number, littleEndian?: boolean) : number {
     // split 64-bit number into two 32-bit (4-byte) parts
     const left =  this.getUint32(byteOffset, littleEndian)
@@ -16,7 +16,6 @@ export class AMQPView extends DataView {
     const combined = littleEndian ? left + 2**32 * right : 2**32 * left + right
 
     if (!Number.isSafeInteger(combined)) {
-      // eslint-disable-next-line no-console
       console.warn(combined, 'exceeds MAX_SAFE_INTEGER. Precision may be lost')
     }
 

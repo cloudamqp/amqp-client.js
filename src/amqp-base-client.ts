@@ -28,7 +28,7 @@ export abstract class AMQPBaseClient {
   onerror: (error: AMQPError) => void
   logger: Logger | null | undefined = console
   /** Used for string -> arraybuffer when publishing */
-  readonly textEncoder = new TextEncoder()
+  readonly textEncoder: InstanceType<typeof TextEncoder> = new TextEncoder()
   // Buffer pool for publishes, let multiple microtasks publish at the same time but save on allocations
   readonly bufferPool: AMQPView[] = []
 
@@ -163,13 +163,14 @@ export abstract class AMQPBaseClient {
       const type = view.getUint8(i); i += 1
       const channelId = view.getUint16(i); i += 2
       const frameSize = view.getUint32(i); i += 4
+      let frameEnd = 0
       try {
-        const frameEnd = view.getUint8(i + frameSize)
-        if (frameEnd !== 206)
-          throw (new AMQPError(`Invalid frame end ${frameEnd}, expected 206`, this))
-      } catch (e) {
+        frameEnd = view.getUint8(i + frameSize)
+      } catch {
         throw (new AMQPError(`Frame end out of range, frameSize=${frameSize}, pos=${i}, byteLength=${view.byteLength}`, this))
       }
+      if (frameEnd !== 206)
+        throw (new AMQPError(`Invalid frame end ${frameEnd}, expected 206`, this))
 
       const channel = this.channels[channelId]
       if (!channel) {
