@@ -28,7 +28,7 @@ export abstract class AMQPBaseClient {
   onerror: (error: AMQPError) => void
   logger: Logger | null | undefined = console
   /** Used for string -> arraybuffer when publishing */
-  readonly textEncoder = new TextEncoder()
+  readonly textEncoder: InstanceType<typeof TextEncoder> = new TextEncoder()
   // Buffer pool for publishes, let multiple microtasks publish at the same time but save on allocations
   readonly bufferPool: AMQPView[] = []
 
