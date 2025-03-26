@@ -743,11 +743,9 @@ export class AMQPChannel {
   private sendRpc(frame: AMQPView, frameSize: number): Promise<any> {
     return new Promise((resolve, reject) => {
       this.rpcQueue = this.rpcQueue.then(() => {
+        this.resolveRPC = resolve
+        this.rejectRPC = reject
         this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
-          .then(() => {
-            this.resolveRPC = resolve
-            this.rejectRPC = reject
-          })
           .catch(reject)
       })
     })
