@@ -28,7 +28,13 @@ export class AMQPChannel {
   constructor(connection: AMQPBaseClient, id: number) {
     this.connection = connection
     this.id = id
-    this.onerror = (reason: string) => this.logger?.error(`channel ${this.id} closed: ${reason}`)
+    this.onerror = (reason: string) => {
+      this.logger?.error(`channel ${this.id} closed: ${reason}`)
+      // Propagate channel errors to the connection's onerror handler
+      if (this.id !== 0) { // Don't propagate for connection channel (id=0)
+        this.connection.onerror(new AMQPError(reason, this.connection))
+      }
+    }
   }
 
   private get logger() {
@@ -762,7 +768,6 @@ export class AMQPChannel {
    * @param [err] - why the channel was closed
    */
   setClosed(err?: Error): void {
-    const closedByServer = err !== undefined
     err ||= new Error("Connection closed by client")
     if (!this.closed) {
       this.closed = true
@@ -772,7 +777,11 @@ export class AMQPChannel {
       // Reject and clear all unconfirmed publishes
       this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
       this.unconfirmedPublishes.length = 0
-      if (closedByServer) this.onerror(err.message)
+      
+      // Call onerror for any error, whether from server or from a channel operation
+      if (err.message !== "Connection closed by client") {
+        this.onerror(err.message)
+      }
     }
   }
 
