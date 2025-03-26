@@ -697,3 +697,35 @@ test('should fail to connect to HTTP', async () => {
   const amqp = new AMQPClient("amqp://127.0.0.1:15672?heartbeat=1")
   await expect(amqp.connect()).rejects.toThrow()
 })
+
+test('should handle heartbeat timeout correctly', async () => {
+  const amqp = getNewClient({ heartbeat: 1 })
+  const conn = await amqp.connect()
+  
+  // Mock the socket timeout to simulate missed heartbeats
+  const socket = amqp["socket"]
+  assert(socket, "Socket must be created")
+  
+  // Set up error callback to capture timeout error
+  const errorPromise = new Promise<AMQPError>((resolve) => {
+    conn.onerror = (err: AMQPError) => {
+      resolve(err)
+    }
+  })
+  
+  // Set up close promise to detect when socket is closed
+  const closePromise = new Promise((resolve) => {
+    socket.on('close', resolve)
+  })
+  
+  // Trigger timeout event to simulate heartbeat timeout
+  socket.emit('timeout')
+  
+  // Wait for error callback and socket close
+  const error = await errorPromise
+  await closePromise
+  
+  // Verify error message and that connection is closed
+  expect(error.message).toEqual('Heartbeat timeout')
+  expect(conn.closed).toBe(true)
+})
