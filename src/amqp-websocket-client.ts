@@ -27,7 +27,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
    */
   constructor(url: string, vhost?: string, username?: string, password?: string, name?: string, frameMax?: number, heartbeat?: number);
   constructor(init: AMQPWebSocketInit);
-  constructor(url: string | AMQPWebSocketInit, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 4096, heartbeat = 0) {
+  constructor(url: string | AMQPWebSocketInit, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 8192, heartbeat = 0) {
     if (typeof url === 'object') {
       vhost = url.vhost ?? vhost
       username = url.username ?? username

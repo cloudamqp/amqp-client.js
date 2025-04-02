@@ -29,7 +29,7 @@ export class AMQPClient extends AMQPBaseClient {
     const username = decodeURIComponent(u.username) || "guest"
     const password = decodeURIComponent(u.password) || "guest"
     const name = u.searchParams.get("name") || ""
-    const frameMax = parseInt(u.searchParams.get("frameMax") || "4096")
+    const frameMax = parseInt(u.searchParams.get("frameMax") || "8192")
     const heartbeat = parseInt(u.searchParams.get("heartbeat") || "0")
     const channelMax = parseInt(u.searchParams.get("channelMax") || "0")
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
