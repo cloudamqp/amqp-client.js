@@ -36,7 +36,7 @@ export abstract class AMQPBaseClient {
    * @param name - name of the connection, set in client properties
    * @param platform - used in client properties
    */
-  constructor(vhost: string, username: string, password: string, name?: string, platform?: string, frameMax = 4096, heartbeat = 0, channelMax = 0) {
+  constructor(vhost: string, username: string, password: string, name?: string, platform?: string, frameMax = 8192, heartbeat = 0, channelMax = 0) {
     this.vhost = vhost
     this.username = username
     this.password = ""
@@ -48,7 +48,7 @@ export abstract class AMQPBaseClient {
     if (platform) this.platform = platform
     this.channels = [new AMQPChannel(this, 0)]
     this.onerror = (error: AMQPError) => this.logger?.error("amqp-client connection closed", error.message)
-    if (frameMax < 4096) throw new Error("frameMax must be 4096 or larger")
+    if (frameMax < 8192) throw new Error("frameMax must be 8192 or larger")
     this.frameMax = frameMax
     if (heartbeat < 0) throw new Error("heartbeat must be positive")
     this.heartbeat = heartbeat
@@ -107,7 +107,7 @@ export abstract class AMQPBaseClient {
 
   updateSecret(newSecret: string, reason: string) {
     let j = 0
-    const frame = new AMQPView(new ArrayBuffer(4096))
+    const frame = new AMQPView(new ArrayBuffer(8192))
     frame.setUint8(j, 1); j += 1 // type: method
     frame.setUint16(j, 0); j += 2 // channel: 0
     frame.setUint32(j, 0); j += 4 // frameSize
@@ -189,7 +189,7 @@ export abstract class AMQPBaseClient {
                   // ignore start frame, just reply startok
                   i += frameSize - 4
 
-                  const startOk = new AMQPView(new ArrayBuffer(4096))
+                  const startOk = new AMQPView(new ArrayBuffer(8192))
                   startOk.setUint8(j, 1); j += 1 // type: method
                   startOk.setUint16(j, 0); j += 2 // channel: 0
                   startOk.setUint32(j, 0); j += 4 // frameSize: to be updated
