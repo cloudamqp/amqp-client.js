@@ -54,7 +54,7 @@ jobs:
   test-browser:
     runs-on: ubuntu-latest
     env:
-      NODE_VERSION: 20.x
+      NODE_VERSION: 22.x
 
     steps:
     - uses: actions/checkout@v4
