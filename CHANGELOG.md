@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Increase min `frameMax` to 8192 (8KB) ([#134](https://github.com/cloudamqp/amqp-client.js/pull/134))
+- Increase min `frameMax` to 8192 (8KB) for compatibility with RabbitMQ 4.1 and large JWT tokens ([#134](https://github.com/cloudamqp/amqp-client.js/pull/134))
 
 ## [3.2.0] - 2025-03-07
 
