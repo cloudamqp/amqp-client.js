@@ -378,7 +378,7 @@ test('will throw when headers are too long', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
-  await expect(q.publish("a".repeat(8000), { headers: { long: "a".repeat(5000) } })).rejects.toThrow()
+  await expect(q.publish("a".repeat(8000), { headers: { long: "a".repeat(9000) } })).rejects.toThrow()
 })
 
 test('can purge a queue', async () => {
@@ -545,7 +545,7 @@ test("can't set too small frameMax", () => {
 })
 
 test("can handle frames split over socket reads", async () => {
-  const amqp = getNewClient({ frameMax: 4*1024 })
+  const amqp = getNewClient({ frameMax: 8*1024 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
@@ -616,15 +616,15 @@ test("onerror is not called when conn is closed by client", async () => {
 })
 
 test("will throw on too large headers", async () => {
-  const amqp = getNewClient({ frameMax: 4096 })
+  const amqp = getNewClient({ frameMax: 8192 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await expect(ch.basicPublish("", "x".repeat(255), null, {"headers": {a: Array(4000).fill(1)}})).rejects.toThrow(RangeError)
-  await expect(ch.basicPublish("", "", null, {"headers": {a: "x".repeat(5000)}})).rejects.toThrow(RangeError)
+  await expect(ch.basicPublish("", "", null, {"headers": {a: "x".repeat(9000)}})).rejects.toThrow(RangeError)
 })
 
 test("will split body over multiple frames", async () => {
-  const amqp = getNewClient({ frameMax: 4096 })
+  const amqp = getNewClient({ frameMax: 8192 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
