@@ -5,4 +5,6 @@ types/
 examples/
 node_modules/
 coverage/
+package-lock.json
+yarn.lock
 premaster.txt
