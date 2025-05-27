@@ -281,7 +281,7 @@ export class AMQPView extends DataView<Uint8Array['buffer']>  {
     switch (typeof field) {
       case "string":
         this.setUint8(i, 'S'.charCodeAt(0)); i += 1
-        i += this.setLongString(i, field as string, littleEndian)
+        i += this.setLongString(i, field, littleEndian)
         break
       case "boolean":
         this.setUint8(i, 't'.charCodeAt(0)); i += 1
@@ -289,7 +289,7 @@ export class AMQPView extends DataView<Uint8Array['buffer']>  {
         break
       case "bigint":
         this.setUint8(i, 'l'.charCodeAt(0)); i += 1
-        this.setBigInt64(i, field as bigint, littleEndian); i += 8
+        this.setBigInt64(i, field, littleEndian); i += 8
         break
       case "number":
         if (Number.isInteger(field)) {
