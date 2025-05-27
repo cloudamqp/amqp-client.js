@@ -63,9 +63,9 @@ export class AMQPQueue {
    * @param [params.args={}] - custom arguments
    * @param {function(AMQPMessage) : void} callback - Function to be called for each received message
    */
-  subscribe({ noAck = true, exclusive = false, tag = "", args = {} } = {} as ConsumeParams,
-            callback: (msg: AMQPMessage) => void) : Promise<AMQPConsumer> {
-    return this.channel.basicConsume(this.name, {noAck, exclusive, tag, args}, callback)
+  subscribe({ noAck = true, exclusive = false, tag = "", args = {} }: ConsumeParams = {},
+    callback: (msg: AMQPMessage) => void): Promise<AMQPConsumer> {
+    return this.channel.basicConsume(this.name, { noAck, exclusive, tag, args }, callback)
   }
 
   /**
