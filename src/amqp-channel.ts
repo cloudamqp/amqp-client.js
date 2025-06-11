@@ -369,15 +369,9 @@ export class AMQPChannel {
     // comes from the server
     if (this.confirmId) {
       const wait4Confirm = new Promise<number>((resolve, reject) => this.unconfirmedPublishes.push([this.confirmId++, resolve, reject]))
-      return sendFrames.then(() => {
-        this.connection.bufferPool.push(buffer)
-        return wait4Confirm
-      })
+      return sendFrames.then(() => wait4Confirm).finally(() => this.connection.bufferPool.push(buffer))
     } else {
-      return sendFrames.then(() => {
-        this.connection.bufferPool.push(buffer)
-        return 0
-      })
+      return sendFrames.then(() => 0).finally(() => this.connection.bufferPool.push(buffer))
     }
   }
 
