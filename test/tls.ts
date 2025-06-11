@@ -31,6 +31,7 @@ test('can batch send message', async () => {
     deliveryMode: 2,
   }))
 
-  const results = await Promise.all(sendMsgs)
-  return expect(results).toHaveLength(4)
+  expect(connection['bufferPool'].length).toBe(0)
+  await Promise.all(sendMsgs)
+  expect(connection['bufferPool'].length).toBe(4)
 })
