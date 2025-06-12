@@ -31,9 +31,7 @@ export class AMQPChannel {
     this.onerror = (reason: string) => {
       this.logger?.error(`channel ${this.id} closed: ${reason}`)
       // Propagate channel errors to the connection's onerror handler
-      if (this.id !== 0) { // Don't propagate for connection channel (id=0)
-        this.connection.onerror(new AMQPError(`Channel ${this.id} closed: ${reason}`, this.connection))
-      }
+      this.connection.onerror(new AMQPError(`Channel ${this.id} closed: ${reason}`, this.connection))
     }
   }
 
