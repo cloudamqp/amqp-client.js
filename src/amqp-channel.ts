@@ -363,15 +363,15 @@ export class AMQPChannel {
     }
     const sendFrames = this.connection.send(bufferView.subarray(0, j))
 
-    this.connection.bufferPool.push(buffer) // return buffer to buffer pool for later reuse
+    // return buffer to buffer pool for later reuse
     // if publish confirm is enabled, put a promise on a queue if the sends were ok
     // the promise on the queue will be fullfilled by the read loop when an ack/nack
     // comes from the server
     if (this.confirmId) {
       const wait4Confirm = new Promise<number>((resolve, reject) => this.unconfirmedPublishes.push([this.confirmId++, resolve, reject]))
-      return sendFrames.then(() => wait4Confirm)
+      return sendFrames.then(() => wait4Confirm).finally(() => this.connection.bufferPool.push(buffer))
     } else {
-      return sendFrames.then(() => 0)
+      return sendFrames.then(() => 0).finally(() => this.connection.bufferPool.push(buffer))
     }
   }
 
