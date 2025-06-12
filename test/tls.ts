@@ -14,7 +14,6 @@ test('can connect with TLS', () => {
 })
 
 test('can batch send message', async () => {
-  //const messages = Array(4).fill(randomBytes(50000))
   const messages = [
     randomBytes(500),
     randomBytes(500),
