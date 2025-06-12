@@ -28,7 +28,11 @@ export class AMQPChannel {
   constructor(connection: AMQPBaseClient, id: number) {
     this.connection = connection
     this.id = id
-    this.onerror = (reason: string) => this.logger?.error(`channel ${this.id} closed: ${reason}`)
+    this.onerror = (reason: string) => {
+      this.logger?.error(`channel ${this.id} closed: ${reason}`)
+      // Propagate channel errors to the connection's onerror handler
+      this.connection.onerror(new AMQPError(`Channel ${this.id} closed: ${reason}`, this.connection))
+    }
   }
 
   private get logger() {
