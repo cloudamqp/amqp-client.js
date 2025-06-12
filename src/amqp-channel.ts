@@ -776,7 +776,6 @@ export class AMQPChannel {
       // Reject and clear all unconfirmed publishes
       this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
       this.unconfirmedPublishes.length = 0
-      
       if (closedByServer) this.onerror(err.message)
     }
   }
