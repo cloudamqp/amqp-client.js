@@ -768,6 +768,7 @@ export class AMQPChannel {
    * @param [err] - why the channel was closed
    */
   setClosed(err?: Error): void {
+    const closedByServer = err !== undefined
     err ||= new Error("Connection closed by client")
     if (!this.closed) {
       this.closed = true
@@ -778,10 +779,7 @@ export class AMQPChannel {
       this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
       this.unconfirmedPublishes.length = 0
       
-      // Call onerror for any error, whether from server or from a channel operation
-      if (err.message !== "Connection closed by client") {
-        this.onerror(err.message)
-      }
+      if (closedByServer) this.onerror(err.message)
     }
   }
 
