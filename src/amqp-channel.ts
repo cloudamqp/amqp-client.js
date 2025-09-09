@@ -14,6 +14,7 @@ export class AMQPChannel {
   readonly id: number
   readonly consumers = new Map<string, AMQPConsumer>()
   private rpcQueue: Promise<unknown> = Promise.resolve(true)
+  private readonly rpcCallbacks: [(value?: unknown) => void, (err?: Error) => void][] = []
   private readonly unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][] = []
   closed = false
   confirmId = 0
@@ -747,11 +748,20 @@ export class AMQPChannel {
   private sendRpc(frame: AMQPView, frameSize: number): Promise<any> {
     return new Promise((resolve, reject) => {
       this.rpcQueue = this.rpcQueue.then(() => {
-        this.resolveRPC = resolve
-        this.rejectRPC = reject
-        this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
-          .catch(reject)
-      })
+        // Add the callbacks to the queue before sending
+        this.rpcCallbacks.push([resolve, reject])
+        
+        return this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
+          .catch((err) => {
+            // Remove the callbacks from the queue if send fails
+            const callbacks = this.rpcCallbacks.pop()
+            if (callbacks) {
+              callbacks[1](err) // call reject
+            } else {
+              reject(err)
+            }
+          })
+      }).catch(reject)
     })
   }
 
@@ -770,7 +780,11 @@ export class AMQPChannel {
       this.closed = true
       this.consumers.forEach((consumer) => consumer.setClosed(err))
       this.consumers.clear()
-      this.rejectRPC(err)
+      
+      // Reject all pending RPC callbacks
+      this.rpcCallbacks.forEach(([, reject]) => reject(err))
+      this.rpcCallbacks.length = 0
+      
       // Reject and clear all unconfirmed publishes
       this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
       this.unconfirmedPublishes.length = 0
@@ -833,13 +847,25 @@ export class AMQPChannel {
    * Resolvs next RPC command
    * @ignore
    */
-  resolveRPC(value?: unknown) : unknown | void { return value }
+  resolveRPC(value?: unknown) : unknown | void {
+    const callbacks = this.rpcCallbacks.shift()
+    if (callbacks) {
+      callbacks[0](value) // call resolve
+    }
+    return value
+  }
 
   /**
    * Reject next RPC command
    * @ignore
    */
-  rejectRPC(err?: Error) : Error | void { return err }
+  rejectRPC(err?: Error) : Error | void {
+    const callbacks = this.rpcCallbacks.shift()
+    if (callbacks) {
+      callbacks[1](err) // call reject
+    }
+    return err
+  }
 
   /**
    * Deliver a message to a consumer
