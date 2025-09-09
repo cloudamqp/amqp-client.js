@@ -154,3 +154,14 @@ Module comparison
 | ------ | ------------ | --- |
 | amqp-client.js | 0 | 1743 |
 | amqplib | 14 | 6720 (w/o dependencies) |
+
+## Development
+
+### GitHub Copilot Coding Agent Setup
+
+This repository is configured to work with GitHub Copilot Coding Agent. The configuration includes:
+
+- **Setup Steps**: `.github/copilot/setup-steps.yml` - Defines pre-installation steps that run before firewall restrictions are applied
+- **Allowlist**: `.github/copilot/ALLOWLIST.md` - Documents required URLs/hosts for the firewall allowlist
+
+These configurations help prevent network access issues when the Copilot agent runs builds, tests, or installs dependencies.
