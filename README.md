@@ -166,6 +166,6 @@ Code style is enforced using [Prettier](https://prettier.io/). Run `npm run form
 ```shell
 npm run lint     # Check linting and formatting
 npm run format   # Auto-format code
-npm run build    # Build the library  
+npm run build    # Build the library
 npm test         # Run tests
 ```
