@@ -134,9 +134,9 @@ export class AMQPChannel {
    * @param [param.noAck=true] - if messages are removed from the server upon delivery, or have to be acknowledged
    * @param [param.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
    * @param [param.args={}] - custom arguments
-   * @param {function(AMQPMessage) : void} callback - will be called for each message delivered to this consumer
+   * @param {function(AMQPMessage) : void | Promise<void>} callback - will be called for each message delivered to this consumer
    */
-  basicConsume(queue: string, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback: (msg: AMQPMessage) => void): Promise<AMQPConsumer> {
+  basicConsume(queue: string, {tag = "", noAck = true, exclusive = false, args = {}} = {}, callback: (msg: AMQPMessage) => void | Promise<void>): Promise<AMQPConsumer> {
     if (this.closed) return this.rejectClosed()
     let j = 0
     const noWait = false

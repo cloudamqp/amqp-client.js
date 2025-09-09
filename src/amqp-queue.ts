@@ -61,10 +61,10 @@ export class AMQPQueue {
    * @param [params.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
    * @param [params.tag=""] - tag of the consumer, will be server generated if left empty
    * @param [params.args={}] - custom arguments
-   * @param {function(AMQPMessage) : void} callback - Function to be called for each received message
+   * @param {function(AMQPMessage) : void | Promise<void>} callback - Function to be called for each received message
    */
   subscribe({ noAck = true, exclusive = false, tag = "", args = {} }: ConsumeParams = {},
-    callback: (msg: AMQPMessage) => void): Promise<AMQPConsumer> {
+    callback: (msg: AMQPMessage) => void | Promise<void>): Promise<AMQPConsumer> {
     return this.channel.basicConsume(this.name, { noAck, exclusive, tag, args }, callback)
   }
 

@@ -8,7 +8,7 @@ import type { AMQPMessage } from './amqp-message.js'
 export class AMQPConsumer {
   readonly channel: AMQPChannel
   readonly tag: string
-  readonly onMessage: (msg: AMQPMessage) => void
+  readonly onMessage: (msg: AMQPMessage) => void | Promise<void>
   private closed = false
   private closedError?: Error
   private resolveWait?: (value: void) => void
@@ -20,7 +20,7 @@ export class AMQPConsumer {
    * @param tag - consumer tag
    * @param onMessage - callback executed when a message arrive
    */
-  constructor(channel: AMQPChannel, tag: string, onMessage: (msg: AMQPMessage) => void) {
+  constructor(channel: AMQPChannel, tag: string, onMessage: (msg: AMQPMessage) => void | Promise<void>) {
     this.channel = channel
     this.tag = tag
     this.onMessage = onMessage
