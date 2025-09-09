@@ -1,6 +1,10 @@
-import { AMQPBaseClient } from './amqp-base-client.js'
+import { AMQPBaseClient, VERSION } from './amqp-base-client.js'
 import { AMQPView } from './amqp-view.js'
 import { AMQPError } from './amqp-error.js'
+import { AMQPChannel } from './amqp-channel.js'
+import { AMQPConsumer } from './amqp-consumer.js'
+import { AMQPMessage } from './amqp-message.js'
+import { AMQPQueue } from './amqp-queue.js'
 
 interface AMQPWebSocketInit {
   url: string
@@ -150,3 +154,14 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       return `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
   }
 }
+
+export {
+  AMQPBaseClient,
+  AMQPChannel,
+  AMQPConsumer,
+  AMQPError,
+  AMQPMessage,
+  AMQPQueue,
+  AMQPView,
+  VERSION,
+};
