@@ -4,7 +4,7 @@ import { AMQPMessage } from './amqp-message.js'
 import { AMQPView } from './amqp-view.js'
 import type { Logger } from './types.js'
 
-const VERSION = '3.1.1'
+export const VERSION = '3.1.1'
 
 /**
  * Base class for AMQPClients.
