@@ -729,3 +729,26 @@ test('should handle heartbeat timeout correctly', async () => {
   expect(error.message).toEqual('Heartbeat timeout')
   expect(conn.closed).toBe(true)
 })
+
+test('can bind queues in parallel', async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue('test-queue')
+  await ch.exchangeDeclare('test-exchange', 'fanout')
+
+  // This should not hang - parallel binds should work
+  await Promise.all([
+    q.bind('test-exchange', 'foo:*'),
+    q.bind('test-exchange', 'bar:*'),
+  ])
+
+  // Test with more binds to stress test the RPC queue
+  await Promise.all([
+    q.bind('test-exchange', 'baz:*'),
+    q.bind('test-exchange', 'qux:*'),
+    q.bind('test-exchange', 'quux:*'),
+  ])
+
+  await expect(Promise.resolve('success')).resolves.toBe('success')
+})
