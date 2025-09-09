@@ -1,0 +1,6 @@
+lib/
+types/
+dist/
+node_modules/
+*.log
+package-lock.json

@@ -30,6 +30,8 @@
   "scripts": {
     "docs": "typedoc src/index.ts",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run --coverage",
     "test-browser": "VITE_WS_URL=$WS_URL vitest --config ./vitest.config.browser.ts",
     "prebuild": "rm -rf dist lib types",
@@ -62,13 +64,15 @@
     "@vitest/browser": "*",
     "@vitest/coverage-v8": "*",
     "eslint": "*",
-    "typescript-eslint": "*",
+    "eslint-config-prettier": "^10.1.8",
     "playwright": "*",
+    "prettier": "^3.6.2",
     "rollup": "*",
     "rollup-plugin-sourcemaps": "*",
     "ts-node": "*",
     "typedoc": "*",
     "typescript": "*",
+    "typescript-eslint": "*",
     "vitest": "*"
   }
 }
