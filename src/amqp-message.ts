@@ -1,5 +1,5 @@
-import type { AMQPChannel } from './amqp-channel.js'
-import type { AMQPProperties } from './amqp-properties.js'
+import type { AMQPChannel } from "./amqp-channel.js";
+import type { AMQPProperties } from "./amqp-properties.js";
 
 /**
  * AMQP message
@@ -17,62 +17,61 @@ import type { AMQPProperties } from './amqp-properties.js'
  * @property {string} replyText - Error message on why message was returned
  */
 export class AMQPMessage {
-  channel: AMQPChannel
-  exchange = ""
-  routingKey = ""
-  properties : AMQPProperties = {}
-  bodySize = 0
-  body: Uint8Array | null = null
-  bodyPos = 0
-  deliveryTag = 0
-  consumerTag = ""
-  redelivered = false
-  messageCount?: number
-  replyCode?: number
-  replyText?: string
+  channel: AMQPChannel;
+  exchange = "";
+  routingKey = "";
+  properties: AMQPProperties = {};
+  bodySize = 0;
+  body: Uint8Array | null = null;
+  bodyPos = 0;
+  deliveryTag = 0;
+  consumerTag = "";
+  redelivered = false;
+  messageCount?: number;
+  replyCode?: number;
+  replyText?: string;
 
   /**
    * @param channel - Channel this message was delivered on
    */
   constructor(channel: AMQPChannel) {
-    this.channel = channel
+    this.channel = channel;
   }
 
   /**
    * Converts the message (which is deliviered as an uint8array) to a string
    */
-  bodyToString(): string|null {
+  bodyToString(): string | null {
     if (this.body) {
       if (typeof Buffer !== "undefined")
-        return Buffer.from(this.body).toString()
-      else
-        return new TextDecoder().decode(this.body)
+        return Buffer.from(this.body).toString();
+      else return new TextDecoder().decode(this.body);
     } else {
-      return null
+      return null;
     }
   }
 
-  bodyString(): string|null {
-    return this.bodyToString()
+  bodyString(): string | null {
+    return this.bodyToString();
   }
 
   /** Acknowledge the message */
   ack(multiple = false) {
-    return this.channel.basicAck(this.deliveryTag, multiple)
+    return this.channel.basicAck(this.deliveryTag, multiple);
   }
 
   /** Negative acknowledgment (same as reject) */
   nack(requeue = false, multiple = false) {
-    return this.channel.basicNack(this.deliveryTag, requeue, multiple)
+    return this.channel.basicNack(this.deliveryTag, requeue, multiple);
   }
 
   /** Rejected the message */
   reject(requeue = false) {
-    return this.channel.basicReject(this.deliveryTag, requeue)
+    return this.channel.basicReject(this.deliveryTag, requeue);
   }
 
   /** Cancel the consumer the message arrived to **/
   cancelConsumer() {
-    return this.channel.basicCancel(this.consumerTag)
+    return this.channel.basicCancel(this.consumerTag);
   }
 }

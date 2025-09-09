@@ -9,6 +9,6 @@ export default defineConfig({
       provider: "playwright",
       name: "chromium",
       headless: false,
-    }
-  }
+    },
+  },
 });

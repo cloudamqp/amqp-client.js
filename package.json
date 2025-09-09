@@ -29,7 +29,7 @@
   },
   "scripts": {
     "docs": "typedoc src/index.ts",
-    "lint": "eslint .",
+    "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
