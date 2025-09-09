@@ -698,6 +698,44 @@ test('should fail to connect to HTTP', async () => {
   await expect(amqp.connect()).rejects.toThrow()
 })
 
+test('can publish multiple messages rapidly without socket backpressure issues', async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await ch.confirmSelect()
+  const q = await ch.queue("test-rapid-publishing", { durable: true })
+  
+  const jobsToPublish = 15 // More than 10 to reproduce the issue
+  const dummyJobData = { _someId: "id", _key: Date.now() }
+  
+  // Publish all messages in parallel, similar to user's Promise.all usage
+  const publishPromises = [...Array(jobsToPublish).keys()].map(i => {
+    const msgBody = JSON.stringify({
+      ...dummyJobData,
+      _pos: i
+    })
+    return q.publish(msgBody, { deliveryMode: 2 })
+  })
+  
+  // Should not throw "Socket closed" or "Channel is closed" errors
+  await expect(Promise.all(publishPromises)).resolves.toBeDefined()
+  
+  // Verify all messages were published
+  await new Promise(resolve => setTimeout(resolve, 100)) // Brief delay for server processing
+  
+  let messageCount = 0
+  while (true) {
+    const msg = await q.get({ noAck: true })
+    if (!msg) break
+    messageCount++
+  }
+  
+  expect(messageCount).toBe(jobsToPublish)
+  
+  await ch.close()
+  await conn.close()
+}, 10_000)
+
 test('should handle heartbeat timeout correctly', async () => {
   const amqp = getNewClient({ heartbeat: 1 })
   const conn = await amqp.connect()

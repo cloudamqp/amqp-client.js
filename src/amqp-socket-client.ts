@@ -163,7 +163,38 @@ export class AMQPClient extends AMQPBaseClient {
       if (!this.socket)
         return reject(new AMQPError("Socket not connected", this))
       try {
-        this.socket.write(bytes, undefined, (err) => err ? reject(err) : resolve())
+        const success = this.socket.write(bytes, undefined, (err) => {
+          if (err) reject(err)
+          else if (success) resolve() // Buffer wasn't full, can resolve immediately
+        })
+        
+        // If write returned false, the buffer is full and we need to wait for drain
+        if (!success) {
+          const onDrain = () => {
+            this.socket?.off('drain', onDrain)
+            this.socket?.off('error', onError)
+            this.socket?.off('close', onClose)
+            resolve()
+          }
+          
+          const onError = (err: Error) => {
+            this.socket?.off('drain', onDrain)
+            this.socket?.off('error', onError)
+            this.socket?.off('close', onClose)
+            reject(err)
+          }
+          
+          const onClose = () => {
+            this.socket?.off('drain', onDrain)
+            this.socket?.off('error', onError)
+            this.socket?.off('close', onClose)
+            reject(new AMQPError("Socket closed while waiting for drain", this))
+          }
+          
+          this.socket.once('drain', onDrain)
+          this.socket.once('error', onError)
+          this.socket.once('close', onClose)
+        }
       } catch (err) {
         this.closeSocket()
         reject(err)
