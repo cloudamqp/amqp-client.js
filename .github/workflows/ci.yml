@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Test against RabbitMQ with TLS support
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -51,6 +52,7 @@ jobs:
         AMQPS_URL: amqps://localhost?insecure
     - run: npm run lint
 
+  # Test against LavinMQ 
   test-lavinmq:
     runs-on: ubuntu-latest
     strategy:
@@ -72,6 +74,7 @@ jobs:
         PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
     - run: npm test
 
+  # Browser tests against RabbitMQ via WebSocket
   test-browser:
     runs-on: ubuntu-latest
     env:
@@ -97,6 +100,7 @@ jobs:
     - run: npx playwright install --with-deps chromium
     - run: npm run test-browser -- run --browser.headless
 
+  # Browser tests against LavinMQ via WebSocket
   test-browser-lavinmq:
     runs-on: ubuntu-latest
     env:
