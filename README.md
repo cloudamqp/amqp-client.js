@@ -123,6 +123,53 @@ Using AMQP over WebSockets in a browser:
 </html>
 ```
 
+## RPC (Remote Procedure Call)
+
+This library includes a high-level RPC API that simplifies request-response patterns over AMQP:
+
+```javascript
+import { AMQPClient, AMQPRpcClient, AMQPRpcServer } from '@cloudamqp/amqp-client'
+
+async function rpcExample() {
+  const amqp = new AMQPClient("amqp://localhost")
+  const conn = await amqp.connect()
+  const serverChannel = await conn.channel()
+  const clientChannel = await conn.channel()
+
+  // Set up RPC server
+  const server = new AMQPRpcServer(serverChannel, 'calculator')
+  
+  server.register('add', (params) => {
+    return params.a + params.b
+  })
+  
+  server.register('multiply', async (params) => {
+    // Async handlers are supported
+    return params.a * params.b
+  })
+  
+  await server.start()
+
+  // Set up RPC client
+  const client = new AMQPRpcClient(clientChannel, 'calculator')
+
+  // Make RPC calls
+  const sum = await client.call('add', { a: 10, b: 5 })
+  console.log(`Result: ${sum}`) // Result: 15
+
+  // With timeout
+  const product = await client.call('multiply', { a: 8, b: 7 }, { timeout: 5000 })
+  console.log(`Result: ${product}`) // Result: 56
+
+  // Clean up
+  await client.close()
+  await server.stop()
+  await conn.close()
+}
+
+rpcExample()
+```
+
 ## Performance
 
 Messages with a 1-byte body, no properties:
