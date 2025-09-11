@@ -59,11 +59,29 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       socket.addEventListener('close', reject)
       socket.addEventListener('error', reject)
       socket.addEventListener('open', () => {
-        socket.addEventListener('error', (ev: Event) => this.onerror(new AMQPError(ev.toString(), this)))
+        socket.addEventListener('error', (ev: Event) => {
+          if (!this.closed) {
+            const err = new AMQPError(ev.toString(), this)
+            this.closed = true
+            // Close all channels and their consumers when there's an error
+            this.channels.forEach((ch) => ch?.setClosed(err))
+            this.channels = [new AMQPChannel(this, 0)]
+            this.onerror(err)
+          }
+        })
         socket.addEventListener('close', (ev: CloseEvent) => {
           const clientClosed = this.closed
           this.closed = true
-          if (!ev.wasClean && !clientClosed) this.onerror(new AMQPError(`connection not cleanly closed (${ev.code})`, this))
+          if (!(ev.wasClean && clientClosed)) {
+            const err = new AMQPError(`connection not cleanly closed (${ev.code})`, this)
+            // Close all channels and their consumers when connection is lost
+            this.channels.forEach((ch) => ch?.setClosed(err))
+            this.channels = [new AMQPChannel(this, 0)]
+            this.onerror(err)
+          } else {
+            this.channels.forEach((ch) => ch?.setClosed())
+            this.channels = [new AMQPChannel(this, 0)]
+          }
         })
         socket.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
       })
