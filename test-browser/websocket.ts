@@ -95,7 +95,7 @@ test('can unsubscribe from a queue', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({}, () => "")
+  const consumer = await q.subscribe({}, () => {})
   await expect(q.unsubscribe(consumer.tag)).resolves.toBeDefined()
 })
 
@@ -129,7 +129,7 @@ test('will throw an error after consumer timeout', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({noAck: false}, () => "")
+  const consumer = await q.subscribe({noAck: false}, () => {})
   await expect(consumer.wait(1)).rejects.toThrow()
 })
 
@@ -138,7 +138,7 @@ test('will throw an error if consumer is closed', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({noAck: false}, () => "")
+  const consumer = await q.subscribe({noAck: false}, () => {})
   consumer.setClosed(new Error("testing"))
   try {
     await consumer.wait(1);
@@ -162,7 +162,7 @@ test('will clear consumer wait timeout on cancel', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({noAck: false}, () => "")
+  const consumer = await q.subscribe({noAck: false}, () => {})
   const wait = consumer.wait(5000);
   consumer.cancel()
   await expect(wait).resolves.toBeUndefined()
@@ -189,7 +189,7 @@ test('consumer stops wait on cancel', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
-  const consumer = await q.subscribe({}, () => ({}))
+  const consumer = await q.subscribe({}, () => {})
   await q.publish("foobar")
   await consumer.cancel()
   await expect(consumer.wait()).resolves.toBeUndefined()
@@ -200,7 +200,7 @@ test('consumer stops wait on channel error', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
-  const consumer = await q.subscribe({}, () => ({}))
+  const consumer = await q.subscribe({}, () => {})
   // acking invalid delivery tag should close channel
   setTimeout(() => ch.basicAck(99999), 1)
   await expect(consumer.wait()).rejects.toThrow()
@@ -577,7 +577,7 @@ test("can handle cancel from server", async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({}, () => "")
+  const consumer = await q.subscribe({}, () => {})
   await q.delete()
   await expect(consumer.wait()).rejects.toThrow(/Consumer cancelled by the server/)
 }, 10_000)
