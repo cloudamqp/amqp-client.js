@@ -1,5 +1,6 @@
 import { assert, expect, test, beforeEach, vi } from "vitest";
 import { AMQPClient } from '../src/amqp-socket-client.js';
+import { AMQPWebSocketClient } from '../src/amqp-websocket-client.js';
 import { AMQPMessage } from '../src/amqp-message.js';
 import type { AMQPError } from "../src/amqp-error.js";
 
@@ -750,5 +751,84 @@ test('can bind queues in parallel', async () => {
     q.bind('test-exchange', 'quux:*'),
   ])
 
-  await expect(Promise.resolve('success')).resolves.toBe('success')
+  // Verify the test completed successfully - parallel binds worked without hanging
+  expect(q.name).toBe('test-queue')
+})
+
+test('should have no logger by default', () => {
+  const amqp = getNewClient()
+  expect(amqp.logger).toBeUndefined()
+})
+
+test('should accept logger in AMQPClient constructor', () => {
+  const mockLogger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+  }
+
+  const amqp = new AMQPClient("amqp://127.0.0.1", undefined, mockLogger)
+  expect(amqp.logger).toBe(mockLogger)
+})
+
+test('should accept logger in AMQPWebSocketClient constructor', () => {
+  const mockLogger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+  }
+
+  const client = new AMQPWebSocketClient("wss://example.com/ws", undefined, undefined, undefined, undefined, undefined, undefined, mockLogger)
+  expect(client.logger).toBe(mockLogger)
+})
+
+test('should accept logger via AMQPWebSocketClient init object', () => {
+  const mockLogger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+  }
+
+  const client = new AMQPWebSocketClient({
+    url: "wss://example.com/ws",
+    logger: mockLogger
+  })
+  expect(client.logger).toBe(mockLogger)
+})
+
+test('should not log when logger is null', () => {
+  const amqp = getNewClient()
+
+  // This should not throw even with null logger
+  expect(() => {
+    amqp.logger?.error("test message")
+    amqp.logger?.warn("test message")
+    amqp.logger?.info("test message")
+    amqp.logger?.debug("test message")
+  }).not.toThrow()
+})
+
+test('should use provided logger when available', () => {
+  const mockLogger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+  }
+
+  const amqp = new AMQPClient("amqp://127.0.0.1", undefined, mockLogger)
+
+  // Call logger methods directly (simulating how they're used in the code)
+  amqp.logger?.error("error message")
+  amqp.logger?.warn("warn message")
+  amqp.logger?.info("info message")
+  amqp.logger?.debug("debug message")
+
+  expect(mockLogger.error).toHaveBeenCalledWith("error message")
+  expect(mockLogger.warn).toHaveBeenCalledWith("warn message")
+  expect(mockLogger.info).toHaveBeenCalledWith("info message")
+  expect(mockLogger.debug).toHaveBeenCalledWith("debug message")
 })

@@ -26,7 +26,7 @@ export abstract class AMQPBaseClient {
   frameMax: number
   heartbeat: number
   onerror: (error: AMQPError) => void
-  logger: Logger | null | undefined = console
+  logger: Logger | undefined
   /** Used for string -> arraybuffer when publishing */
   readonly textEncoder: InstanceType<typeof TextEncoder> = new TextEncoder()
   // Buffer pool for publishes, let multiple microtasks publish at the same time but save on allocations
@@ -35,8 +35,9 @@ export abstract class AMQPBaseClient {
   /**
    * @param name - name of the connection, set in client properties
    * @param platform - used in client properties
+   * @param logger - optional logger instance, defaults to undefined (no logging)
    */
-  constructor(vhost: string, username: string, password: string, name?: string, platform?: string, frameMax = 8192, heartbeat = 0, channelMax = 0) {
+  constructor(vhost: string, username: string, password: string, name?: string, platform?: string, frameMax = 8192, heartbeat = 0, channelMax = 0, logger?: Logger | null) {
     this.vhost = vhost
     this.username = username
     this.password = ""
@@ -46,6 +47,7 @@ export abstract class AMQPBaseClient {
     })
     if (name) this.name = name // connection name
     if (platform) this.platform = platform
+    this.logger = logger || undefined
     this.channels = [new AMQPChannel(this, 0)]
     this.onerror = (error: AMQPError) => this.logger?.error("amqp-client connection closed", error.message)
     if (frameMax < 8192) throw new Error("frameMax must be 8192 or larger")
@@ -318,7 +320,7 @@ export abstract class AMQPBaseClient {
                   break
                 }
                 case 71: { // update-secret-ok
-                  console.info("AMQP connection update secret ok")
+                  this.logger?.info("AMQP connection update secret ok")
                   this.onUpdateSecretOk?.()
                   delete this.onUpdateSecretOk
                   break

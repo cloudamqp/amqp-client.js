@@ -1,6 +1,7 @@
 import { AMQPBaseClient } from './amqp-base-client.js'
 import { AMQPError } from './amqp-error.js'
 import type { AMQPTlsOptions } from './amqp-tls-options.js'
+import type { Logger } from './types.js'
 import { AMQPView } from './amqp-view.js'
 import { Buffer } from 'buffer'
 import * as net from 'net'
@@ -22,8 +23,10 @@ export class AMQPClient extends AMQPBaseClient {
 
   /**
    * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
+   * @param tlsOptions - optional TLS options
+   * @param logger - optional logger instance, defaults to null (no logging)
    */
-  constructor(url: string, tlsOptions?: AMQPTlsOptions) {
+  constructor(url: string, tlsOptions?: AMQPTlsOptions, logger?: Logger | null) {
     const u = new URL(url)
     const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
     const username = decodeURIComponent(u.username) || "guest"
@@ -33,7 +36,7 @@ export class AMQPClient extends AMQPBaseClient {
     const heartbeat = parseInt(u.searchParams.get("heartbeat") || "0")
     const channelMax = parseInt(u.searchParams.get("channelMax") || "0")
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
-    super(vhost, username, password, name, platform, frameMax, heartbeat, channelMax)
+    super(vhost, username, password, name, platform, frameMax, heartbeat, channelMax, logger)
     this.tls = u.protocol === "amqps:"
     this.tlsOptions = tlsOptions
     this.host = u.hostname || "localhost"
