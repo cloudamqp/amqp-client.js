@@ -583,7 +583,8 @@ test("can set frameMax", async () => {
   const ch = await conn.channel()
   await ch.confirmSelect()
   const q = await ch.queue("")
-  await q.publish("", { headers: { a: "a".repeat(15000) } })
+  const headerValue = "a".repeat(conn.frameMax - 100) // leave some space for other parts of the frame
+  await q.publish("", { headers: { a: headerValue } })
   const msg = await q.get()
   if (msg) {
     const props = msg.properties
@@ -591,7 +592,7 @@ test("can set frameMax", async () => {
       const headers = props.headers
       if (headers) {
         const a = headers["a"] as string
-        expect(a.length).toEqual(15000)
+        expect(a.length).toEqual(headerValue.length)
       } else expect(headers).toBeTruthy()
     } else expect(props).toBeTruthy()
   } else expect(msg).toBeTruthy()
