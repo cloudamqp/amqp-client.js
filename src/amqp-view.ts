@@ -310,6 +310,9 @@ export class AMQPView extends DataView<Uint8Array['buffer']>  {
           }
         }
         break
+      case "undefined":
+        this.setUint8(i, 'V'.charCodeAt(0)); i += 1
+        break
       case "object":
         if (Array.isArray(field)) {
           this.setUint8(i, 'A'.charCodeAt(0)); i += 1
@@ -324,7 +327,7 @@ export class AMQPView extends DataView<Uint8Array['buffer']>  {
           this.setUint8(i, 'T'.charCodeAt(0)); i += 1
           const unixEpoch = Math.floor(Number(field) / 1000)
           this.setInt64(i, unixEpoch, littleEndian); i += 8
-        } else if (field === null || field === undefined) {
+        } else if (field === null) {
           this.setUint8(i, 'V'.charCodeAt(0)); i += 1
         } else { // hopefully it's a hash like object
           this.setUint8(i, 'F'.charCodeAt(0)); i += 1
