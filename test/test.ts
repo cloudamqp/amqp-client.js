@@ -98,7 +98,7 @@ test('can unsubscribe from a queue', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({}, () => "")
+  const consumer = await q.subscribe({}, () => {})
   await expect(q.unsubscribe(consumer.tag)).resolves.toBeDefined()
 })
 
@@ -132,7 +132,7 @@ test('will throw an error after consumer timeout', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({ noAck: false }, () => "")
+  const consumer = await q.subscribe({ noAck: false }, () => {})
   await expect(consumer.wait(1)).rejects.toThrow()
 })
 
@@ -141,7 +141,7 @@ test('will throw an error if consumer is closed', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({ noAck: false }, () => "")
+  const consumer = await q.subscribe({ noAck: false }, () => {})
   consumer.setClosed(new Error("testing"))
   try {
     await consumer.wait(1);
@@ -165,7 +165,7 @@ test('will clear consumer wait timeout on cancel', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({ noAck: false }, () => "")
+  const consumer = await q.subscribe({ noAck: false }, () => {})
   const wait = consumer.wait(5000);
   consumer.cancel()
   await expect(wait).resolves.toBeUndefined()
@@ -192,7 +192,7 @@ test('consumer stops wait on cancel', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
-  const consumer = await q.subscribe({}, () => ({}))
+  const consumer = await q.subscribe({}, () => {})
   await q.publish("foobar")
   await consumer.cancel()
   await expect(consumer.wait()).resolves.toBeUndefined()
@@ -203,7 +203,7 @@ test('consumer stops wait on channel error', async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
-  const consumer = await q.subscribe({}, () => ({}))
+  const consumer = await q.subscribe({}, () => {})
   // acking invalid delivery tag should close channel
   setTimeout(() => ch.basicAck(99999), 1)
   await expect(consumer.wait()).rejects.toThrow()
@@ -580,7 +580,7 @@ test("can handle cancel from server", async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({}, () => "")
+  const consumer = await q.subscribe({}, () => {})
   await q.delete()
   await expect(consumer.wait()).rejects.toThrow(/Consumer cancelled by the server/)
 })
@@ -701,30 +701,30 @@ test('should fail to connect to HTTP', async () => {
 test('should handle heartbeat timeout correctly', async () => {
   const amqp = getNewClient({ heartbeat: 1 })
   const conn = await amqp.connect()
-  
+
   // Mock the socket timeout to simulate missed heartbeats
   const socket = amqp["socket"]
   assert(socket, "Socket must be created")
-  
+
   // Set up error callback to capture timeout error
   const errorPromise = new Promise<AMQPError>((resolve) => {
     conn.onerror = (err: AMQPError) => {
       resolve(err)
     }
   })
-  
+
   // Set up close promise to detect when socket is closed
   const closePromise = new Promise((resolve) => {
     socket.on('close', resolve)
   })
-  
+
   // Trigger timeout event to simulate heartbeat timeout
   socket.emit('timeout')
-  
+
   // Wait for error callback and socket close
   const error = await errorPromise
   await closePromise
-  
+
   // Verify error message and that connection is closed
   expect(error.message).toEqual('Heartbeat timeout')
   expect(conn.closed).toBe(true)
