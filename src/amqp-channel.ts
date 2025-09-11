@@ -750,7 +750,7 @@ export class AMQPChannel {
       this.rpcQueue = this.rpcQueue.then(() => {
         // Add the callbacks to the queue before sending
         this.rpcCallbacks.push([resolve, reject])
-        
+
         return this.connection.send(new Uint8Array(frame.buffer, 0, frameSize))
           .catch((err) => {
             // Remove the callbacks from the queue if send fails
@@ -780,11 +780,11 @@ export class AMQPChannel {
       this.closed = true
       this.consumers.forEach((consumer) => consumer.setClosed(err))
       this.consumers.clear()
-      
+
       // Reject all pending RPC callbacks
       this.rpcCallbacks.forEach(([, reject]) => reject(err))
       this.rpcCallbacks.length = 0
-      
+
       // Reject and clear all unconfirmed publishes
       this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
       this.unconfirmedPublishes.length = 0
