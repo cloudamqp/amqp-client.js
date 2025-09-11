@@ -226,6 +226,63 @@ test('closed socket closes client', async () => {
   expect(amqp.closed).toBe(true)
 })
 
+test('connection loss closes channels and consumers', async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+
+  const consumer = await q.subscribe({noAck: false}, () => {})
+
+  // Set up error handler to track when consumer is closed
+  const originalConsumerWait = consumer.wait()
+
+  const socket = amqp["socket"]
+  assert(socket, "Socket must be created")
+
+  // Simulate unclean connection loss by closing the socket
+  const closed = new Promise((resolve) => socket.addEventListener('close', resolve))
+  socket.close()
+  await closed
+
+  // Check that connection, channel, and consumer are all marked as closed
+  expect(amqp.closed).toBe(true)
+  expect(ch.closed).toBe(true)
+
+  // Consumer wait should reject with an error
+  await expect(originalConsumerWait).rejects.toThrow()
+
+  // Verify that operations on closed objects throw errors
+  await expect(ch.queue()).rejects.toThrow(/closed/)
+  await expect(q.publish("test")).rejects.toThrow()
+})
+
+test('connection loss triggers onerror callback', async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+
+  let errorReceived: AMQPError | null = null
+  conn.onerror = vi.fn((err: AMQPError) => {
+    errorReceived = err
+  })
+
+  const socket = amqp["socket"]
+  assert(socket, "Socket must be created")
+
+  // Simulate unclean connection loss
+  const closed = new Promise((resolve) => socket.addEventListener('close', resolve))
+  socket.close()
+  await closed
+
+  // Check that error callback was called
+  expect(conn.onerror).toHaveBeenCalled()
+  expect(errorReceived).toBeTruthy()
+  if (errorReceived) {
+    expect((errorReceived as AMQPError).message).toMatch(/connection not cleanly closed/)
+  }
+  expect(amqp.closed).toBe(true)
+})
+
 test('wait for publish confirms', async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
