@@ -31,7 +31,7 @@
     "docs": "typedoc src/index.ts",
     "lint": "eslint .",
     "test": "vitest run --coverage",
-    "test-browser": "VITE_WS_URL=$WS_URL vitest --config ./vitest.config.browser.ts",
+    "test-browser": "vitest --config ./vitest.config.browser.ts",
     "prebuild": "rm -rf dist lib types",
     "build": "tsc && tsc --module commonjs --outDir lib/cjs && tsc --emitDeclarationOnly --removeComments false && rollup -c",
     "postbuild": "echo '{\"type\": \"commonjs\"}' > lib/cjs/package.json",

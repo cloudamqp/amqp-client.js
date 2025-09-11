@@ -10,5 +10,6 @@ export default defineConfig({
       name: "chromium",
       headless: false,
     }
-  }
+  },
+  envDir: '.'
 });
