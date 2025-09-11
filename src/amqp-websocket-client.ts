@@ -5,6 +5,7 @@ import { AMQPChannel } from './amqp-channel.js'
 import { AMQPConsumer } from './amqp-consumer.js'
 import { AMQPMessage } from './amqp-message.js'
 import { AMQPQueue } from './amqp-queue.js'
+import type { Logger } from './types.js'
 
 interface AMQPWebSocketInit {
   url: string
@@ -14,6 +15,7 @@ interface AMQPWebSocketInit {
   name?: string
   frameMax?: number
   heartbeat?: number
+  logger?: Logger | null
 }
 
 /**
@@ -28,10 +30,11 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
 
   /**
    * @param url to the websocket endpoint, example: wss://server/ws/amqp
+   * @param logger - optional logger instance, defaults to null (no logging)
    */
-  constructor(url: string, vhost?: string, username?: string, password?: string, name?: string, frameMax?: number, heartbeat?: number);
+  constructor(url: string, vhost?: string, username?: string, password?: string, name?: string, frameMax?: number, heartbeat?: number, logger?: Logger | null);
   constructor(init: AMQPWebSocketInit);
-  constructor(url: string | AMQPWebSocketInit, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 8192, heartbeat = 0) {
+  constructor(url: string | AMQPWebSocketInit, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 8192, heartbeat = 0, logger?: Logger | null) {
     if (typeof url === 'object') {
       vhost = url.vhost ?? vhost
       username = url.username ?? username
@@ -39,9 +42,10 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       name = url.name ?? name
       frameMax = url.frameMax ?? frameMax
       heartbeat = url.heartbeat ?? heartbeat
+      logger = url.logger ?? logger
       url = url.url
     }
-    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat)
+    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat, 0, logger)
     this.url = url
     this.frameBuffer = new Uint8Array(frameMax)
   }
