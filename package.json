@@ -41,7 +41,7 @@
     "postbuild": "echo '{\"type\": \"commonjs\"}' > lib/cjs/package.json",
     "prepare": "npm run build",
     "preversion": "npm run test:local",
-    "version": "sed -i'' \"s/VERSION = .*/VERSION = '$npm_package_version'/\" src/amqp-base-client.ts && node scripts/release-tag.js && git add src/amqp-base-client.ts CHANGELOG.md",
+    "version": "sed -i'' \"s/VERSION = .*/VERSION = \\\"$npm_package_version\\\"/\" src/amqp-base-client.ts && npm run format && node scripts/release-tag.js && git add src/amqp-base-client.ts CHANGELOG.md",
     "postversion": "git push && git push --tags",
     "release": "npm version patch",
     "release:minor": "npm version minor",

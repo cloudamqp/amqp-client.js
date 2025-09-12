@@ -19,7 +19,10 @@ function main() {
   const today = new Date().toISOString().split("T")[0] // YYYY-MM-DD format
   const newVersionHeader = `## [${version}] - ${today}`
 
-  if (changelog.includes(unreleasedHeader)) {
+  // Check if version already exists in changelog
+  if (changelog.includes(newVersionHeader) || changelog.includes(versionHeader)) {
+    console.log(`Version ${version} already exists in changelog. Skipping update.`)
+  } else if (changelog.includes(unreleasedHeader)) {
     console.log("Updating [Unreleased] section to current version...")
     changelog = changelog.replace(unreleasedHeader, newVersionHeader)
 
