@@ -33,10 +33,7 @@ function main() {
 
     // Write updated changelog back to file
     fs.writeFileSync("CHANGELOG.md", changelog, "utf8")
-
-    // Stage the changelog file for commit
-    execSync("git add CHANGELOG.md", { stdio: "inherit" })
-    console.log("✅ Updated CHANGELOG.md and staged for commit")
+    console.log("✅ Updated CHANGELOG.md")
   }
 
   // Find the section for this version
