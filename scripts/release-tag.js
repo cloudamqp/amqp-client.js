@@ -4,56 +4,18 @@ import fs from "fs"
 import { execSync } from "child_process"
 
 function main() {
-  // Check if we should only update changelog (no tag creation)
-  const updateChangelogOnly = process.argv.includes("--update-changelog")
-  
   // Read package.json to get current version
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"))
   const version = pkg.version
 
-  if (updateChangelogOnly) {
-    console.log(`Updating changelog for version ${version}...`)
-  } else {
-    console.log(`Creating tag for version ${version}...`)
-  }
+  console.log(`Creating tag for version ${version}...`)
 
   // Read changelog
-  let changelog = fs.readFileSync("CHANGELOG.md", "utf8")
-
-  // Update [Unreleased] section to current version if it exists
-  const unreleasedHeader = "## [Unreleased]"
-  const versionHeader = `## [${version}]`
-  const today = new Date().toISOString().split("T")[0] // YYYY-MM-DD format
-  const newVersionHeader = `## [${version}] - ${today}`
-
-  // Check if version already exists in changelog
-  if (changelog.includes(newVersionHeader) || changelog.includes(versionHeader)) {
-    console.log(`Version ${version} already exists in changelog. Skipping update.`)
-  } else if (changelog.includes(unreleasedHeader)) {
-    console.log("Updating [Unreleased] section to current version...")
-    changelog = changelog.replace(unreleasedHeader, newVersionHeader)
-
-    // Add a new [Unreleased] section at the top for future changes
-    const changelogLines = changelog.split("\n")
-    const headerIndex = changelogLines.findIndex((line) => line.startsWith("## ["))
-    if (headerIndex !== -1) {
-      changelogLines.splice(headerIndex, 0, "## [Unreleased]", "")
-      changelog = changelogLines.join("\n")
-    }
-
-    // Write updated changelog back to file
-    fs.writeFileSync("CHANGELOG.md", changelog, "utf8")
-    console.log("✅ Updated CHANGELOG.md")
-  }
-
-  // If only updating changelog, exit here (don't create tag)
-  if (updateChangelogOnly) {
-    return
-  }
+  const changelog = fs.readFileSync("CHANGELOG.md", "utf8")
 
   // Find the section for this version
-  const startIdx =
-    changelog.indexOf(newVersionHeader) !== -1 ? changelog.indexOf(newVersionHeader) : changelog.indexOf(versionHeader)
+  const versionHeader = `## [${version}]`
+  const startIdx = changelog.indexOf(versionHeader)
 
   if (startIdx === -1) {
     console.error(`Error: Version ${version} not found in CHANGELOG.md`)
