@@ -1,6 +1,6 @@
 import { AMQPChannel } from './amqp-channel.js'
 import { AMQPError } from './amqp-error.js'
-import { AMQPFrame } from './amqp-frame.js'
+import * as AMQPFrame from './amqp-frame.js'
 import { AMQPMessage } from './amqp-message.js'
 import { AMQPView } from './amqp-view.js'
 import type { Logger } from './types.js'
@@ -88,12 +88,12 @@ export abstract class AMQPBaseClient {
   close(reason = "", code = 200): Promise<void> {
     if (this.closed) return this.rejectClosed()
     this.closed = true
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 512,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: 0,
-      classId: 10,
-      method: 50,
+      classId: AMQPFrame.ClassId.CONNECTION,
+      method: AMQPFrame.ConnectionMethod.CLOSE,
     })
     frame.writeUint16(code) // reply code
     frame.writeShortString(reason) // reply reason
@@ -108,16 +108,16 @@ export abstract class AMQPBaseClient {
   }
 
   updateSecret(newSecret: string, reason: string) {
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 8192,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: 0,
-      classId: 10,
-      method: 70,
+      classId: AMQPFrame.ClassId.CONNECTION,
+      method: AMQPFrame.ConnectionMethod.UPDATE_SECRET,
     })
 
-    frame.writeLongString(newSecret) // new secret
-    frame.writeShortString(reason) // reason
+    frame.writeLongString(newSecret)
+    frame.writeShortString(reason)
     frame.finalize()
     return new Promise((resolve, reject) => {
       this.send(frame.toUint8Array())
@@ -170,8 +170,8 @@ export abstract class AMQPBaseClient {
       } catch {
         throw (new AMQPError(`Frame end out of range, frameSize=${frameSize}, pos=${i}, byteLength=${view.byteLength}`, this))
       }
-      if (frameEnd !== 206)
-        throw (new AMQPError(`Invalid frame end ${frameEnd}, expected 206`, this))
+      if (frameEnd !== AMQPFrame.End.CODE)
+        throw (new AMQPError(`Invalid frame end ${frameEnd}, expected ${AMQPFrame.End.CODE}`, this))
 
       const channel = this.channels[channelId]
       if (!channel) {
@@ -180,22 +180,22 @@ export abstract class AMQPBaseClient {
         continue
       }
       switch (type) {
-        case 1: { // method
+        case AMQPFrame.Type.METHOD: {
           const classId = view.getUint16(i); i += 2
           const methodId = view.getUint16(i); i += 2
           switch (classId) {
-            case 10: { // connection
+            case AMQPFrame.ClassId.CONNECTION: {
               switch (methodId) {
-                case 10: { // start
+                case AMQPFrame.ConnectionMethod.START: {
                   // ignore start frame, just reply startok
                   i += frameSize - 4
 
-                  const startOk = new AMQPFrame({
+                  const startOk = new AMQPFrame.Writer({
                     bufferSize: 8192,
-                    type: 1,
+                    type: AMQPFrame.Type.METHOD,
                     channel: 0,
-                    classId: 10,
-                    method: 11,
+                    classId: AMQPFrame.ClassId.CONNECTION,
+                    method: AMQPFrame.ConnectionMethod.START_OK,
                   })
 
                   const clientProps = {
@@ -214,16 +214,16 @@ export abstract class AMQPBaseClient {
                       "publisher_confirms": true,
                     }
                   }
-                  startOk.writeTable(clientProps) // client properties
-                  startOk.writeShortString("PLAIN") // mechanism
+                  startOk.writeTable(clientProps)
+                  startOk.writeShortString("PLAIN") // authentication mechanism
                   const response = `\u0000${this.username}\u0000${this.password}`
-                  startOk.writeLongString(response) // response
+                  startOk.writeLongString(response) // authentication response
                   startOk.writeShortString("") // locale
                   startOk.finalize()
                   this.send(startOk.toUint8Array()).catch(this.rejectConnect)
                   break
                 }
-                case 30: { // tune
+                case AMQPFrame.ConnectionMethod.TUNE: {
                   const channelMax = view.getUint16(i); i += 2
                   const frameMax = view.getUint32(i); i += 4
                   const heartbeat = view.getUint16(i); i += 2
@@ -231,28 +231,28 @@ export abstract class AMQPBaseClient {
                   this.frameMax = this.frameMax === 0 ? frameMax : Math.min(this.frameMax, frameMax)
                   this.heartbeat = this.heartbeat === 0 ? 0 : Math.min(this.heartbeat, heartbeat)
 
-                  const tuneOk = new AMQPFrame({
+                  const tuneOk = new AMQPFrame.Writer({
                     bufferSize: 20,
-                    type: 1,
+                    type: AMQPFrame.Type.METHOD,
                     channel: 0,
                     frameSize: 12,
-                    classId: 10,
-                    method: 31,
+                    classId: AMQPFrame.ClassId.CONNECTION,
+                    method: AMQPFrame.ConnectionMethod.TUNE_OK,
                   })
-                  tuneOk.writeUint16(this.channelMax) // channel max
-                  tuneOk.writeUint32(this.frameMax) // frame max
-                  tuneOk.writeUint16(this.heartbeat) // heartbeat
+                  tuneOk.writeUint16(this.channelMax)
+                  tuneOk.writeUint32(this.frameMax)
+                  tuneOk.writeUint16(this.heartbeat)
                   tuneOk.finalize()
                   this.send(tuneOk.toUint8Array()).catch(this.rejectConnect)
 
-                  const open = new AMQPFrame({
+                  const open = new AMQPFrame.Writer({
                     bufferSize: 512,
-                    type: 1,
+                    type: AMQPFrame.Type.METHOD,
                     channel: 0,
-                    classId: 10,
-                    method: 40,
+                    classId: AMQPFrame.ClassId.CONNECTION,
+                    method: AMQPFrame.ConnectionMethod.OPEN,
                   })
-                  open.writeShortString(this.vhost) // vhost
+                  open.writeShortString(this.vhost)
                   open.writeUint8(0) // reserved1
                   open.writeUint8(0) // reserved2
                   open.finalize()
@@ -260,7 +260,7 @@ export abstract class AMQPBaseClient {
 
                   break
                 }
-                case 41: { // openok
+                case AMQPFrame.ConnectionMethod.OPEN_OK: {
                   i += 1 // reserved1
                   this.closed = false
                   const promise = this.connectPromise
@@ -271,7 +271,7 @@ export abstract class AMQPBaseClient {
                   }
                   break
                 }
-                case 50: { // close
+                case AMQPFrame.ConnectionMethod.CLOSE: {
                   const code = view.getUint16(i); i += 2
                   const [text, strLen] = view.getShortString(i); i += strLen
                   const classId = view.getUint16(i); i += 2
@@ -283,13 +283,13 @@ export abstract class AMQPBaseClient {
                   this.channels.forEach((ch) => ch.setClosed(err))
                   this.channels = [new AMQPChannel(this, 0)]
 
-                  const closeOk = new AMQPFrame({
+                  const closeOk = new AMQPFrame.Writer({
                     bufferSize: 12,
-                    type: 1,
+                    type: AMQPFrame.Type.METHOD,
                     channel: 0,
                     frameSize: 4,
-                    classId: 10,
-                    method: 51,
+                    classId: AMQPFrame.ClassId.CONNECTION,
+                    method: AMQPFrame.ConnectionMethod.CLOSE_OK,
                   })
                   closeOk.finalize()
                   this.send(closeOk.toUint8Array())
@@ -299,7 +299,7 @@ export abstract class AMQPBaseClient {
                   this.onUpdateSecretOk?.()
                   break
                 }
-                case 51: { // closeOk
+                case AMQPFrame.ConnectionMethod.CLOSE_OK: {
                   this.channels.forEach((ch) => ch.setClosed())
                   this.channels = [new AMQPChannel(this, 0)]
                   const promise = this.closePromise
@@ -311,18 +311,18 @@ export abstract class AMQPBaseClient {
                   }
                   break
                 }
-                case 60: { // blocked
+                case AMQPFrame.ConnectionMethod.BLOCKED: {
                   const [reason, len] = view.getShortString(i); i += len
                   this.logger?.warn("AMQP connection blocked:", reason)
                   this.blocked = reason
                   break
                 }
-                case 61: { // unblocked
+                case AMQPFrame.ConnectionMethod.UNBLOCKED: {
                   this.logger?.info("AMQP connection unblocked")
                   delete this.blocked
                   break
                 }
-                case 71: { // update-secret-ok
+                case AMQPFrame.ConnectionMethod.UPDATE_SECRET_OK: {
                   this.logger?.info("AMQP connection update secret ok")
                   this.onUpdateSecretOk?.()
                   delete this.onUpdateSecretOk
@@ -334,19 +334,19 @@ export abstract class AMQPBaseClient {
               }
               break
             }
-            case 20: { // channel
+            case AMQPFrame.ClassId.CHANNEL: {
               switch (methodId) {
-                case 11: { // openok
+                case AMQPFrame.ChannelMethod.OPEN_OK: {
                   i += 4 // reserved1 (long string)
                   channel.resolveRPC(channel)
                   break
                 }
-                case 21: { // flowOk
+                case AMQPFrame.ChannelMethod.FLOW_OK: {
                   const active = view.getUint8(i) !== 0; i += 1
                   channel.resolveRPC(active)
                   break
                 }
-                case 40: { // close
+                case AMQPFrame.ChannelMethod.CLOSE: {
                   const code = view.getUint16(i); i += 2
                   const [text, strLen] = view.getShortString(i); i += strLen
                   const classId = view.getUint16(i); i += 2
@@ -358,20 +358,20 @@ export abstract class AMQPBaseClient {
                   channel.setClosed(err)
                   delete this.channels[channelId]
 
-                  const closeOk = new AMQPFrame({
+                  const closeOk = new AMQPFrame.Writer({
                     bufferSize: 12,
-                    type: 1,
+                    type: AMQPFrame.Type.METHOD,
                     channel: channelId,
                     frameSize: 4,
-                    classId: 20,
-                    method: 41,
+                    classId: AMQPFrame.ClassId.CHANNEL,
+                    method: AMQPFrame.ChannelMethod.CLOSE_OK,
                   })
                   closeOk.finalize()
                   this.send(closeOk.toUint8Array())
                     .catch(err => this.logger?.error("Error while sending Channel#closeOk", err))
                   break
                 }
-                case 41: { // closeOk
+                case AMQPFrame.ChannelMethod.CLOSE_OK: {
                   channel.setClosed()
                   delete this.channels[channelId]
                   channel.resolveRPC()
@@ -383,12 +383,12 @@ export abstract class AMQPBaseClient {
               }
               break
             }
-            case 40: { // exchange
+            case AMQPFrame.ClassId.EXCHANGE: {
               switch (methodId) {
-                case 11: // declareOk
-                case 21: // deleteOk
-                case 31: // bindOk
-                case 51: { // unbindOk
+                case AMQPFrame.ExchangeMethod.DECLARE_OK:
+                case AMQPFrame.ExchangeMethod.DELETE_OK:
+                case AMQPFrame.ExchangeMethod.BIND_OK:
+                case AMQPFrame.ExchangeMethod.UNBIND_OK: {
                   channel.resolveRPC()
                   break
                 }
@@ -398,30 +398,30 @@ export abstract class AMQPBaseClient {
               }
               break
             }
-            case 50: { // queue
+            case AMQPFrame.ClassId.QUEUE: {
               switch (methodId) {
-                case 11: { // declareOk
+                case AMQPFrame.QueueMethod.DECLARE_OK: {
                   const [name, strLen] = view.getShortString(i); i += strLen
                   const messageCount = view.getUint32(i); i += 4
                   const consumerCount = view.getUint32(i); i += 4
                   channel.resolveRPC({ name, messageCount, consumerCount })
                   break
                 }
-                case 21: { // bindOk
+                case AMQPFrame.QueueMethod.BIND_OK: {
                   channel.resolveRPC()
                   break
                 }
-                case 31: { // purgeOk
+                case AMQPFrame.QueueMethod.PURGE_OK: {
                   const messageCount = view.getUint32(i); i += 4
                   channel.resolveRPC({ messageCount })
                   break
                 }
-                case 41: { // deleteOk
+                case AMQPFrame.QueueMethod.DELETE_OK: {
                   const messageCount = view.getUint32(i); i += 4
                   channel.resolveRPC({ messageCount })
                   break
                 }
-                case 51: { // unbindOk
+                case AMQPFrame.QueueMethod.UNBIND_OK: {
                   channel.resolveRPC()
                   break
                 }
@@ -431,18 +431,18 @@ export abstract class AMQPBaseClient {
               }
               break
             }
-            case 60: { // basic
+            case AMQPFrame.ClassId.BASIC: {
               switch (methodId) {
-                case 11: { // qosOk
+                case AMQPFrame.BasicMethod.QOS_OK: {
                   channel.resolveRPC()
                   break
                 }
-                case 21: { // consumeOk
+                case AMQPFrame.BasicMethod.CONSUME_OK: {
                   const [consumerTag, len] = view.getShortString(i); i += len
                   channel.resolveRPC(consumerTag)
                   break
                 }
-                case 30: { // cancel
+                case AMQPFrame.BasicMethod.CANCEL: {
                   const [consumerTag, len] = view.getShortString(i); i += len
                   const noWait = view.getUint8(i) === 1; i += 1
 
@@ -452,26 +452,26 @@ export abstract class AMQPBaseClient {
                     channel.consumers.delete(consumerTag)
                   }
                   if (!noWait) {
-                    const frame = new AMQPFrame({
+                    const frame = new AMQPFrame.Writer({
                       bufferSize: 512,
-                      type: 1,
+                      type: AMQPFrame.Type.METHOD,
                       channel: channel.id,
-                      classId: 60,
-                      method: 31,
+                      classId: AMQPFrame.ClassId.BASIC,
+                      method: AMQPFrame.BasicMethod.CANCEL_OK,
                     })
 
-                    frame.writeShortString(consumerTag) // tag
+                    frame.writeShortString(consumerTag)
                     frame.finalize()
                     this.send(frame.toUint8Array())
                   }
                   break
                 }
-                case 31: { // cancelOk
+                case AMQPFrame.BasicMethod.CANCEL_OK: {
                   const [consumerTag, len] = view.getShortString(i); i += len
                   channel.resolveRPC(consumerTag)
                   break
                 }
-                case 50: { // return
+                case AMQPFrame.BasicMethod.RETURN: {
                   const code = view.getUint16(i); i += 2
                   const [text, len] = view.getShortString(i); i += len
                   const [exchange, exchangeLen] = view.getShortString(i); i += exchangeLen
@@ -484,7 +484,7 @@ export abstract class AMQPBaseClient {
                   channel.returned = message
                   break
                 }
-                case 60: { // deliver
+                case AMQPFrame.BasicMethod.DELIVER: {
                   const [consumerTag, consumerTagLen] = view.getShortString(i); i += consumerTagLen
                   const deliveryTag = view.getUint64(i); i += 8
                   const redelivered = view.getUint8(i) === 1; i += 1
@@ -499,7 +499,7 @@ export abstract class AMQPBaseClient {
                   channel.delivery = message
                   break
                 }
-                case 71: { // getOk
+                case AMQPFrame.BasicMethod.GET_OK: {
                   const deliveryTag = view.getUint64(i); i += 8
                   const redelivered = view.getUint8(i) === 1; i += 1
                   const [exchange, exchangeLen] = view.getShortString(i); i += exchangeLen
@@ -514,22 +514,22 @@ export abstract class AMQPBaseClient {
                   channel.getMessage = message
                   break
                 }
-                case 72: { // getEmpty
+                case AMQPFrame.BasicMethod.GET_EMPTY: {
                   const [, len] = view.getShortString(i); i += len // reserved1
                   channel.resolveRPC(null)
                   break
                 }
-                case 80: { // confirm ack
+                case AMQPFrame.BasicMethod.ACK: {
                   const deliveryTag = view.getUint64(i); i += 8
                   const multiple = view.getUint8(i) === 1; i += 1
                   channel.publishConfirmed(deliveryTag, multiple, false)
                   break
                 }
-                case 111: { // recoverOk
+                case AMQPFrame.BasicMethod.RECOVER_OK: {
                   channel.resolveRPC()
                   break
                 }
-                case 120: { // confirm nack
+                case AMQPFrame.BasicMethod.NACK: {
                   const deliveryTag = view.getUint64(i); i += 8
                   const multiple = view.getUint8(i) === 1; i += 1
                   channel.publishConfirmed(deliveryTag, multiple, true)
@@ -541,9 +541,9 @@ export abstract class AMQPBaseClient {
               }
               break
             }
-            case 85: { // confirm
+            case AMQPFrame.ClassId.CONFIRM: {
               switch (methodId) {
-                case 11: { // selectOk
+                case AMQPFrame.ConfirmMethod.SELECT_OK: {
                   channel.confirmId = 1
                   channel.resolveRPC()
                   break
@@ -554,11 +554,11 @@ export abstract class AMQPBaseClient {
               }
               break
             }
-            case 90: { // tx / transaction
+            case AMQPFrame.ClassId.TX: {
               switch (methodId) {
-                case 11: // selectOk
-                case 21: // commitOk
-                case 31: { // rollbackOk
+                case AMQPFrame.TxMethod.SELECT_OK:
+                case AMQPFrame.TxMethod.COMMIT_OK:
+                case AMQPFrame.TxMethod.ROLLBACK_OK: {
                   channel.resolveRPC()
                   break
                 }
@@ -574,7 +574,7 @@ export abstract class AMQPBaseClient {
           }
           break
         }
-        case 2: { // header
+        case AMQPFrame.Type.HEADER: {
           i += 4 // ignoring class id and weight
           const bodySize = view.getUint64(i); i += 8
           const [properties, propLen] = view.getProperties(i); i += propLen
@@ -590,7 +590,7 @@ export abstract class AMQPBaseClient {
           }
           break
         }
-        case 3: { // body
+        case AMQPFrame.Type.BODY: {
           const message = channel.delivery || channel.getMessage || channel.returned
           if (message && message.body) {
             const bodyPart = new Uint8Array(view.buffer, view.byteOffset + i, frameSize)
@@ -604,8 +604,8 @@ export abstract class AMQPBaseClient {
           }
           break
         }
-        case 8: { // heartbeat
-          const heartbeat = new Uint8Array([8, 0, 0, 0, 0, 0, 0, 206])
+        case AMQPFrame.Type.HEARTBEAT: {
+          const heartbeat = new Uint8Array([AMQPFrame.Type.HEARTBEAT, 0, 0, 0, 0, 0, 0, AMQPFrame.End.CODE])
           this.send(heartbeat).catch(err => this.logger?.warn("Error while sending heartbeat", err))
           break
         }
