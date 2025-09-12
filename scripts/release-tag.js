@@ -4,9 +4,8 @@ import fs from "fs"
 import { execSync } from "child_process"
 
 function main() {
-  // Check command line flags
-  const updateChangelogOnly = process.argv.includes("--update-changelog-only")
-  const getChangelogContent = process.argv.includes("--get-changelog-content")
+  // Check if we should only update changelog (no tag creation)
+  const updateChangelogOnly = process.argv.includes("--update-changelog")
   
   // Read package.json to get current version
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"))
@@ -14,10 +13,8 @@ function main() {
 
   if (updateChangelogOnly) {
     console.log(`Updating changelog for version ${version}...`)
-  } else if (getChangelogContent) {
-    // Just get the changelog content for this version and exit
   } else {
-    console.log(`Updating changelog and creating tag for version ${version}...`)
+    console.log(`Creating tag for version ${version}...`)
   }
 
   // Read changelog
@@ -32,7 +29,7 @@ function main() {
   // Check if version already exists in changelog
   if (changelog.includes(newVersionHeader) || changelog.includes(versionHeader)) {
     console.log(`Version ${version} already exists in changelog. Skipping update.`)
-  } else if (changelog.includes(unreleasedHeader) && !getChangelogContent) {
+  } else if (changelog.includes(unreleasedHeader)) {
     console.log("Updating [Unreleased] section to current version...")
     changelog = changelog.replace(unreleasedHeader, newVersionHeader)
 
@@ -46,13 +43,10 @@ function main() {
 
     // Write updated changelog back to file
     fs.writeFileSync("CHANGELOG.md", changelog, "utf8")
-
-    // Stage the changelog file for commit
-    execSync("git add CHANGELOG.md", { stdio: "inherit" })
-    console.log("✅ Updated CHANGELOG.md and staged for commit")
+    console.log("✅ Updated CHANGELOG.md")
   }
 
-  // If only updating changelog, exit here
+  // If only updating changelog, exit here (don't create tag)
   if (updateChangelogOnly) {
     return
   }
@@ -71,12 +65,6 @@ function main() {
 
   // Extract the content for this version
   const content = changelog.substring(startIdx, nextVersionIdx === -1 ? undefined : nextVersionIdx).trim()
-
-  // If only getting changelog content, just output it and exit
-  if (getChangelogContent) {
-    console.log(content)
-    return
-  }
 
   console.log("Changelog content:")
   console.log(content)
