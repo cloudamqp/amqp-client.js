@@ -45,9 +45,9 @@
     "preversion": "npm run test:local",
     "version": "sed -i'' \"s/VERSION = .*/VERSION = \\\"$npm_package_version\\\"/\" src/amqp-base-client.ts && npm run format && npm run update-changelog && git add -A",
     "postversion": "npm run create-tag && git push && git push --tags",
-    "release": "npm version patch",
-    "release:minor": "npm version minor",
-    "release:major": "npm version major"
+    "release": "npm version patch --no-git-tag-version",
+    "release:minor": "npm version minor --no-git-tag-version",
+    "release:major": "npm version major --no-git-tag-version"
   },
   "files": [
     "src/",
