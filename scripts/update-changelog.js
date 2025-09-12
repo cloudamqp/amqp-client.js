@@ -24,7 +24,7 @@ function main() {
 
   // Update [Unreleased] section to current version if it exists
   const unreleasedHeader = "## [Unreleased]"
-  
+
   if (changelog.includes(unreleasedHeader)) {
     console.log("Updating [Unreleased] section to current version...")
     changelog = changelog.replace(unreleasedHeader, newVersionHeader)
