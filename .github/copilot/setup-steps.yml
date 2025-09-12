@@ -1,0 +1,59 @@
+# GitHub Copilot Coding Agent Setup Steps
+# This configuration runs before the firewall is enabled to pre-install dependencies
+# that would otherwise be blocked by firewall rules
+
+name: Copilot Coding Agent Setup
+description: Pre-install dependencies and configure environment for Copilot coding agent
+
+steps:
+  - name: Update package lists
+    run: |
+      sudo apt-get update
+      
+  - name: Install required system packages
+    run: |
+      sudo apt-get install -y curl wget ca-certificates gnupg lsb-release
+      
+  - name: Set up Homebrew
+    uses: Homebrew/actions/setup-homebrew@master
+    
+  - name: Install mkcert via Homebrew
+    run: brew install mkcert
+    
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: '22.x'
+      
+  - name: Create certificates directory
+    run: |
+      mkdir -p .etc_rabbitmq
+      
+  - name: Create local CA and certificate
+    run: |
+      CAROOT="$(pwd)/.etc_rabbitmq" $(brew --prefix)/bin/mkcert -install
+      $(brew --prefix)/bin/mkcert -key-file ./.etc_rabbitmq/localhost-key.pem -cert-file ./.etc_rabbitmq/localhost.pem localhost
+      chmod +r ./.etc_rabbitmq/localhost-key.pem
+      
+  - name: Create RabbitMQ config
+    run: |
+      tee ./.etc_rabbitmq/rabbitmq.conf <<'EOF'
+      loopback_users = none
+      listeners.ssl.default  = 5671
+      ssl_options.cacertfile = /etc/rabbitmq/rootCA.pem
+      ssl_options.certfile   = /etc/rabbitmq/localhost.pem
+      ssl_options.keyfile    = /etc/rabbitmq/localhost-key.pem
+      EOF
+      
+  - name: Start Docker Compose
+    run: docker compose up -d
+    
+  - name: Install Node.js dependencies
+    run: |
+      npm install
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      
+  - name: Install Playwright browsers (for browser testing)
+    run: |
+      npx playwright install --with-deps chromium
