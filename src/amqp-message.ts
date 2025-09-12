@@ -1,5 +1,5 @@
-import type { AMQPChannel } from './amqp-channel.js'
-import type { AMQPProperties } from './amqp-properties.js'
+import type { AMQPChannel } from "./amqp-channel.js"
+import type { AMQPProperties } from "./amqp-properties.js"
 
 /**
  * AMQP message
@@ -20,7 +20,7 @@ export class AMQPMessage {
   channel: AMQPChannel
   exchange = ""
   routingKey = ""
-  properties : AMQPProperties = {}
+  properties: AMQPProperties = {}
   bodySize = 0
   body: Uint8Array | null = null
   bodyPos = 0
@@ -41,18 +41,16 @@ export class AMQPMessage {
   /**
    * Converts the message (which is deliviered as an uint8array) to a string
    */
-  bodyToString(): string|null {
+  bodyToString(): string | null {
     if (this.body) {
-      if (typeof Buffer !== "undefined")
-        return Buffer.from(this.body).toString()
-      else
-        return new TextDecoder().decode(this.body)
+      if (typeof Buffer !== "undefined") return Buffer.from(this.body).toString()
+      else return new TextDecoder().decode(this.body)
     } else {
       return null
     }
   }
 
-  bodyString(): string|null {
+  bodyString(): string | null {
     return this.bodyToString()
   }
 

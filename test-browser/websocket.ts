@@ -1,87 +1,102 @@
-import { assert, expect, test, beforeEach, vi } from "vitest";
-import { AMQPWebSocketClient } from '../src/amqp-websocket-client.js';
-import { AMQPMessage } from '../src/amqp-message.js';
-import type { AMQPError } from "../src/amqp-error.js";
+/// <reference types="vite/client" />
+import { assert, expect, test, beforeEach, vi } from "vitest"
+import { AMQPWebSocketClient } from "../src/amqp-websocket-client.js"
+import { AMQPMessage } from "../src/amqp-message.js"
+import type { AMQPError } from "../src/amqp-error.js"
 
 const WS_URL = import.meta.env.VITE_WS_URL || "ws://127.0.0.1:15670/ws/amqp"
 
-function getNewClient(init?: {frameMax?: number, heartbeat?: number}): AMQPWebSocketClient {
-  return init
-    ? new AMQPWebSocketClient({ url: WS_URL, ...init })
-    : new AMQPWebSocketClient(WS_URL)
+function getNewClient(init?: { frameMax?: number; heartbeat?: number }): AMQPWebSocketClient {
+  return init ? new AMQPWebSocketClient({ url: WS_URL, ...init }) : new AMQPWebSocketClient(WS_URL)
 }
 
 beforeEach(() => {
   expect.hasAssertions()
 })
 
-test('can parse the url correctly', () => {
-  const username = 'user_name'
-  const password = 'passwd'
-  const hostname = '127.0.0.1'
+test("can parse the url correctly", () => {
+  const username = "user_name"
+  const password = "passwd"
+  const hostname = "127.0.0.1"
   const port = 15670
-  const vhost = 'my_host'
-  const name = 'test'
-  const client = new AMQPWebSocketClient({ url: `ws://${hostname}:${port}/ws/amqp`, username: username, password: password, vhost: vhost, name: name });
-  expect(client.username).toEqual(username);
-  expect(client.password).toEqual(password);
-  expect(client.vhost).toEqual(vhost);
-  expect(client.name).toEqual(name);
+  const vhost = "my_host"
+  const name = "test"
+  const client = new AMQPWebSocketClient({
+    url: `ws://${hostname}:${port}/ws/amqp`,
+    username: username,
+    password: password,
+    vhost: vhost,
+    name: name,
+  })
+  expect(client.username).toEqual(username)
+  expect(client.password).toEqual(password)
+  expect(client.vhost).toEqual(vhost)
+  expect(client.name).toEqual(name)
 })
 
-test('can open a connection and a channel', () => {
+test("can open a connection and a channel", () => {
   const amqp = getNewClient()
-  return amqp.connect()
+  return amqp
+    .connect()
     .then((conn) => conn.channel())
     .then((ch) => expect(ch.connection.channels.length).toEqual(2)) // 2 because channel 0 is counted
 })
 
-test('can publish and consume', () => {
+test("can publish and consume", () => {
   const amqp = getNewClient()
   return new Promise<AMQPMessage>((resolve, reject) => {
-    amqp.connect()
-      .then(conn => conn.channel())
-      .then(ch => ch.queue(""))
-      .then(q => q.publish("hello world"))
-      .then(q => q.subscribe({noAck: false}, msg => {
-        msg.ack()
-        resolve(msg)
-      }))
+    amqp
+      .connect()
+      .then((conn) => conn.channel())
+      .then((ch) => ch.queue(""))
+      .then((q) => q.publish("hello world"))
+      .then((q) =>
+        q.subscribe({ noAck: false }, (msg) => {
+          msg.ack()
+          resolve(msg)
+        }),
+      )
       .catch(reject)
   }).then((result: AMQPMessage) => expect(result.bodyString()).toEqual("hello world"))
 })
 
-test('can nack a message', () => {
+test("can nack a message", () => {
   const amqp = getNewClient()
   return new Promise<AMQPMessage>((resolve, reject) => {
-    amqp.connect()
-      .then(conn => conn.channel())
-      .then(ch => ch.queue(""))
-      .then(q => q.publish("hello world"))
-      .then(q => q.subscribe({noAck: false}, msg => {
-        msg.nack()
-        resolve(msg)
-      }))
+    amqp
+      .connect()
+      .then((conn) => conn.channel())
+      .then((ch) => ch.queue(""))
+      .then((q) => q.publish("hello world"))
+      .then((q) =>
+        q.subscribe({ noAck: false }, (msg) => {
+          msg.nack()
+          resolve(msg)
+        }),
+      )
       .catch(reject)
   }).then((result: AMQPMessage) => expect(result.bodyString()).toEqual("hello world"))
 })
 
-test('can reject a message', () => {
+test("can reject a message", () => {
   const amqp = getNewClient()
   return new Promise<AMQPMessage>((resolve, reject) => {
-    amqp.connect()
-      .then(conn => conn.channel())
-      .then(ch => ch.queue(""))
-      .then(q => q.publish("hello world"))
-      .then(q => q.subscribe({noAck: false}, msg => {
-        msg.reject()
-        resolve(msg)
-      }))
+    amqp
+      .connect()
+      .then((conn) => conn.channel())
+      .then((ch) => ch.queue(""))
+      .then((q) => q.publish("hello world"))
+      .then((q) =>
+        q.subscribe({ noAck: false }, (msg) => {
+          msg.reject()
+          resolve(msg)
+        }),
+      )
       .catch(reject)
   }).then((result: AMQPMessage) => expect(result.bodyString()).toEqual("hello world"))
 })
 
-test('can unbind a queue from exchange', async () => {
+test("can unbind a queue from exchange", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -90,7 +105,7 @@ test('can unbind a queue from exchange', async () => {
   await expect(q.unbind("amq.topic", "asd")).resolves.toBeDefined()
 })
 
-test('can unsubscribe from a queue', async () => {
+test("can unsubscribe from a queue", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -113,70 +128,71 @@ test("can get message from a queue", async () => {
   const ch = await conn.channel()
   const q = await ch.queue("")
   await q.publish("message")
-  const msg = await q.get({noAck: true})
+  const msg = await q.get({ noAck: true })
   expect((msg as AMQPMessage).bodyString()).toEqual("message")
 })
 
-test('will throw an error', async () => {
+test("will throw an error", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await expect(ch.queue("amq.foobar")).rejects.toThrow(/ACCESS_REFUSED/)
 })
 
-test('will throw an error after consumer timeout', async () => {
+test("will throw an error after consumer timeout", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({noAck: false}, () => {})
+  const consumer = await q.subscribe({ noAck: false }, () => {})
   await expect(consumer.wait(1)).rejects.toThrow()
 })
 
-test('will throw an error if consumer is closed', async () => {
+test("will throw an error if consumer is closed", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({noAck: false}, () => {})
+  const consumer = await q.subscribe({ noAck: false }, () => {})
   consumer.setClosed(new Error("testing"))
   try {
-    await consumer.wait(1);
+    await consumer.wait(1)
   } catch (error) {
     expect((error as Error).message).toEqual("testing")
   }
 })
 
-test('can cancel a consumer', () => {
+test("can cancel a consumer", () => {
   const amqp = getNewClient()
-  return amqp.connect()
+  return amqp
+    .connect()
     .then((conn) => conn.channel())
     .then((ch) => ch.queue(""))
-    .then((q) => q.subscribe({noAck: false}, console.log))
+    .then((q) => q.subscribe({ noAck: false }, console.log))
     .then((consumer) => consumer.cancel())
     .then((channel) => expect(channel.consumers.size).toEqual(0))
 })
 
-test('will clear consumer wait timeout on cancel', async () => {
+test("will clear consumer wait timeout on cancel", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
-  const consumer = await q.subscribe({noAck: false}, () => {})
-  const wait = consumer.wait(5000);
+  const consumer = await q.subscribe({ noAck: false }, () => {})
+  const wait = consumer.wait(5000)
   consumer.cancel()
   await expect(wait).resolves.toBeUndefined()
 })
 
-test('can close a channel', async () => {
+test("can close a channel", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await ch.close()
-  await expect(ch.close()).rejects.toThrow('Channel is closed')
+  await expect(ch.close()).rejects.toThrow("Channel is closed")
 })
 
-test('connection error raises everywhere', async () => {
+test("connection error raises everywhere", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -184,7 +200,7 @@ test('connection error raises everywhere', async () => {
   await expect(ch.close()).rejects.toThrow(/Channel is closed/)
 })
 
-test('consumer stops wait on cancel', async () => {
+test("consumer stops wait on cancel", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -195,7 +211,7 @@ test('consumer stops wait on cancel', async () => {
   await expect(consumer.wait()).resolves.toBeUndefined()
 })
 
-test('consumer stops wait on channel error', async () => {
+test("consumer stops wait on channel error", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -206,7 +222,7 @@ test('consumer stops wait on channel error', async () => {
   await expect(consumer.wait()).rejects.toThrow()
 })
 
-test('connection error raises on publish', async () => {
+test("connection error raises on publish", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -215,24 +231,24 @@ test('connection error raises on publish', async () => {
   await expect(q.publish("foobar")).rejects.toThrow()
 })
 
-test('closed socket closes client', async () => {
+test("closed socket closes client", async () => {
   const amqp = getNewClient()
   await amqp.connect()
   const socket = amqp["socket"]
   assert(socket, "Socket must be created")
-  const closed = new Promise((resolve) => socket.addEventListener('close', resolve))
+  const closed = new Promise((resolve) => socket.addEventListener("close", resolve))
   socket.close()
   await closed
   expect(amqp.closed).toBe(true)
 })
 
-test('connection loss closes channels and consumers', async () => {
+test("connection loss closes channels and consumers", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
 
-  const consumer = await q.subscribe({noAck: false}, () => {})
+  const consumer = await q.subscribe({ noAck: false }, () => {})
 
   // Set up error handler to track when consumer is closed
   const originalConsumerWait = consumer.wait()
@@ -241,7 +257,7 @@ test('connection loss closes channels and consumers', async () => {
   assert(socket, "Socket must be created")
 
   // Simulate unclean connection loss by closing the socket
-  const closed = new Promise((resolve) => socket.addEventListener('close', resolve))
+  const closed = new Promise((resolve) => socket.addEventListener("close", resolve))
   socket.close()
   await closed
 
@@ -257,7 +273,7 @@ test('connection loss closes channels and consumers', async () => {
   await expect(q.publish("test")).rejects.toThrow()
 })
 
-test('connection loss triggers onerror callback', async () => {
+test("connection loss triggers onerror callback", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
 
@@ -270,7 +286,7 @@ test('connection loss triggers onerror callback', async () => {
   assert(socket, "Socket must be created")
 
   // Simulate unclean connection loss
-  const closed = new Promise((resolve) => socket.addEventListener('close', resolve))
+  const closed = new Promise((resolve) => socket.addEventListener("close", resolve))
   socket.close()
   await closed
 
@@ -283,7 +299,7 @@ test('connection loss triggers onerror callback', async () => {
   expect(amqp.closed).toBe(true)
 })
 
-test('wait for publish confirms', async () => {
+test("wait for publish confirms", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -305,34 +321,34 @@ test('wait for publish confirms', async () => {
   // can wait for multiple tags
   const tags = await Promise.all([
     ch.basicPublish("amq.fanout", "rk", "body"),
-    ch.basicPublish("amq.fanout", "rk", "body")
+    ch.basicPublish("amq.fanout", "rk", "body"),
   ])
-  expect(tags).toEqual([3,4])
+  expect(tags).toEqual([3, 4])
 })
 
-test('can handle returned messages', async () => {
+test("can handle returned messages", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
 
-  const returned = new Promise((resolve) => ch.onReturn = resolve)
+  const returned = new Promise((resolve) => (ch.onReturn = resolve))
   await ch.basicPublish("", "not-a-queue", "body", {}, true)
-  const msg = await returned as AMQPMessage
+  const msg = (await returned) as AMQPMessage
   expect(msg.replyCode).toEqual(312)
   expect(msg.routingKey).toEqual("not-a-queue")
 })
 
-test('can handle nacks on confirm channel', async () => {
+test("can handle nacks on confirm channel", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
 
-  const q = await ch.queue("", {}, {"x-overflow": "reject-publish", "x-max-length": 0})
+  const q = await ch.queue("", {}, { "x-overflow": "reject-publish", "x-max-length": 0 })
   await ch.confirmSelect()
   await expect(q.publish("body")).rejects.toThrow("Message rejected")
 })
 
-test('throws on invalid exchange type', async () => {
+test("throws on invalid exchange type", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -340,7 +356,7 @@ test('throws on invalid exchange type', async () => {
   await expect(ch.exchangeDeclare(name, "none")).rejects.toThrow(/invalid exchange type/)
 })
 
-test('can declare an exchange', async () => {
+test("can declare an exchange", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -352,7 +368,7 @@ test('can declare an exchange', async () => {
   await expect(ch.basicPublish(name, "rk", "body")).rejects.toThrow(/NOT_FOUND/)
 })
 
-test('exchange to exchange bind/unbind', async () => {
+test("exchange to exchange bind/unbind", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -375,7 +391,7 @@ test('exchange to exchange bind/unbind', async () => {
 })
 
 // not implemented on servers
-test.skip('can change flow state of channel', async () => {
+test.skip("can change flow state of channel", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -385,7 +401,7 @@ test.skip('can change flow state of channel', async () => {
   expect(flow).toEqual(true)
 })
 
-test('basic get', async () => {
+test("basic get", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -398,7 +414,7 @@ test('basic get', async () => {
   expect(msg?.bodyToString()).toEqual("foobar")
 })
 
-test('transactions', async () => {
+test("transactions", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -418,19 +434,25 @@ test('transactions', async () => {
   expect(msg3).toBeNull()
 })
 
-test('can publish and consume msgs with large headers', async () => {
+test("can publish and consume msgs with large headers", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
-  await q.publish("a".repeat(4000), { headers: { long: new Uint8Array(new TextEncoder().encode("a".repeat(4000))) } })
+  await q.publish("a".repeat(4000), {
+    headers: {
+      long: new Uint8Array(new TextEncoder().encode("a".repeat(4000))),
+    },
+  })
   await q.publish("a".repeat(8000), { headers: { long: "a".repeat(4000) } })
   await q.publish("a".repeat(8000), { headers: { long: Array(100).fill("a") } })
-  const consumer = await q.subscribe({ noAck: false }, async (msg) => { if (msg.deliveryTag === 3) await msg.cancelConsumer() })
+  const consumer = await q.subscribe({ noAck: false }, async (msg) => {
+    if (msg.deliveryTag === 3) await msg.cancelConsumer()
+  })
   await expect(consumer.wait()).resolves.toBeUndefined()
 })
 
-test('will throw when headers are too long', async () => {
+test("will throw when headers are too long", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -438,7 +460,7 @@ test('will throw when headers are too long', async () => {
   await expect(q.publish("a".repeat(8000), { headers: { long: "a".repeat(9000) } })).rejects.toThrow()
 })
 
-test('can purge a queue', async () => {
+test("can purge a queue", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -450,14 +472,21 @@ test('can purge a queue', async () => {
   expect(msg).toBeNull()
 })
 
-test('can publish all type of properties', async () => {
+test("can publish all type of properties", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue()
   const headers = {
-    a: 2, b: true, c: "c", d: 1.5, e: null, f: new Date(1000), g: { a: 1 },
-    i: 2**32 + 1, j: 2.5**33,
+    a: 2,
+    b: true,
+    c: "c",
+    d: 1.5,
+    e: null,
+    f: new Date(1000),
+    g: { a: 1 },
+    i: 2 ** 32 + 1,
+    j: 2.5 ** 33,
   }
   const properties = {
     contentType: "application/json",
@@ -472,35 +501,35 @@ test('can publish all type of properties', async () => {
     appId: "appid",
     userId: "guest",
     type: "type",
-    timestamp: new Date(Math.round(Date.now()/1000)*1000) // amqp timestamps does only have second resolution
+    timestamp: new Date(Math.round(Date.now() / 1000) * 1000), // amqp timestamps does only have second resolution
   }
   await q.publish("", properties)
   const msg = await q.get()
   expect(msg?.properties).toMatchObject(properties)
 })
 
-test('cannot publish too long strings', async () => {
+test("cannot publish too long strings", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await expect(ch.queue("a".repeat(256))).rejects.toThrow(/Short string too long/)
 })
 
-test('can set prefetch', async () => {
+test("can set prefetch", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await expect(ch.prefetch(1)).resolves.toBeUndefined()
 })
 
-test('can open a specific channel', async () => {
+test("can open a specific channel", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel(2)
   expect(ch.id).toEqual(2)
 })
 
-test('can open a specific channel twice', async () => {
+test("can open a specific channel twice", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel(2)
@@ -509,7 +538,7 @@ test('can open a specific channel twice', async () => {
   expect(ch2 === ch).toEqual(true)
 })
 
-test('can publish messages spanning multiple frames', async () => {
+test("can publish messages spanning multiple frames", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -525,14 +554,14 @@ test('can publish messages spanning multiple frames', async () => {
   }
 })
 
-test('set basic flow on channel', async () => {
+test("set basic flow on channel", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await expect(ch.basicFlow(true)).resolves.toBeDefined()
 })
 
-test('confirming unknown deliveryTag', async () => {
+test("confirming unknown deliveryTag", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -540,7 +569,7 @@ test('confirming unknown deliveryTag', async () => {
 })
 
 // ch.deliver does enqueue a microtask, rendering the ch.deliver method untestable.
-test.skip('delivering a message when no consumer exists raises', async () => {
+test.skip("delivering a message when no consumer exists raises", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
@@ -578,7 +607,7 @@ test("can do basicRecover", async () => {
 })
 
 test("can set frameMax", async () => {
-  const amqp = getNewClient({ frameMax: 16*1024 })
+  const amqp = getNewClient({ frameMax: 16 * 1024 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await ch.confirmSelect()
@@ -603,7 +632,7 @@ test("can't set too small frameMax", () => {
 })
 
 test("can handle frames split over socket reads", async () => {
-  const amqp = getNewClient({ frameMax: 8*1024 })
+  const amqp = getNewClient({ frameMax: 8 * 1024 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
@@ -613,7 +642,9 @@ test("can handle frames split over socket reads", async () => {
     await q.publish(body)
   }
   let i = 0
-  const consumer = await q.subscribe({ noAck: true }, () => { if (++i === msgs) consumer.cancel() })
+  const consumer = await q.subscribe({ noAck: true }, () => {
+    if (++i === msgs) consumer.cancel()
+  })
   await consumer.wait(20_000)
   expect(i).toEqual(msgs)
 }, 60_000)
@@ -653,7 +684,7 @@ test("has an onerror callback", async () => {
   const conn = await amqp.connect()
   const ch = await conn.channel()
   let errMessage: string | null = null
-  ch.onerror = vi.fn((reason) => errMessage = reason)
+  ch.onerror = vi.fn((reason) => (errMessage = reason))
   await expect(ch.exchangeDeclare("none", "none")).rejects.toThrow()
   expect(ch.onerror).toBeCalled()
   expect(errMessage).toMatch(/invalid exchange type/)
@@ -663,9 +694,9 @@ test("onerror is not called when conn is closed by client", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const callbackPromise = new Promise((done, reject) => {
-  conn.onerror = vi.fn(
-      (err: AMQPError) => reject(new Error(`onerror should not be called when gracefully closed. Error was: ${err.message}`))
-  )
+    conn.onerror = vi.fn((err: AMQPError) =>
+      reject(new Error(`onerror should not be called when gracefully closed. Error was: ${err.message}`)),
+    )
     setTimeout(done, 10)
   })
   await conn.close()
@@ -677,8 +708,12 @@ test("will throw on too large headers", async () => {
   const amqp = getNewClient({ frameMax: 8192 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
-  await expect(ch.basicPublish("", "x".repeat(255), null, {"headers": {a: Array(4000).fill(1)}})).rejects.toThrow(RangeError)
-  await expect(ch.basicPublish("", "", null, {"headers": {a: "x".repeat(9000)}})).rejects.toThrow(RangeError)
+  await expect(
+    ch.basicPublish("", "x".repeat(255), null, {
+      headers: { a: Array(4000).fill(1) },
+    }),
+  ).rejects.toThrow(RangeError)
+  await expect(ch.basicPublish("", "", null, { headers: { a: "x".repeat(9000) } })).rejects.toThrow(RangeError)
 })
 
 test("will split body over multiple frames", async () => {
@@ -690,12 +725,9 @@ test("will split body over multiple frames", async () => {
   await q.publish("x".repeat(5000))
   const msg = await q.get()
   if (msg)
-    if (msg.body)
-      expect(msg.body.length).toEqual(5000)
-    else
-      assert.fail("no body")
-  else
-  assert.fail("no msg")
+    if (msg.body) expect(msg.body.length).toEqual(5000)
+    else assert.fail("no body")
+  else assert.fail("no msg")
 })
 
 test("can republish in consume block without race condition", async () => {
@@ -706,13 +738,9 @@ test("can republish in consume block without race condition", async () => {
   const q = await ch.queue("")
   await ch.confirmSelect()
   await q.publish("x".repeat(500))
-  const consumer = await q.subscribe({noAck: false}, async (msg) => {
+  const consumer = await q.subscribe({ noAck: false }, async (msg) => {
     if (msg.deliveryTag < 10000) {
-      await Promise.all([
-        q.publish(msg.body),
-        q.publish(msg.body),
-        msg.ack()
-      ])
+      await Promise.all([q.publish(msg.body), q.publish(msg.body), msg.ack()])
     } else if (msg.deliveryTag === 10000) {
       await consumer.cancel()
     }
@@ -728,14 +756,14 @@ test("raises when channelMax is reached", async () => {
   for (let i = 0; i < conn.channelMax; i++) {
     await conn.channel()
   }
-  await expect(conn.channel()).rejects.toThrow('Max number of channels reached');
+  await expect(conn.channel()).rejects.toThrow("Max number of channels reached")
 
   // make sure other channels still work
   const ch1 = await conn.channel(1)
   await expect(ch1.basicQos(10)).resolves.toBeUndefined()
 }, 20_000)
 
-test('should fail to connect to an AMQP port', async () => {
+test("should fail to connect to an AMQP port", async () => {
   const amqp = new AMQPWebSocketClient("ws://127.0.0.1:5672/ws/amqp")
   await expect(amqp.connect()).rejects.toThrow()
 })
