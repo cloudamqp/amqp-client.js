@@ -1,5 +1,5 @@
 import { AMQPError } from './amqp-error.js'
-import { AMQPFrame } from './amqp-frame.js'
+import * as AMQPFrame from './amqp-frame.js'
 import { AMQPView } from './amqp-view.js'
 import { AMQPQueue } from './amqp-queue.js'
 import { AMQPConsumer } from './amqp-consumer.js'
@@ -42,13 +42,13 @@ export class AMQPChannel {
   }
 
   open(): Promise<AMQPChannel> {
-    const channelOpen = new AMQPFrame({
+    const channelOpen = new AMQPFrame.Writer({
       bufferSize: 13,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
       frameSize: 5,
-      classId: 20,
-      method: 10,
+      classId: AMQPFrame.ClassId.CHANNEL,
+      method: AMQPFrame.ChannelMethod.OPEN,
     })
 
     channelOpen.writeUint8(0) // reserved1
@@ -90,12 +90,12 @@ export class AMQPChannel {
   close(reason = "", code = 200): Promise<void> {
     if (this.closed) return this.rejectClosed()
     this.closed = true
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 512,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 20,
-      method: 40,
+      classId: AMQPFrame.ClassId.CHANNEL,
+      method: AMQPFrame.ChannelMethod.CLOSE,
     })
     frame.writeUint16(code) // reply code
     frame.writeShortString(reason) // reply reason
@@ -114,16 +114,16 @@ export class AMQPChannel {
    */
   basicGet(queue: string, { noAck = true } = {}): Promise<AMQPMessage|null> {
     if (this.closed) return this.rejectClosed()
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 512,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 60,
-      method: 70,
+      classId: AMQPFrame.ClassId.BASIC,
+      method: AMQPFrame.BasicMethod.GET,
     })
     frame.writeUint16(0) // reserved1
-    frame.writeShortString(queue) // queue
-    frame.writeUint8(noAck ? 1 : 0) // noAck
+    frame.writeShortString(queue)
+    frame.writeUint8(noAck ? 1 : 0)
     frame.finalize()
     return this.sendRpc(frame)
   }
@@ -142,23 +142,23 @@ export class AMQPChannel {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     const noLocal = false
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 4096,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 60,
-      method: 20,
+      classId: AMQPFrame.ClassId.BASIC,
+      method: AMQPFrame.BasicMethod.CONSUME,
     })
     frame.writeUint16(0) // reserved1
-    frame.writeShortString(queue) // queue
-    frame.writeShortString(tag) // tag
+    frame.writeShortString(queue)
+    frame.writeShortString(tag)
     let bits = 0
     if (noLocal)   bits = bits | (1 << 0)
     if (noAck)     bits = bits | (1 << 1)
     if (exclusive) bits = bits | (1 << 2)
     if (noWait)    bits = bits | (1 << 3)
-    frame.writeUint8(bits) // noLocal/noAck/exclusive/noWait
-    frame.writeTable(args) // arguments table
+    frame.writeUint8(bits)
+    frame.writeTable(args)
     frame.finalize()
 
     return new Promise((resolve, reject) => {
@@ -177,15 +177,15 @@ export class AMQPChannel {
   basicCancel(tag: string): Promise<AMQPChannel> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 512,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 60,
-      method: 30,
+      classId: AMQPFrame.ClassId.BASIC,
+      method: AMQPFrame.BasicMethod.CANCEL,
     })
-    frame.writeShortString(tag) // tag
-    frame.writeUint8(noWait ? 1 : 0) // noWait
+    frame.writeShortString(tag)
+    frame.writeUint8(noWait ? 1 : 0)
     frame.finalize()
 
     return new Promise((resolve, reject) => {
@@ -207,13 +207,13 @@ export class AMQPChannel {
    */
   basicAck(deliveryTag: number, multiple = false): Promise<void> {
     if (this.closed) return this.rejectClosed()
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 21,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
       frameSize: 13,
-      classId: 60,
-      method: 80,
+      classId: AMQPFrame.ClassId.BASIC,
+      method: AMQPFrame.BasicMethod.ACK,
     })
     frame.writeUint64(deliveryTag)
     frame.writeUint8(multiple ? 1 : 0)
@@ -229,13 +229,13 @@ export class AMQPChannel {
    */
   basicNack(deliveryTag: number, requeue = false, multiple = false): Promise<void> {
     if (this.closed) return this.rejectClosed()
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 21,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
       frameSize: 13,
-      classId: 60,
-      method: 120,
+      classId: AMQPFrame.ClassId.BASIC,
+      method: AMQPFrame.BasicMethod.NACK,
     })
     frame.writeUint64(deliveryTag)
     let bits = 0
@@ -253,13 +253,13 @@ export class AMQPChannel {
    */
   basicReject(deliveryTag: number, requeue = false): Promise<void> {
     if (this.closed) return this.rejectClosed()
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 21,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
       frameSize: 13,
-      classId: 60,
-      method: 90,
+      classId: AMQPFrame.ClassId.BASIC,
+      method: AMQPFrame.BasicMethod.REJECT,
     })
     frame.writeUint64(deliveryTag)
     frame.writeUint8(requeue ? 1 : 0)
@@ -273,13 +273,13 @@ export class AMQPChannel {
    */
   basicRecover(requeue = false): Promise<void> {
     if (this.closed) return this.rejectClosed()
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 13,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
       frameSize: 5,
-      classId: 60,
-      method: 110,
+      classId: AMQPFrame.ClassId.BASIC,
+      method: AMQPFrame.BasicMethod.RECOVER,
     })
     frame.writeUint8(requeue ? 1 : 0)
     frame.finalize()
@@ -319,31 +319,31 @@ export class AMQPChannel {
     let j = 0
     // get a buffer from the pool or create a new, it will later be returned to the pool for reuse
     let buffer = this.connection.bufferPool.pop() || new AMQPView(new ArrayBuffer(this.connection.frameMax))
-    buffer.setUint8(j, 1); j += 1 // type: method
+    buffer.setUint8(j, AMQPFrame.Type.METHOD); j += 1
     buffer.setUint16(j, this.id); j += 2 // channel
     j += 4 // frame size, update later
-    buffer.setUint16(j, 60); j += 2 // class: basic
-    buffer.setUint16(j, 40); j += 2 // method: publish
+    buffer.setUint16(j, AMQPFrame.ClassId.BASIC); j += 2
+    buffer.setUint16(j, AMQPFrame.BasicMethod.PUBLISH); j += 2
     buffer.setUint16(j, 0); j += 2 // reserved1
-    j += buffer.setShortString(j, exchange) // exchange
-    j += buffer.setShortString(j, routingKey) // routing key
+    j += buffer.setShortString(j, exchange)
+    j += buffer.setShortString(j, routingKey)
     let bits = 0
     if (mandatory) bits = bits | (1 << 0)
     if (immediate) bits = bits | (1 << 1)
-    buffer.setUint8(j, bits); j += 1 // mandatory/immediate
-    buffer.setUint8(j, 206); j += 1 // frame end byte
+    buffer.setUint8(j, bits); j += 1
+    buffer.setUint8(j, AMQPFrame.End.CODE); j += 1
     buffer.setUint32(3, j - 8) // update frameSize
 
     const headerStart = j
-    buffer.setUint8(j, 2); j += 1 // type: header
+    buffer.setUint8(j, AMQPFrame.Type.HEADER); j += 1
     buffer.setUint16(j, this.id); j += 2 // channel
     j += 4 // frame size, update later
-    buffer.setUint16(j, 60); j += 2 // class: basic
+    buffer.setUint16(j, AMQPFrame.ClassId.BASIC); j += 2
     buffer.setUint16(j, 0); j += 2 // weight
     buffer.setUint32(j, 0); j += 4 // bodysize (upper 32 of 64 bits)
     buffer.setUint32(j, body.byteLength); j += 4 // bodysize
-    j += buffer.setProperties(j, properties); // properties
-    buffer.setUint8(j, 206); j += 1 // frame end byte
+    j += buffer.setProperties(j, properties);
+    buffer.setUint8(j, AMQPFrame.End.CODE); j += 1
     buffer.setUint32(headerStart + 3, j - headerStart - 8) // update frameSize
 
     let bufferView = new Uint8Array(buffer.buffer)
@@ -362,11 +362,11 @@ export class AMQPChannel {
       const frameSize = Math.min(body.byteLength - bodyPos, this.connection.frameMax - 8) // frame overhead is 8 bytes
       const dataSlice = body.subarray(bodyPos, bodyPos + frameSize)
 
-      buffer.setUint8(j, 3); j += 1 // type: body
+      buffer.setUint8(j, AMQPFrame.Type.BODY); j += 1
       buffer.setUint16(j, this.id); j += 2 // channel
-      buffer.setUint32(j, frameSize); j += 4 // frameSize
+      buffer.setUint32(j, frameSize); j += 4
       bufferView.set(dataSlice, j); j += frameSize // body content
-      buffer.setUint8(j, 206); j += 1 // frame end byte
+      buffer.setUint8(j, AMQPFrame.End.CODE); j += 1
       bodyPos += frameSize
     }
     const sendFrames = this.connection.send(bufferView.subarray(0, j))
@@ -393,17 +393,17 @@ export class AMQPChannel {
    */
   basicQos(prefetchCount: number, prefetchSize = 0, global = false): Promise<void> {
     if (this.closed) return this.rejectClosed()
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 19,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
       frameSize: 11,
-      classId: 60,
-      method: 10,
+      classId: AMQPFrame.ClassId.BASIC,
+      method: AMQPFrame.BasicMethod.QOS,
     })
-    frame.writeUint32(prefetchSize) // prefetch size
-    frame.writeUint16(prefetchCount) // prefetch count
-    frame.writeUint8(global ? 1 : 0) // global
+    frame.writeUint32(prefetchSize)
+    frame.writeUint16(prefetchCount)
+    frame.writeUint8(global ? 1 : 0)
     frame.finalize()
     return this.sendRpc(frame)
   }
@@ -415,13 +415,13 @@ export class AMQPChannel {
    */
   basicFlow(active = true): Promise<boolean> {
     if (this.closed) return this.rejectClosed()
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 13,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
       frameSize: 5,
-      classId: 20,
-      method: 20,
+      classId: AMQPFrame.ClassId.CHANNEL,
+      method: AMQPFrame.BasicMethod.CONSUME,
     })
     frame.writeUint8(active ? 1 : 0) // active flow
     frame.finalize()
@@ -433,13 +433,13 @@ export class AMQPChannel {
    */
   confirmSelect(): Promise<void> {
     if (this.closed) return this.rejectClosed()
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 13,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
       frameSize: 5,
-      classId: 85,
-      method: 10,
+      classId: AMQPFrame.ClassId.CONFIRM,
+      method: AMQPFrame.ConfirmMethod.SELECT,
     })
     frame.writeUint8(0) // noWait
     frame.finalize()
@@ -460,15 +460,15 @@ export class AMQPChannel {
   queueDeclare(name = "", { passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "" }: QueueParams = {}, args = {}): Promise<QueueOk> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
-    const declare = new AMQPFrame({
+    const declare = new AMQPFrame.Writer({
       bufferSize: 4096,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 50,
-      method: 10,
+      classId: AMQPFrame.ClassId.QUEUE,
+      method: AMQPFrame.QueueMethod.DECLARE,
     })
     declare.writeUint16(0) // reserved1
-    declare.writeShortString(name) // name
+    declare.writeShortString(name)
     let bits = 0
     if (passive)    bits = bits | (1 << 0)
     if (durable)    bits = bits | (1 << 1)
@@ -476,7 +476,7 @@ export class AMQPChannel {
     if (autoDelete) bits = bits | (1 << 3)
     if (noWait)     bits = bits | (1 << 4)
     declare.writeUint8(bits)
-    declare.writeTable(args) // arguments
+    declare.writeTable(args)
     declare.finalize()
     return this.sendRpc(declare)
   }
@@ -491,15 +491,15 @@ export class AMQPChannel {
   queueDelete(name = "", { ifUnused = false, ifEmpty = false } = {}): Promise<MessageCount> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 512,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 50,
-      method: 40,
+      classId: AMQPFrame.ClassId.QUEUE,
+      method: AMQPFrame.QueueMethod.DELETE,
     })
     frame.writeUint16(0) // reserved1
-    frame.writeShortString(name) // name
+    frame.writeShortString(name)
     let bits = 0
     if (ifUnused) bits = bits | (1 << 0)
     if (ifEmpty)  bits = bits | (1 << 1)
@@ -520,18 +520,18 @@ export class AMQPChannel {
   queueBind(queue: string, exchange: string, routingKey: string, args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
-    const bind = new AMQPFrame({
+    const bind = new AMQPFrame.Writer({
       bufferSize: 4096,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 50,
-      method: 20,
+      classId: AMQPFrame.ClassId.QUEUE,
+      method: AMQPFrame.BasicMethod.CONSUME,
     })
     bind.writeUint16(0) // reserved1
     bind.writeShortString(queue)
     bind.writeShortString(exchange)
     bind.writeShortString(routingKey)
-    bind.writeUint8(noWait ? 1 : 0) // noWait
+    bind.writeUint8(noWait ? 1 : 0)
     bind.writeTable(args)
     bind.finalize()
     return this.sendRpc(bind)
@@ -547,12 +547,12 @@ export class AMQPChannel {
    */
   queueUnbind(queue: string, exchange: string, routingKey: string, args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
-    const unbind = new AMQPFrame({
+    const unbind = new AMQPFrame.Writer({
       bufferSize: 4096,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 50,
-      method: 50,
+      classId: AMQPFrame.ClassId.QUEUE,
+      method: AMQPFrame.QueueMethod.UNBIND,
     })
     unbind.writeUint16(0) // reserved1
     unbind.writeShortString(queue)
@@ -571,16 +571,16 @@ export class AMQPChannel {
   queuePurge(queue: string): Promise<MessageCount> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
-    const purge = new AMQPFrame({
+    const purge = new AMQPFrame.Writer({
       bufferSize: 512,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 50,
-      method: 30,
+      classId: AMQPFrame.ClassId.QUEUE,
+      method: AMQPFrame.BasicMethod.CANCEL,
     })
     purge.writeUint16(0) // reserved1
     purge.writeShortString(queue)
-    purge.writeUint8(noWait ? 1 : 0) // noWait
+    purge.writeUint8(noWait ? 1 : 0)
     purge.finalize()
     return this.sendRpc(purge)
   }
@@ -600,12 +600,12 @@ export class AMQPChannel {
   exchangeDeclare(name: string, type: ExchangeType, { passive = false, durable = true, autoDelete = false, internal = false }: ExchangeParams = {}, args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 4096,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 40,
-      method: 10,
+      classId: AMQPFrame.ClassId.EXCHANGE,
+      method: AMQPFrame.ExchangeMethod.DECLARE,
     })
     frame.writeUint16(0) // reserved1
     frame.writeShortString(name)
@@ -632,12 +632,12 @@ export class AMQPChannel {
   exchangeDelete(name: string, { ifUnused = false } = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 512,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 40,
-      method: 20,
+      classId: AMQPFrame.ClassId.EXCHANGE,
+      method: AMQPFrame.BasicMethod.CONSUME,
     })
     frame.writeUint16(0) // reserved1
     frame.writeShortString(name)
@@ -659,18 +659,18 @@ export class AMQPChannel {
    */
   exchangeBind(destination: string, source: string, routingKey = "", args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
-    const bind = new AMQPFrame({
+    const bind = new AMQPFrame.Writer({
       bufferSize: 4096,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 40,
-      method: 30,
+      classId: AMQPFrame.ClassId.EXCHANGE,
+      method: AMQPFrame.BasicMethod.CANCEL,
     })
     bind.writeUint16(0) // reserved1
     bind.writeShortString(destination)
     bind.writeShortString(source)
     bind.writeShortString(routingKey)
-    bind.writeUint8(0) // noWait
+    bind.writeUint8(0)
     bind.writeTable(args)
     bind.finalize()
     return this.sendRpc(bind)
@@ -686,18 +686,18 @@ export class AMQPChannel {
    */
   exchangeUnbind(destination: string, source: string, routingKey = "", args = {}): Promise<void> {
     if (this.closed) return this.rejectClosed()
-    const unbind = new AMQPFrame({
+    const unbind = new AMQPFrame.Writer({
       bufferSize: 4096,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
-      classId: 40,
-      method: 40,
+      classId: AMQPFrame.ClassId.EXCHANGE,
+      method: AMQPFrame.ExchangeMethod.UNBIND,
     })
     unbind.writeUint16(0) // reserved1
     unbind.writeShortString(destination)
     unbind.writeShortString(source)
     unbind.writeShortString(routingKey)
-    unbind.writeUint8(0) // noWait
+    unbind.writeUint8(0)
     unbind.writeTable(args)
     unbind.finalize()
     return this.sendRpc(unbind)
@@ -727,12 +727,12 @@ export class AMQPChannel {
 
   private txMethod(methodId: number): Promise<void> {
     if (this.closed) return this.rejectClosed()
-    const frame = new AMQPFrame({
+    const frame = new AMQPFrame.Writer({
       bufferSize: 12,
-      type: 1,
+      type: AMQPFrame.Type.METHOD,
       channel: this.id,
       frameSize: 4,
-      classId: 90,
+      classId: AMQPFrame.ClassId.TX,
       method: methodId,
     })
     frame.finalize()
@@ -741,10 +741,10 @@ export class AMQPChannel {
 
   /**
    * Send a RPC request, will resolve a RPC promise when RPC response arrives
-   * @param frame - AMQPFrame to send
+   * @param frame - AMQP.AMQPFrame to send
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private sendRpc(frame: AMQPFrame): Promise<any> {
+  private sendRpc(frame: AMQPFrame.Writer): Promise<any> {
     const bytes = frame.toUint8Array()
     return new Promise((resolve, reject) => {
       this.rpcQueue = this.rpcQueue.then(() => {
