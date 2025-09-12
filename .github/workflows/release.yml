@@ -21,12 +21,37 @@ jobs:
       - run: npm install
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      - run: npm run test:local
       - run: npm run build
       - run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - uses: ncipollo/release-action@v1
+        # create GitHub release
+      - name: Extract release notes
+        id: extract_release_notes
+        run: |
+          # Extract version from tag (remove 'v' prefix)
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Extract changelog section for this version with better handling
+          if grep -q "## \[$VERSION\]" CHANGELOG.md; then
+            awk "/^## \[$VERSION\]/ {flag=1; next} /^## \[/ && flag {exit} flag && /\S/ {print}" CHANGELOG.md > release_notes.md
+            echo "Release notes extracted for version $VERSION:"
+            cat release_notes.md
+          else
+            echo "No changelog entry found for version $VERSION" > release_notes.md
+            echo "Warning: No changelog entry found for version $VERSION"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          artifacts: "dist/amqp-websocket-client.mjs*"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          name: Release ${{ steps.extract_release_notes.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            dist/amqp-websocket-client.mjs
+            dist/amqp-websocket-client.mjs.map

@@ -174,12 +174,15 @@ The package.json includes several npm scripts for releasing:
 ### What happens during a release
 
 1. **Tests**: All tests are run to ensure everything passes (`preversion`)
-2. **Version bump**: The version is updated in `package.json` and `src/amqp-base-client.ts` (`version`)
-3. **Changelog update**: The `## [Unreleased]` section is converted to the actual version and date (`postversion`)
-4. **Git commit**: A commit is created with the version change and changelog update
-5. **Git tag**: An annotated tag is created with the full changelog content as the tag message
-6. **Push**: Both the commit and tags are pushed to the remote repository
-7. **CI deployment**: The GitHub Actions workflow automatically publishes the new version to npm
+2. **Version bump**: npm automatically updates the version in `package.json`
+3. **File updates**: The version is updated in `src/amqp-base-client.ts`, code is formatted, and changelog is updated (`version`)
+4. **Staging**: All changes are staged for commit (`version`)
+5. **Git commit**: npm automatically commits all staged changes with a version message
+6. **Git tag**: An annotated tag is created with the full changelog content as the tag message (`postversion`)
+7. **Push**: Both the commit and tags are pushed to the remote repository (`postversion`)
+8. **CI deployment**: The GitHub Actions workflow automatically publishes the new version to npm
+
+> **Technical Note**: This release process leverages npm's built-in version lifecycle hooks (`preversion`, `version`, `postversion`). The `npm version` command automatically handles the git commit after running our custom `version` script, which is why we stage changes with `git add -A` rather than committing manually.
 
 ### Prerequisites
 
