@@ -158,3 +158,43 @@ Module comparison
 | -------------- | -------------------- | ------------------------------------------------- |
 | amqp-client.js | 0                    | 1743                                              |
 | amqplib        | 14                   | 6720 (w/o dependencies)                           |
+
+## Release
+
+This project uses automated release scripts for version management.
+
+### Release Commands
+
+The package.json includes several npm scripts for releasing:
+
+- **`npm run release`** - Performs a patch version bump (e.g., 3.2.1 → 3.2.2) and creates a release
+- **`npm run release:minor`** - Performs a minor version bump (e.g., 3.2.1 → 3.3.0) and creates a release
+- **`npm run release:major`** - Performs a major version bump (e.g., 3.2.1 → 4.0.0) and creates a release
+
+### What happens during a release
+
+1. **Tests**: All tests are run to ensure everything passes (`preversion`)
+2. **Version bump**: The version is updated in `package.json` and `src/amqp-base-client.ts` (`version`)
+3. **Changelog update**: The `## [Unreleased]` section is converted to the actual version and date (`postversion`)
+4. **Git commit**: A commit is created with the version change and changelog update
+5. **Git tag**: An annotated tag is created with the full changelog content as the tag message
+6. **Push**: Both the commit and tags are pushed to the remote repository
+7. **CI deployment**: The GitHub Actions workflow automatically publishes the new version to npm
+
+### Prerequisites
+
+Before releasing:
+
+1. Add your changes to the `## [Unreleased]` section in `CHANGELOG.md`
+2. All tests should pass (`npm test`)
+3. The working directory should be clean (no uncommitted changes)
+
+### Automated npm Publishing
+
+When a new tag is pushed (e.g., `v3.3.0`), the GitHub Actions workflow (`.github/workflows/release.yml`) automatically:
+
+- Builds the project
+- Publishes the package to npm with public access and provenance
+- Creates a GitHub release with browser bundle artifacts
+
+The git tag contains the complete changelog section for that version, including version header, all changes, and PR links. This makes it easy to see what changed in each release directly from the git tag.
