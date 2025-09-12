@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Improve connection loss handling for WebSocket connections ([#152](https://github.com/cloudamqp/amqp-client.js/pull/152))
+- Fix parallel queue binding issues ([#154](https://github.com/cloudamqp/amqp-client.js/pull/154))
+- Properly handle heartbeat timeouts ([#95](https://github.com/cloudamqp/amqp-client.js/pull/95))
+- Fix TypeScript callback types to support async callbacks ([#155](https://github.com/cloudamqp/amqp-client.js/pull/155))
+- Return publish frame buffer to pool after send ([#142](https://github.com/cloudamqp/amqp-client.js/pull/142))
+
+### Changed
+
+- Logger configuration improvements - console is no longer used as default logger, explicit logger parameter support added ([#149](https://github.com/cloudamqp/amqp-client.js/pull/149))
+- Internal code improvements and optimizations ([#140](https://github.com/cloudamqp/amqp-client.js/pull/140))
+- Add missing exports to WebSocket client ([#147](https://github.com/cloudamqp/amqp-client.js/pull/147))
+
 ## [3.2.1] - 2025-04-06
 
 - Increase min `frameMax` to 8192 (8KB) for compatibility with RabbitMQ 4.1 and large JWT tokens ([#134](https://github.com/cloudamqp/amqp-client.js/pull/134))
