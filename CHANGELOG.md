@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2025-09-12
+
 ### Fixed
 
 - Improve connection loss handling for WebSocket connections ([#152](https://github.com/cloudamqp/amqp-client.js/pull/152))
