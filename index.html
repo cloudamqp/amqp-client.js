@@ -115,13 +115,17 @@
 </ul>
 <h3 id="what-happens-during-a-release" class="tsd-anchor-link">What happens during a release<a href="#what-happens-during-a-release" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><ol>
 <li><strong>Tests</strong>: All tests are run to ensure everything passes (<code>preversion</code>)</li>
-<li><strong>Version bump</strong>: The version is updated in <code>package.json</code> and <code>src/amqp-base-client.ts</code> (<code>version</code>)</li>
-<li><strong>Changelog update</strong>: The <code>## [Unreleased]</code> section is converted to the actual version and date (<code>postversion</code>)</li>
-<li><strong>Git commit</strong>: A commit is created with the version change and changelog update</li>
-<li><strong>Git tag</strong>: An annotated tag is created with the full changelog content as the tag message</li>
-<li><strong>Push</strong>: Both the commit and tags are pushed to the remote repository</li>
+<li><strong>Version bump</strong>: npm automatically updates the version in <code>package.json</code></li>
+<li><strong>File updates</strong>: The version is updated in <code>src/amqp-base-client.ts</code>, code is formatted, and changelog is updated (<code>version</code>)</li>
+<li><strong>Staging</strong>: All changes are staged for commit (<code>version</code>)</li>
+<li><strong>Git commit</strong>: npm automatically commits all staged changes with a version message</li>
+<li><strong>Git tag</strong>: An annotated tag is created with the full changelog content as the tag message (<code>postversion</code>)</li>
+<li><strong>Push</strong>: Both the commit and tags are pushed to the remote repository (<code>postversion</code>)</li>
 <li><strong>CI deployment</strong>: The GitHub Actions workflow automatically publishes the new version to npm</li>
 </ol>
+<blockquote>
+<p><strong>Technical Note</strong>: This release process leverages npm's built-in version lifecycle hooks (<code>preversion</code>, <code>version</code>, <code>postversion</code>). The <code>npm version</code> command automatically handles the git commit after running our custom <code>version</code> script, which is why we stage changes with <code>git add -A</code> rather than committing manually.</p>
+</blockquote>
 <h3 id="prerequisites" class="tsd-anchor-link">Prerequisites<a href="#prerequisites" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3><p>Before releasing:</p>
 <ol>
 <li>Add your changes to the <code>## [Unreleased]</code> section in <code>CHANGELOG.md</code></li>
