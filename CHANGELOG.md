@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.3.2] - 2025-09-12
 
-## [3.3.0] - 2025-09-12
-
 ### Fixed
 
 - Improve connection loss handling for WebSocket connections ([#152](https://github.com/cloudamqp/amqp-client.js/pull/152))
@@ -24,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Logger configuration improvements - console is no longer used as default logger, explicit logger parameter support added ([#149](https://github.com/cloudamqp/amqp-client.js/pull/149))
 - Internal code improvements and optimizations ([#140](https://github.com/cloudamqp/amqp-client.js/pull/140))
 - Add missing exports to WebSocket client ([#147](https://github.com/cloudamqp/amqp-client.js/pull/147))
+
+## [3.3.0, 3.3.1]
+
+- Fat fingers
 
 ## [3.2.1] - 2025-04-06
 
