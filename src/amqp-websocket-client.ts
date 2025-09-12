@@ -1,11 +1,11 @@
-import { AMQPBaseClient, VERSION } from './amqp-base-client.js'
-import { AMQPView } from './amqp-view.js'
-import { AMQPError } from './amqp-error.js'
-import { AMQPChannel } from './amqp-channel.js'
-import { AMQPConsumer } from './amqp-consumer.js'
-import { AMQPMessage } from './amqp-message.js'
-import { AMQPQueue } from './amqp-queue.js'
-import type { Logger } from './types.js'
+import { AMQPBaseClient, VERSION } from "./amqp-base-client.js"
+import { AMQPView } from "./amqp-view.js"
+import { AMQPError } from "./amqp-error.js"
+import { AMQPChannel } from "./amqp-channel.js"
+import { AMQPConsumer } from "./amqp-consumer.js"
+import { AMQPMessage } from "./amqp-message.js"
+import { AMQPQueue } from "./amqp-queue.js"
+import type { Logger } from "./types.js"
 
 interface AMQPWebSocketInit {
   url: string
@@ -32,10 +32,28 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
    * @param url to the websocket endpoint, example: wss://server/ws/amqp
    * @param logger - optional logger instance, defaults to null (no logging)
    */
-  constructor(url: string, vhost?: string, username?: string, password?: string, name?: string, frameMax?: number, heartbeat?: number, logger?: Logger | null);
-  constructor(init: AMQPWebSocketInit);
-  constructor(url: string | AMQPWebSocketInit, vhost = "/", username = "guest", password = "guest", name?: string, frameMax = 8192, heartbeat = 0, logger?: Logger | null) {
-    if (typeof url === 'object') {
+  constructor(
+    url: string,
+    vhost?: string,
+    username?: string,
+    password?: string,
+    name?: string,
+    frameMax?: number,
+    heartbeat?: number,
+    logger?: Logger | null,
+  )
+  constructor(init: AMQPWebSocketInit)
+  constructor(
+    url: string | AMQPWebSocketInit,
+    vhost = "/",
+    username = "guest",
+    password = "guest",
+    name?: string,
+    frameMax = 8192,
+    heartbeat = 0,
+    logger?: Logger | null,
+  ) {
+    if (typeof url === "object") {
       vhost = url.vhost ?? vhost
       username = url.username ?? username
       password = url.password ?? password
@@ -60,10 +78,10 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     socket.onmessage = this.handleMessage.bind(this)
     return new Promise((resolve, reject) => {
       this.connectPromise = [resolve, reject]
-      socket.addEventListener('close', reject)
-      socket.addEventListener('error', reject)
-      socket.addEventListener('open', () => {
-        socket.addEventListener('error', (ev: Event) => {
+      socket.addEventListener("close", reject)
+      socket.addEventListener("error", reject)
+      socket.addEventListener("open", () => {
+        socket.addEventListener("error", (ev: Event) => {
           if (!this.closed) {
             const err = new AMQPError(ev.toString(), this)
             this.closed = true
@@ -73,7 +91,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
             this.onerror(err)
           }
         })
-        socket.addEventListener('close', (ev: CloseEvent) => {
+        socket.addEventListener("close", (ev: CloseEvent) => {
           const clientClosed = this.closed
           this.closed = true
           if (!(ev.wasClean && clientClosed)) {
@@ -119,7 +137,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   }
 
   private handleMessage(event: MessageEvent) {
-    const buf : ArrayBuffer = event.data
+    const buf: ArrayBuffer = event.data
     const bufView = new DataView(buf)
     // A socket read can contain 0 or more frames, so find frame boundries
     let bufPos = 0
@@ -170,20 +188,9 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   }
 
   static platform(): string {
-    if (typeof(navigator) !== 'undefined')
-      return navigator.userAgent
-    else
-      return `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
+    if (typeof navigator !== "undefined") return navigator.userAgent
+    else return `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
   }
 }
 
-export {
-  AMQPBaseClient,
-  AMQPChannel,
-  AMQPConsumer,
-  AMQPError,
-  AMQPMessage,
-  AMQPQueue,
-  AMQPView,
-  VERSION,
-};
+export { AMQPBaseClient, AMQPChannel, AMQPConsumer, AMQPError, AMQPMessage, AMQPQueue, AMQPView, VERSION }

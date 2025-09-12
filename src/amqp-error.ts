@@ -1,4 +1,4 @@
-import type { AMQPBaseClient } from './amqp-base-client.js'
+import type { AMQPBaseClient } from "./amqp-base-client.js"
 
 /**
  * An error, can be both AMQP level errors or socket errors

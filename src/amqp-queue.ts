@@ -1,7 +1,7 @@
-import type { AMQPMessage } from './amqp-message.js'
-import type { AMQPChannel, ConsumeParams } from './amqp-channel.js'
-import type { AMQPProperties } from './amqp-properties.js'
-import type { AMQPConsumer } from './amqp-consumer.js'
+import type { AMQPMessage } from "./amqp-message.js"
+import type { AMQPChannel, ConsumeParams } from "./amqp-channel.js"
+import type { AMQPProperties } from "./amqp-properties.js"
+import type { AMQPConsumer } from "./amqp-consumer.js"
 
 /**
  * Convenience class for queues
@@ -21,9 +21,10 @@ export class AMQPQueue {
   /**
    * Bind the queue to an exchange
    */
-  bind(exchange: string, routingKey = "", args = {}) : Promise<AMQPQueue> {
+  bind(exchange: string, routingKey = "", args = {}): Promise<AMQPQueue> {
     return new Promise<AMQPQueue>((resolve, reject) => {
-      this.channel.queueBind(this.name, exchange, routingKey, args)
+      this.channel
+        .queueBind(this.name, exchange, routingKey, args)
         .then(() => resolve(this))
         .catch(reject)
     })
@@ -32,9 +33,10 @@ export class AMQPQueue {
   /**
    * Delete a binding between this queue and an exchange
    */
-  unbind(exchange: string, routingKey = "", args = {}) : Promise<AMQPQueue>{
+  unbind(exchange: string, routingKey = "", args = {}): Promise<AMQPQueue> {
     return new Promise<AMQPQueue>((resolve, reject) => {
-      this.channel.queueUnbind(this.name, exchange, routingKey, args)
+      this.channel
+        .queueUnbind(this.name, exchange, routingKey, args)
         .then(() => resolve(this))
         .catch(reject)
     })
@@ -46,9 +48,13 @@ export class AMQPQueue {
    * @param properties - publish properties
    * @return fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
-  publish(body: string|Uint8Array|ArrayBuffer|Buffer|null, properties: AMQPProperties = {}): Promise<AMQPQueue> {
+  publish(
+    body: string | Uint8Array | ArrayBuffer | Buffer | null,
+    properties: AMQPProperties = {},
+  ): Promise<AMQPQueue> {
     return new Promise<AMQPQueue>((resolve, reject) => {
-      this.channel.basicPublish("", this.name, body, properties)
+      this.channel
+        .basicPublish("", this.name, body, properties)
         .then(() => resolve(this))
         .catch(reject)
     })
@@ -63,8 +69,10 @@ export class AMQPQueue {
    * @param [params.args={}] - custom arguments
    * @param {function(AMQPMessage) : void | Promise<void>} callback - Function to be called for each received message
    */
-  subscribe({ noAck = true, exclusive = false, tag = "", args = {} }: ConsumeParams = {},
-    callback: (msg: AMQPMessage) => void | Promise<void>): Promise<AMQPConsumer> {
+  subscribe(
+    { noAck = true, exclusive = false, tag = "", args = {} }: ConsumeParams = {},
+    callback: (msg: AMQPMessage) => void | Promise<void>,
+  ): Promise<AMQPConsumer> {
     return this.channel.basicConsume(this.name, { noAck, exclusive, tag, args }, callback)
   }
 
@@ -73,7 +81,8 @@ export class AMQPQueue {
    */
   unsubscribe(consumerTag: string): Promise<AMQPQueue> {
     return new Promise((resolve, reject) => {
-      this.channel.basicCancel(consumerTag)
+      this.channel
+        .basicCancel(consumerTag)
         .then(() => resolve(this))
         .catch(reject)
     })
@@ -84,7 +93,8 @@ export class AMQPQueue {
    */
   delete(): Promise<AMQPQueue> {
     return new Promise((resolve, reject) => {
-      this.channel.queueDelete(this.name)
+      this.channel
+        .queueDelete(this.name)
         .then(() => resolve(this))
         .catch(reject)
     })

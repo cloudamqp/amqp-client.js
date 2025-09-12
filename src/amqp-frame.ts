@@ -6,12 +6,12 @@ export enum Type {
   METHOD = 1,
   HEADER = 2,
   BODY = 3,
-  HEARTBEAT = 8
+  HEARTBEAT = 8,
 }
 
 // AMQP Frame End Byte (from AMQP 0-9-1 spec)
 export enum End {
-  CODE = 206
+  CODE = 206,
 }
 
 // AMQP Class IDs (partial, add more as needed)
@@ -22,7 +22,7 @@ export enum ClassId {
   QUEUE = 50,
   BASIC = 60,
   TX = 90,
-  CONFIRM = 85
+  CONFIRM = 85,
 }
 
 // AMQP Method IDs by class (partial, add more as needed)
@@ -40,7 +40,7 @@ export enum ConnectionMethod {
   BLOCKED = 60,
   UNBLOCKED = 61,
   UPDATE_SECRET = 70,
-  UPDATE_SECRET_OK = 71
+  UPDATE_SECRET_OK = 71,
 }
 
 export enum ChannelMethod {
@@ -49,7 +49,7 @@ export enum ChannelMethod {
   FLOW = 20,
   FLOW_OK = 21,
   CLOSE = 40,
-  CLOSE_OK = 41
+  CLOSE_OK = 41,
 }
 
 export enum ExchangeMethod {
@@ -60,7 +60,7 @@ export enum ExchangeMethod {
   BIND = 30,
   BIND_OK = 31,
   UNBIND = 40,
-  UNBIND_OK = 51
+  UNBIND_OK = 51,
 }
 
 export enum QueueMethod {
@@ -73,7 +73,7 @@ export enum QueueMethod {
   DELETE = 40,
   DELETE_OK = 41,
   UNBIND = 50,
-  UNBIND_OK = 51
+  UNBIND_OK = 51,
 }
 
 export enum BasicMethod {
@@ -94,7 +94,7 @@ export enum BasicMethod {
   RECOVER_ASYNC = 100,
   RECOVER = 110,
   RECOVER_OK = 111,
-  NACK = 120
+  NACK = 120,
 }
 
 export enum TxMethod {
@@ -103,12 +103,12 @@ export enum TxMethod {
   COMMIT = 20,
   COMMIT_OK = 21,
   ROLLBACK = 30,
-  ROLLBACK_OK = 31
+  ROLLBACK_OK = 31,
 }
 
 export enum ConfirmMethod {
   SELECT = 10,
-  SELECT_OK = 11
+  SELECT_OK = 11,
 }
 
 interface FrameOptions {

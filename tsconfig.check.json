@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src", "test", "test-browser", "vite-env.d.ts"],
+  "compilerOptions": {
+    "noEmit": true,
+    "moduleResolution": "bundler",
+    "types": ["node", "vite/client", "vitest/globals"]
+  }
+}

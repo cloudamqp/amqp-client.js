@@ -1,0 +1,9 @@
+# Ignore artifacts:
+dist
+lib
+types
+coverage
+
+# ignore formatted config files
+tsconfig.json
+.vscode
