@@ -1,7 +1,7 @@
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPChannel, ConsumeParams } from "./amqp-channel.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { AMQPConsumer } from "./amqp-consumer.js"
+import type { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 
 /**
  * Convenience class for queues
@@ -69,11 +69,27 @@ export class AMQPQueue {
    * @param [params.args={}] - custom arguments
    * @param {function(AMQPMessage) : void | Promise<void>} callback - Function to be called for each received message
    */
-  subscribe(
-    { noAck = true, exclusive = false, tag = "", args = {} }: ConsumeParams = {},
-    callback: (msg: AMQPMessage) => void | Promise<void>,
-  ): Promise<AMQPConsumer> {
-    return this.channel.basicConsume(this.name, { noAck, exclusive, tag, args }, callback)
+  async subscribe(params: ConsumeParams, callback: (msg: AMQPMessage) => void | Promise<void>): Promise<AMQPConsumer>
+
+  /**
+   * Subscribe to the queue. Use `consumer.messages` to iterate over messages with an AsyncGenerator.
+   * @param params
+   * @param [params.noAck=true] - if messages are removed from the server upon delivery, or have to be acknowledged
+   * @param [params.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
+   * @param [params.tag=""] - tag of the consumer, will be server generated if left empty
+   * @param [params.args={}] - custom arguments
+   * @return {AMQPGeneratorConsumer} - Consumer with an AsyncGenerator for messages at `consumer.messages`
+   */
+  async subscribe(params: ConsumeParams): Promise<AMQPGeneratorConsumer>
+
+  async subscribe(
+    params: ConsumeParams = {},
+    callback?: (msg: AMQPMessage) => void | Promise<void>,
+  ): Promise<AMQPConsumer | AMQPGeneratorConsumer> {
+    if (callback) {
+      return this.channel.basicConsume(this.name, params, callback)
+    }
+    return this.channel.basicConsume(this.name, params)
   }
 
   /**

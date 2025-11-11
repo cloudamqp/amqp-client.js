@@ -2,7 +2,7 @@ import { AMQPError } from "./amqp-error.js"
 import * as AMQPFrame from "./amqp-frame.js"
 import { AMQPView } from "./amqp-view.js"
 import { AMQPQueue } from "./amqp-queue.js"
-import { AMQPConsumer } from "./amqp-consumer.js"
+import { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPProperties } from "./amqp-properties.js"
@@ -13,7 +13,7 @@ import type { AMQPProperties } from "./amqp-properties.js"
 export class AMQPChannel {
   readonly connection: AMQPBaseClient
   readonly id: number
-  readonly consumers = new Map<string, AMQPConsumer>()
+  readonly consumers = new Map<string, AMQPConsumer | AMQPGeneratorConsumer>()
   private rpcQueue: Promise<unknown> = Promise.resolve(true)
   private readonly rpcCallbacks: [(value?: unknown) => void, (err?: Error) => void][] = []
   private readonly unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][] = []
@@ -144,9 +144,25 @@ export class AMQPChannel {
    */
   basicConsume(
     queue: string,
-    { tag = "", noAck = true, exclusive = false, args = {} } = {},
+    params: ConsumeParams,
     callback: (msg: AMQPMessage) => void | Promise<void>,
-  ): Promise<AMQPConsumer> {
+  ): Promise<AMQPConsumer>
+  /**
+   * Consume from a queue. Messages will be delivered asynchronously through an AsyncGenerator at `consumer.messages`.
+   * @param queue - name of the queue to poll
+   * @param param
+   * @param [param.tag=""] - tag of the consumer, will be server generated if left empty
+   * @param [param.noAck=true] - if messages are removed from the server upon delivery, or have to be acknowledged
+   * @param [param.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
+   * @param [param.args={}] - custom arguments
+   * @return {AMQPGeneratorConsumer} - Consumer with an AsyncGenerator for messages at `consumer.messages`
+   */
+  basicConsume(queue: string, params: ConsumeParams): Promise<AMQPGeneratorConsumer>
+  basicConsume(
+    queue: string,
+    { tag = "", noAck = true, exclusive = false, args = {} }: ConsumeParams = {},
+    callback?: (msg: AMQPMessage) => void | Promise<void>,
+  ): Promise<AMQPConsumer | AMQPGeneratorConsumer> {
     if (this.closed) return this.rejectClosed()
     const noWait = false
     const noLocal = false
@@ -172,7 +188,12 @@ export class AMQPChannel {
     return new Promise((resolve, reject) => {
       this.sendRpc(frame)
         .then((consumerTag) => {
-          const consumer = new AMQPConsumer(this, consumerTag, callback)
+          let consumer: AMQPConsumer | AMQPGeneratorConsumer
+          if (callback) {
+            consumer = new AMQPConsumer(this, consumerTag, callback)
+          } else {
+            consumer = new AMQPGeneratorConsumer(this, consumerTag)
+          }
           this.consumers.set(consumerTag, consumer)
           resolve(consumer)
         })

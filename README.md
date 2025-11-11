@@ -50,6 +50,40 @@ async function run() {
 run()
 ```
 
+### Using AsyncGenerator for consuming messages
+
+As an alternative to the callback-based approach, you can use an AsyncGenerator for a more modern, iteration-based API:
+
+```javascript
+import { AMQPClient } from "@cloudamqp/amqp-client"
+
+async function run() {
+  try {
+    const amqp = new AMQPClient("amqp://localhost")
+    const conn = await amqp.connect()
+    const ch = await conn.channel()
+    const q = await ch.queue()
+
+    await q.publish("Hello World", { deliveryMode: 2 })
+
+    // Subscribe without a callback and use consumer.messages for AsyncGenerator
+    const consumer = await q.subscribe({ noAck: false })
+    for await (const msg of consumer.messages) {
+      console.log(msg.bodyToString())
+      await msg.ack()
+      break // breaking automatically cancels the consumer
+    }
+
+    await conn.close()
+  } catch (e) {
+    console.error("ERROR", e)
+    e.connection.close()
+  }
+}
+
+run()
+```
+
 ## WebSockets
 
 This library can be used in the browser to access an AMQP server over WebSockets. For servers such as RabbitMQ that doesn't support WebSockets natively a [WebSocket TCP relay](https://github.com/cloudamqp/websocket-tcp-relay/) have to be used as a proxy. All CloudAMQP servers has this proxy configured. More information can be found [in this blog post](https://www.cloudamqp.com/blog/cloudamqp-releases-amqp-websockets.html).
