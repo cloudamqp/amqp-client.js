@@ -113,6 +113,148 @@ test("can unsubscribe from a queue", async () => {
   await expect(q.unsubscribe(consumer.tag)).resolves.toBeDefined()
 })
 
+test("can subscribe using AsyncGenerator", async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  await q.publish("hello world")
+
+  const consumer = await q.subscribe({ noAck: true })
+  const generator = consumer.messages
+  const result = await generator.next()
+
+  expect(result.done).toBe(false)
+  const value = result.value
+  if (!value) throw new Error("Expected a message")
+  expect(value.bodyString()).toEqual("hello world")
+
+  await generator.return()
+})
+
+test("can consume multiple messages with AsyncGenerator", async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+
+  // Publish 3 messages
+  await q.publish("message 1")
+  await q.publish("message 2")
+  await q.publish("message 3")
+
+  const consumer = await q.subscribe({ noAck: true })
+  const messages: string[] = []
+  let count = 0
+  for await (const msg of consumer.messages) {
+    messages.push(msg.bodyString()!)
+    count++
+    if (count === 3) break
+  }
+
+  expect(messages).toEqual(["message 1", "message 2", "message 3"])
+})
+
+test("AsyncGenerator with manual acknowledgment", async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+
+  await q.publish("test message")
+
+  const consumer = await q.subscribe({ noAck: false })
+  let ackCalled = false
+  for await (const msg of consumer.messages) {
+    expect(msg.bodyString()).toEqual("test message")
+    await msg.ack()
+    ackCalled = true
+    break
+  }
+
+  expect(ackCalled).toBe(true)
+})
+
+test("AsyncGenerator with nack", async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+
+  await q.publish("test message")
+
+  const consumer = await q.subscribe({ noAck: false })
+  let nackCalled = false
+  for await (const msg of consumer.messages) {
+    expect(msg.bodyString()).toEqual("test message")
+    await msg.nack(false)
+    nackCalled = true
+    break
+  }
+
+  expect(nackCalled).toBe(true)
+})
+
+test("AsyncGenerator auto-cancels consumer on break", async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+
+  // Publish multiple messages
+  for (let i = 0; i < 5; i++) {
+    await q.publish(`message ${i}`)
+  }
+
+  const consumer = await q.subscribe({ noAck: true })
+  let receivedCount = 0
+  for await (const msg of consumer.messages) {
+    void msg // Intentionally unused in this test
+    receivedCount++
+    if (receivedCount === 2) break
+  }
+
+  expect(receivedCount).toBe(2)
+})
+
+test("AsyncGenerator works with prefetch", async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  await ch.prefetch(1)
+  const q = await ch.queue("")
+
+  // Publish multiple messages
+  await q.publish("message 1")
+  await q.publish("message 2")
+  await q.publish("message 3")
+
+  const consumer = await q.subscribe({ noAck: false })
+  const messages: string[] = []
+  for await (const msg of consumer.messages) {
+    messages.push(msg.bodyString()!)
+    await msg.ack()
+    if (messages.length === 3) break
+  }
+
+  expect(messages).toEqual(["message 1", "message 2", "message 3"])
+})
+
+test("AsyncGenerator with exclusive consumer", async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+
+  await q.publish("exclusive message")
+
+  const consumer = await q.subscribe({ noAck: true, exclusive: true })
+  for await (const msg of consumer.messages) {
+    expect(msg.bodyString()).toEqual("exclusive message")
+    break
+  }
+})
+
 test("can delete a queue", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
