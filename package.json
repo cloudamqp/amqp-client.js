@@ -1,6 +1,6 @@
 {
   "name": "@cloudamqp/amqp-client",
-  "version": "3.3.2",
+  "version": "3.4.0",
   "description": "AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)",
   "type": "module",
   "main": "lib/cjs/index.js",
@@ -43,7 +43,7 @@
     "postbuild": "echo '{\"type\": \"commonjs\"}' > lib/cjs/package.json",
     "prepare": "npm run build",
     "preversion": "npm run test:local",
-    "version": "sed -i'' \"s/VERSION = .*/VERSION = \\\"$npm_package_version\\\"/\" src/amqp-base-client.ts && npm run format && npm run update-changelog && git add -A",
+    "version": "sed -i '' \"s/VERSION = .*/VERSION = \\\"$npm_package_version\\\"/\" src/amqp-base-client.ts && npm run format && npm run update-changelog && git add -A",
     "postversion": "npm run create-tag && git push && git push --tags",
     "release": "npm version patch --no-git-tag-version",
     "release:minor": "npm version minor --no-git-tag-version",
