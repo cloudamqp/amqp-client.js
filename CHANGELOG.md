@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2025-11-12
+
+### Added
+
+ - Add AsyncGenerator support to subscribe() for improved DX ([#169](https://github.com/cloudamqp/amqp-client.js/pull/169))
+
 ## [3.3.2] - 2025-09-12
 
 ### Fixed
