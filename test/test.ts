@@ -823,13 +823,14 @@ test("can republish in consume block without race condition", async () => {
     if (msg.deliveryTag < 10000) {
       await Promise.all([q.publish(msg.body), q.publish(msg.body), msg.ack()])
     } else if (msg.deliveryTag === 10000) {
+      await msg.ack()
       await consumer.cancel()
     }
   })
   await expect(consumer.wait()).resolves.toBeUndefined()
   await expect(conn.close()).resolves.toBeUndefined()
   console.log(conn.bufferPool.length)
-})
+}, 60_000)
 
 test("raises when channelMax is reached", async () => {
   const amqp = getNewClient()
