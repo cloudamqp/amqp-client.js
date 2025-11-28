@@ -84,6 +84,66 @@ async function run() {
 run()
 ```
 
+### Automatic Reconnection
+
+For applications that need robust connection handling, use `AMQPReconnectingClient`. This high-level client automatically reconnects on connection loss and recovers consumers:
+
+```javascript
+import { AMQPClient, AMQPReconnectingClient } from "@cloudamqp/amqp-client"
+
+async function run() {
+  // Create a reconnecting client with a factory function
+  const client = new AMQPReconnectingClient(
+    () => new AMQPClient("amqp://localhost"),
+    {
+      reconnectInterval: 1000,     // Initial delay before reconnecting (ms)
+      maxReconnectInterval: 30000, // Maximum delay between attempts (ms)
+      backoffMultiplier: 2,        // Exponential backoff multiplier
+      maxRetries: 0,               // 0 = infinite retries
+    }
+  )
+
+  // Set up event callbacks
+  client.onconnect = () => console.log("Connected!")
+  client.ondisconnect = (err) => console.log("Disconnected:", err?.message)
+  client.onreconnecting = (attempt) => console.log("Reconnecting, attempt:", attempt)
+  client.onfailed = (err) => console.log("Failed to reconnect:", err?.message)
+
+  // Start the client (establishes connection)
+  await client.start()
+
+  // Declare a queue
+  const q = await client.queue("my-queue", { durable: true })
+
+  // Subscribe to the queue - consumer will be automatically recovered after reconnection
+  await client.subscribe("my-queue", { noAck: false }, async (msg) => {
+    console.log("Received:", msg.bodyString())
+    await msg.ack()
+  })
+
+  // Publish messages
+  await client.publish("", "my-queue", "Hello World")
+
+  // Enable publisher confirms
+  await client.confirmSelect()
+  const tag = await client.publish("", "my-queue", "Confirmed message")
+  console.log("Message confirmed with tag:", tag)
+
+  // When done, stop the client
+  // await client.stop()
+}
+
+run()
+```
+
+Key features of `AMQPReconnectingClient`:
+
+- **Automatic reconnection**: Reconnects automatically when the connection is lost
+- **Exponential backoff**: Configurable delays between reconnection attempts
+- **Consumer recovery**: Consumers registered via `subscribe()` are automatically re-established after reconnection
+- **Event callbacks**: Hooks for connection state changes (`onconnect`, `ondisconnect`, `onreconnecting`, `onfailed`)
+- **High-level API**: Simplified methods for common operations (`queue`, `publish`, `subscribe`, etc.)
+
 ## WebSockets
 
 This library can be used in the browser to access an AMQP server over WebSockets. For servers such as RabbitMQ that doesn't support WebSockets natively a [WebSocket TCP relay](https://github.com/cloudamqp/websocket-tcp-relay/) have to be used as a proxy. All CloudAMQP servers has this proxy configured. More information can be found [in this blog post](https://www.cloudamqp.com/blog/cloudamqp-releases-amqp-websockets.html).
