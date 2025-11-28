@@ -15,6 +15,8 @@ interface ConsumerDefinition {
   params: ConsumeParams
   callback: ((msg: AMQPMessage) => void | Promise<void>) | undefined
   prefetch: number | undefined
+  queueParams: QueueParams | undefined
+  queueArgs: Record<string, unknown> | undefined
 }
 
 /**
@@ -117,25 +119,12 @@ export class AMQPReconnectingClient {
 
   /**
    * Create a new AMQPReconnectingClient
-   * @param client - A function that creates AMQPBaseClient instances, or an existing client to use as a template
+   * @param clientFactory - A function that creates AMQPBaseClient instances for each connection attempt
    * @param options - Reconnection options
    */
-  constructor(client: AMQPBaseClient | (() => AMQPBaseClient), options: ReconnectOptions = {}) {
-    if (typeof client === "function") {
-      this.clientFactory = client
-      this.client = client()
-    } else {
-      // Store the constructor and arguments to recreate the client on reconnect
-      this.client = client
-      this.clientFactory = () => {
-        // Create a new instance with the same type
-        // This requires the client to have a compatible constructor signature
-        const ClientClass = client.constructor as new (...args: unknown[]) => AMQPBaseClient
-        // For AMQPClient or AMQPWebSocketClient, we can extract the URL from the client
-        // This is a limitation - users should prefer the factory function approach
-        return new ClientClass()
-      }
-    }
+  constructor(clientFactory: () => AMQPBaseClient, options: ReconnectOptions = {}) {
+    this.clientFactory = clientFactory
+    this.client = clientFactory()
     this.options = {
       reconnectInterval: options.reconnectInterval ?? 1000,
       maxReconnectInterval: options.maxReconnectInterval ?? 30000,
@@ -272,25 +261,52 @@ export class AMQPReconnectingClient {
   }
 
   /**
+   * Options for subscribing with queue recovery support
+   */
+  /**
    * Subscribe to a queue with automatic recovery on reconnection.
    * The consumer will be automatically re-established after a reconnection.
    *
    * @param queue - Queue name to subscribe to
    * @param params - Consumer parameters
    * @param callback - Function called for each message
+   * @param options - Additional options for recovery (optional)
+   * @param options.queueParams - Queue parameters to use when re-declaring the queue on recovery
+   * @param options.queueArgs - Queue arguments to use when re-declaring the queue on recovery
    * @returns Consumer object (note: this may change after reconnection)
    */
   async subscribe(
     queue: string,
     params: ConsumeParams,
     callback: (msg: AMQPMessage) => void | Promise<void>,
+    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown> },
   ): Promise<AMQPConsumer>
-  async subscribe(queue: string, params: ConsumeParams): Promise<AMQPGeneratorConsumer>
+  async subscribe(
+    queue: string,
+    params: ConsumeParams,
+    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown> },
+  ): Promise<AMQPGeneratorConsumer>
   async subscribe(
     queue: string,
     params: ConsumeParams = {},
-    callback?: (msg: AMQPMessage) => void | Promise<void>,
+    callbackOrOptions?:
+      | ((msg: AMQPMessage) => void | Promise<void>)
+      | { queueParams?: QueueParams; queueArgs?: Record<string, unknown> },
+    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown> },
   ): Promise<AMQPConsumer | AMQPGeneratorConsumer> {
+    let callback: ((msg: AMQPMessage) => void | Promise<void>) | undefined
+    let queueParams: QueueParams | undefined
+    let queueArgs: Record<string, unknown> | undefined
+
+    if (typeof callbackOrOptions === "function") {
+      callback = callbackOrOptions
+      queueParams = options?.queueParams
+      queueArgs = options?.queueArgs
+    } else if (callbackOrOptions) {
+      queueParams = callbackOrOptions.queueParams
+      queueArgs = callbackOrOptions.queueArgs
+    }
+
     const consumerId = this.generateConsumerId(queue, params.tag)
 
     // Store the consumer definition for recovery
@@ -299,6 +315,8 @@ export class AMQPReconnectingClient {
       params,
       callback: callback,
       prefetch: undefined,
+      queueParams: queueParams,
+      queueArgs: queueArgs,
     }
     this.consumerDefinitions.set(consumerId, definition)
 
@@ -417,7 +435,9 @@ export class AMQPReconnectingClient {
         // Set up error handler for this connection
         const originalOnerror = this.connection.onerror
         this.connection.onerror = (err: AMQPError) => {
-          originalOnerror.call(this.connection, err)
+          if (originalOnerror) {
+            originalOnerror.call(this.connection, err)
+          }
           // Connection error will trigger the read loop to exit and cause reconnection
         }
 
@@ -518,7 +538,14 @@ export class AMQPReconnectingClient {
       await ch.basicQos(definition.prefetch)
     }
 
-    const q = await ch.queue(definition.queue, { passive: true })
+    // If queue params were provided, re-declare the queue (idempotent if it exists)
+    // Otherwise, use passive: true to check if queue exists without modifying it
+    let q: AMQPQueue
+    if (definition.queueParams) {
+      q = await ch.queue(definition.queue, definition.queueParams, definition.queueArgs || {})
+    } else {
+      q = await ch.queue(definition.queue, { passive: true })
+    }
 
     if (definition.callback) {
       return q.subscribe(definition.params, definition.callback)
