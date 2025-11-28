@@ -86,15 +86,17 @@ run()
 
 ### Automatic Reconnection
 
-For applications that need robust connection handling, use `AMQPReconnectingClient`. This high-level client automatically reconnects on connection loss and recovers consumers:
+Both `AMQPClient` and `AMQPWebSocketClient` support automatic reconnection with exponential backoff when the connection is lost. Configure reconnection via the constructor:
 
 ```javascript
-import { AMQPClient, AMQPReconnectingClient } from "@cloudamqp/amqp-client"
+import { AMQPClient } from "@cloudamqp/amqp-client"
 
 async function run() {
-  // Create a reconnecting client with a factory function
-  const client = new AMQPReconnectingClient(
-    () => new AMQPClient("amqp://localhost"),
+  // Create a client with reconnection options
+  const client = new AMQPClient(
+    "amqp://localhost",
+    undefined, // TLS options
+    undefined, // logger
     {
       reconnectInterval: 1000,     // Initial delay before reconnecting (ms)
       maxReconnectInterval: 30000, // Maximum delay between attempts (ms)
@@ -109,40 +111,35 @@ async function run() {
   client.onreconnecting = (attempt) => console.log("Reconnecting, attempt:", attempt)
   client.onfailed = (err) => console.log("Failed to reconnect:", err?.message)
 
-  // Start the client (establishes connection)
-  await client.start()
+  // Connect (will automatically reconnect on connection loss)
+  await client.connect()
 
-  // Declare a queue
-  const q = await client.queue("my-queue", { durable: true })
+  // Open a channel and declare a queue
+  const ch = await client.channel()
+  const q = await ch.queue("my-queue", { durable: true })
 
-  // Subscribe to the queue - consumer will be automatically recovered after reconnection
+  // Subscribe using the client's subscribe method for automatic consumer recovery
   await client.subscribe("my-queue", { noAck: false }, async (msg) => {
     console.log("Received:", msg.bodyString())
     await msg.ack()
   })
 
   // Publish messages
-  await client.publish("", "my-queue", "Hello World")
+  await ch.basicPublish("", "my-queue", "Hello World")
 
-  // Enable publisher confirms
-  await client.confirmSelect()
-  const tag = await client.publish("", "my-queue", "Confirmed message")
-  console.log("Message confirmed with tag:", tag)
-
-  // When done, stop the client
-  // await client.stop()
+  // When done, close the connection (this stops reconnection)
+  // await client.close()
 }
 
 run()
 ```
 
-Key features of `AMQPReconnectingClient`:
+Key features:
 
 - **Automatic reconnection**: Reconnects automatically when the connection is lost
 - **Exponential backoff**: Configurable delays between reconnection attempts
-- **Consumer recovery**: Consumers registered via `subscribe()` are automatically re-established after reconnection
+- **Consumer recovery**: Consumers registered via `client.subscribe()` are automatically re-established after reconnection
 - **Event callbacks**: Hooks for connection state changes (`onconnect`, `ondisconnect`, `onreconnecting`, `onfailed`)
-- **High-level API**: Simplified methods for common operations (`queue`, `publish`, `subscribe`, etc.)
 
 ## WebSockets
 

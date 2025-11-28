@@ -1,4 +1,4 @@
-import { AMQPBaseClient, VERSION } from "./amqp-base-client.js"
+import { AMQPBaseClient, VERSION, ReconnectOptions } from "./amqp-base-client.js"
 import { AMQPView } from "./amqp-view.js"
 import { AMQPError } from "./amqp-error.js"
 import { AMQPChannel } from "./amqp-channel.js"
@@ -16,10 +16,13 @@ interface AMQPWebSocketInit {
   frameMax?: number
   heartbeat?: number
   logger?: Logger | null
+  reconnectOptions?: ReconnectOptions
 }
 
 /**
- * WebSocket client for AMQP 0-9-1 servers
+ * WebSocket client for AMQP 0-9-1 servers.
+ * 
+ * Supports automatic reconnection with exponential backoff when connection is lost.
  */
 export class AMQPWebSocketClient extends AMQPBaseClient {
   readonly url: string
@@ -31,6 +34,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   /**
    * @param url to the websocket endpoint, example: wss://server/ws/amqp
    * @param logger - optional logger instance, defaults to null (no logging)
+   * @param reconnectOptions - options for automatic reconnection
    */
   constructor(
     url: string,
@@ -41,6 +45,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     frameMax?: number,
     heartbeat?: number,
     logger?: Logger | null,
+    reconnectOptions?: ReconnectOptions,
   )
   constructor(init: AMQPWebSocketInit)
   constructor(
@@ -52,7 +57,9 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     frameMax = 8192,
     heartbeat = 0,
     logger?: Logger | null,
+    reconnectOptions?: ReconnectOptions,
   ) {
+    let reconnectOpts = reconnectOptions
     if (typeof url === "object") {
       vhost = url.vhost ?? vhost
       username = url.username ?? username
@@ -61,9 +68,10 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       frameMax = url.frameMax ?? frameMax
       heartbeat = url.heartbeat ?? heartbeat
       logger = url.logger ?? logger
+      reconnectOpts = url.reconnectOptions ?? reconnectOptions
       url = url.url
     }
-    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat, 0, logger)
+    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat, 0, logger, reconnectOpts)
     this.url = url
     this.frameBuffer = new Uint8Array(frameMax)
   }
@@ -72,6 +80,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
    * Establish a AMQP connection over WebSocket
    */
   override connect(): Promise<AMQPBaseClient> {
+    this.stopped = false // Allow reconnection
     const socket = new WebSocket(this.url)
     this.socket = socket
     socket.binaryType = "arraybuffer"
@@ -89,6 +98,10 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
             this.channels.forEach((ch) => ch?.setClosed(err))
             this.channels = [new AMQPChannel(this, 0)]
             this.onerror(err)
+            // Schedule reconnection if not manually closed
+            if (!this.stopped) {
+              void this.scheduleReconnect()
+            }
           }
         })
         socket.addEventListener("close", (ev: CloseEvent) => {
@@ -100,6 +113,10 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
             this.channels.forEach((ch) => ch?.setClosed(err))
             this.channels = [new AMQPChannel(this, 0)]
             this.onerror(err)
+            // Schedule reconnection if not manually closed
+            if (!this.stopped) {
+              void this.scheduleReconnect()
+            }
           } else {
             this.channels.forEach((ch) => ch?.setClosed())
             this.channels = [new AMQPChannel(this, 0)]
@@ -108,6 +125,20 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
         socket.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
       })
     })
+  }
+
+  /**
+   * Reconnect to the server. Called internally after connection loss.
+   * @internal
+   */
+  protected override async reconnect(): Promise<void> {
+    // Reset state for new connection
+    this.framePos = 0
+    this.frameSize = 0
+    this.channels = [new AMQPChannel(this, 0)]
+    this.publishChannel = undefined
+    
+    await this.connect()
   }
 
   /**
@@ -193,4 +224,4 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   }
 }
 
-export { AMQPBaseClient, AMQPChannel, AMQPConsumer, AMQPError, AMQPMessage, AMQPQueue, AMQPView, VERSION }
+export { AMQPBaseClient, AMQPChannel, AMQPConsumer, AMQPError, AMQPMessage, AMQPQueue, AMQPView, VERSION, ReconnectOptions }
