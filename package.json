@@ -44,10 +44,10 @@
     "prepare": "npm run build",
     "preversion": "npm run test:local",
     "version": "node scripts/update-version.js && npm run update-changelog && npm run format && git add -A",
-    "postversion": "npm run create-tag && git push && git push --tags",
-    "release": "npm version patch",
-    "release:minor": "npm version minor",
-    "release:major": "npm version major"
+    "postversion": "git commit -m \"Release v$npm_package_version\" && npm run create-tag && git push && git push --tags",
+    "release": "npm version patch --no-git-tag-version",
+    "release:minor": "npm version minor --no-git-tag-version",
+    "release:major": "npm version major --no-git-tag-version"
   },
   "files": [
     "src/",
