@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.1] - 2025-11-28
+
+### Fixed
+
+- Improve 'republish in consume block' test reliability - add proper message acknowledgment and increase timeout for high-volume message processing
+
+### Changed
+
+- Make npm scripts cross-platform compatible ([#179](https://github.com/cloudamqp/amqp-client.js/pull/179))
+- Update dependencies: glob 10.4.5→10.5.0, js-yaml 4.1.0→4.1.1 ([#173](https://github.com/cloudamqp/amqp-client.js/pull/173))
+- Export AMQPGeneratorConsumer for documentation generation ([#172](https://github.com/cloudamqp/amqp-client.js/pull/172))
+
 ## [3.4.0] - 2025-11-12
 
 ### Added
