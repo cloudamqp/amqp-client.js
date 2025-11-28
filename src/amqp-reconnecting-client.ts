@@ -56,11 +56,13 @@ type ConnectionState = "disconnected" | "connecting" | "connected" | "reconnecti
  * import { AMQPClient } from "@cloudamqp/amqp-client"
  * import { AMQPReconnectingClient } from "@cloudamqp/amqp-client/amqp-reconnecting-client"
  *
- * const baseClient = new AMQPClient("amqp://localhost")
- * const client = new AMQPReconnectingClient(baseClient, {
- *   reconnectInterval: 1000,
- *   maxRetries: 10
- * })
+ * const client = new AMQPReconnectingClient(
+ *   () => new AMQPClient("amqp://localhost"),
+ *   {
+ *     reconnectInterval: 1000,
+ *     maxRetries: 10
+ *   }
+ * )
  *
  * client.onconnect = () => console.log("Connected")
  * client.ondisconnect = (err) => console.log("Disconnected:", err?.message)
@@ -433,10 +435,12 @@ export class AMQPReconnectingClient {
         this.publishChannel = undefined // Will be lazily created
 
         // Set up error handler for this connection
-        const originalOnerror = this.connection.onerror
-        this.connection.onerror = (err: AMQPError) => {
+        // Capture the connection reference to avoid potential null reference in callback
+        const conn = this.connection
+        const originalOnerror = conn.onerror
+        conn.onerror = (err: AMQPError) => {
           if (originalOnerror) {
-            originalOnerror.call(this.connection, err)
+            originalOnerror.call(conn, err)
           }
           // Connection error will trigger the read loop to exit and cause reconnection
         }
