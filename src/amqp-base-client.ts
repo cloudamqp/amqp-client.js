@@ -869,7 +869,7 @@ export abstract class AMQPBaseClient {
 
     this.reconnectAttempts++
 
-    // Check max retries
+    // Check max retries (use >= to ensure we get exactly maxRetries attempts)
     if (this.reconnectOptions.maxRetries > 0 && this.reconnectAttempts > this.reconnectOptions.maxRetries) {
       this.stopped = true
       this.onfailed?.(new Error(`Max reconnection attempts (${this.reconnectOptions.maxRetries}) reached`))
@@ -897,8 +897,9 @@ export abstract class AMQPBaseClient {
     try {
       await this.reconnect()
       this.reconnectAttempts = 0
-      this.onconnect?.()
       await this.recoverConsumers()
+      // Call onconnect after successful reconnection and consumer recovery
+      this.onconnect?.()
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err))
       this.logger?.warn("AMQP-Client reconnect error:", error.message)
@@ -913,6 +914,15 @@ export abstract class AMQPBaseClient {
    * @internal
    */
   protected abstract reconnect(): Promise<void>
+
+  /**
+   * Reset internal state for a new connection.
+   * @internal
+   */
+  protected resetForReconnect(): void {
+    this.channels = [new AMQPChannel(this, 0)]
+    this.publishChannel = undefined
+  }
 
   /**
    * Recover consumers after reconnection.

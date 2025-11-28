@@ -1,5 +1,4 @@
 import { AMQPBaseClient, ReconnectOptions } from "./amqp-base-client.js"
-import { AMQPChannel } from "./amqp-channel.js"
 import { AMQPError } from "./amqp-error.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
@@ -111,8 +110,7 @@ export class AMQPClient extends AMQPBaseClient {
     // Reset state for new connection
     this.framePos = 0
     this.frameSize = 0
-    this.channels = [new AMQPChannel(this, 0)]
-    this.publishChannel = undefined
+    this.resetForReconnect()
     
     await this.connect()
   }

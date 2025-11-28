@@ -135,8 +135,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     // Reset state for new connection
     this.framePos = 0
     this.frameSize = 0
-    this.channels = [new AMQPChannel(this, 0)]
-    this.publishChannel = undefined
+    this.resetForReconnect()
     
     await this.connect()
   }
