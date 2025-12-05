@@ -122,6 +122,9 @@ async function run() {
   await client.subscribe("my-queue", { noAck: false }, async (msg) => {
     console.log("Received:", msg.bodyString())
     await msg.ack()
+  }, {
+    prefetch: 10,  // Set prefetch limit for this consumer
+    queueParams: { durable: true }  // Queue declaration parameters
   })
 
   // Publish messages
@@ -134,12 +137,35 @@ async function run() {
 run()
 ```
 
-Key features:
+#### Two APIs for Different Use Cases
+
+This library provides two APIs that coexist:
+
+1. **Low-level API** (unchanged): `client → channel → queue → subscribe`
+   - Full control over channels and resources
+   - No automatic reconnection - you handle connection failures
+   - Use when you need fine-grained control
+
+2. **High-level API** (new): `client.subscribe()`
+   - Automatic reconnection and consumer recovery
+   - Simplified API for common use cases
+   - Use for convenience when you don't need channel-level control
+
+#### Key Features
 
 - **Automatic reconnection**: Reconnects automatically when the connection is lost
 - **Exponential backoff**: Configurable delays between reconnection attempts
 - **Consumer recovery**: Consumers registered via `client.subscribe()` are automatically re-established after reconnection
 - **Event callbacks**: Hooks for connection state changes (`onconnect`, `ondisconnect`, `onreconnecting`, `onfailed`)
+- **Prefetch control**: Set per-consumer prefetch limits
+
+#### Reconnection Behavior
+
+When a connection is lost:
+- The client automatically attempts to reconnect using exponential backoff
+- After successful reconnection, consumers created with `client.subscribe()` are automatically re-established
+- Messages that were delivered but not acknowledged before disconnection will be redelivered by the broker (standard AMQP behavior)
+- Any acknowledgment attempts during disconnection will fail and should be handled in your code
 
 ## WebSockets
 

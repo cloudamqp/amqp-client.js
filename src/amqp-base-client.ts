@@ -788,32 +788,35 @@ export abstract class AMQPBaseClient {
     queue: string,
     params: ConsumeParams,
     callback: (msg: AMQPMessage) => void | Promise<void>,
-    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown> },
+    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown>; prefetch?: number },
   ): Promise<AMQPConsumer>
   async subscribe(
     queue: string,
     params: ConsumeParams,
-    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown> },
+    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown>; prefetch?: number },
   ): Promise<AMQPGeneratorConsumer>
   async subscribe(
     queue: string,
     params: ConsumeParams = {},
     callbackOrOptions?:
       | ((msg: AMQPMessage) => void | Promise<void>)
-      | { queueParams?: QueueParams; queueArgs?: Record<string, unknown> },
-    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown> },
+      | { queueParams?: QueueParams; queueArgs?: Record<string, unknown>; prefetch?: number },
+    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown>; prefetch?: number },
   ): Promise<AMQPConsumer | AMQPGeneratorConsumer> {
     let callback: ((msg: AMQPMessage) => void | Promise<void>) | undefined
     let queueParams: QueueParams | undefined
     let queueArgs: Record<string, unknown> | undefined
+    let prefetch: number | undefined
 
     if (typeof callbackOrOptions === "function") {
       callback = callbackOrOptions
       queueParams = options?.queueParams
       queueArgs = options?.queueArgs
+      prefetch = options?.prefetch
     } else if (callbackOrOptions) {
       queueParams = callbackOrOptions.queueParams
       queueArgs = callbackOrOptions.queueArgs
+      prefetch = callbackOrOptions.prefetch
     }
 
     const consumerId = this.generateConsumerId(queue, params.tag)
@@ -823,7 +826,7 @@ export abstract class AMQPBaseClient {
       queue,
       params,
       callback: callback,
-      prefetch: undefined,
+      prefetch: prefetch,
       queueParams: queueParams,
       queueArgs: queueArgs,
     }

@@ -246,9 +246,72 @@ test("unsubscribe method on client removes consumer", async () => {
   const ch = await client.channel()
   const q = await ch.queue("")
   const consumer = await client.subscribe(q.name, { noAck: true }, () => {})
-  
+
   await client.unsubscribe(consumer.tag)
 
   await client.close()
   expect(true).toBe(true)
+})
+
+test("client.subscribe supports prefetch option", async () => {
+  const client = getNewClient()
+  await client.connect()
+
+  const queueName = "test-prefetch-queue-" + Math.random()
+  const ch = await client.channel()
+  await ch.queue(queueName, { durable: false, autoDelete: true })
+
+  let messagesReceived = 0
+  const consumer = await client.subscribe(queueName, { noAck: false }, async (msg) => {
+    messagesReceived++
+    // Don't ack immediately to test prefetch
+    if (messagesReceived === 2) {
+      await msg.ack()
+    }
+  }, {
+    prefetch: 1
+  })
+
+  // Publish multiple messages
+  const q2 = await ch.queue(queueName, { passive: true })
+  await q2.publish("message 1")
+  await q2.publish("message 2")
+  await q2.publish("message 3")
+
+  // Wait a bit
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  // With prefetch=1, we should only receive 1 message until we ack
+  expect(messagesReceived).toBe(1)
+
+  await consumer.cancel()
+  await client.close()
+})
+
+test("client.subscribe with AsyncGenerator supports prefetch", async () => {
+  const client = getNewClient()
+  await client.connect()
+
+  const queueName = "test-prefetch-gen-queue-" + Math.random()
+  const ch = await client.channel()
+  await ch.queue(queueName, { durable: false, autoDelete: true })
+
+  const consumer = await client.subscribe(queueName, { noAck: false }, {
+    prefetch: 2
+  })
+
+  // Publish messages
+  const q2 = await ch.queue(queueName, { passive: true })
+  await q2.publish("message 1")
+  await q2.publish("message 2")
+
+  const messages: string[] = []
+  for await (const msg of consumer.messages) {
+    messages.push(msg.bodyString()!)
+    await msg.ack()
+    if (messages.length >= 2) break
+  }
+
+  expect(messages).toEqual(["message 1", "message 2"])
+  await client.close()
 })
