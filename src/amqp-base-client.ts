@@ -1,11 +1,48 @@
-import { AMQPChannel } from "./amqp-channel.js"
+import { AMQPChannel, ConsumeParams, QueueParams } from "./amqp-channel.js"
 import { AMQPError } from "./amqp-error.js"
 import * as AMQPFrame from "./amqp-frame.js"
 import { AMQPMessage } from "./amqp-message.js"
 import { AMQPView } from "./amqp-view.js"
+import { AMQPQueue } from "./amqp-queue.js"
+import { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import type { Logger } from "./types.js"
 
 export const VERSION = "3.4.1"
+
+/**
+ * Options for automatic reconnection behavior
+ */
+export interface ReconnectOptions {
+  /**
+   * Initial delay in milliseconds before reconnecting (default: 1000)
+   */
+  reconnectInterval?: number
+  /**
+   * Maximum delay in milliseconds between reconnection attempts (default: 30000)
+   */
+  maxReconnectInterval?: number
+  /**
+   * Multiplier for exponential backoff (default: 2)
+   */
+  backoffMultiplier?: number
+  /**
+   * Maximum number of reconnection attempts, 0 for infinite (default: 0)
+   */
+  maxRetries?: number
+}
+
+/**
+ * Consumer definition for recovery after reconnection
+ * @internal
+ */
+interface ConsumerDefinition {
+  queue: string
+  params: ConsumeParams
+  callback: ((msg: AMQPMessage) => void | Promise<void>) | undefined
+  prefetch: number | undefined
+  queueParams: QueueParams | undefined
+  queueArgs: Record<string, unknown> | undefined
+}
 
 /**
  * Base class for AMQPClients.
@@ -33,10 +70,44 @@ export abstract class AMQPBaseClient {
   // Buffer pool for publishes, let multiple microtasks publish at the same time but save on allocations
   readonly bufferPool: AMQPView[] = []
 
+  // Reconnection state
+  protected reconnectOptions: Required<ReconnectOptions>
+  protected reconnectAttempts = 0
+  protected reconnectTimer: ReturnType<typeof setTimeout> | undefined
+  protected reconnectResolve: (() => void) | undefined
+  protected stopped = false
+  protected readonly consumerDefinitions: Map<string, ConsumerDefinition> = new Map()
+  protected activeConsumers: Map<string, AMQPConsumer | AMQPGeneratorConsumer> = new Map()
+  protected publishChannel: AMQPChannel | undefined
+
+  /**
+   * Callback when connection is established (including reconnection)
+   */
+  onconnect?: () => void
+
+  /**
+   * Callback when connection is lost
+   * @param error - The error that caused the disconnection, if any
+   */
+  ondisconnect?: (error?: Error) => void
+
+  /**
+   * Callback when reconnection attempt is starting
+   * @param attempt - Current reconnection attempt number
+   */
+  onreconnecting?: (attempt: number) => void
+
+  /**
+   * Callback when max retries reached and giving up
+   * @param error - The last error encountered
+   */
+  onfailed?: (error?: Error) => void
+
   /**
    * @param name - name of the connection, set in client properties
    * @param platform - used in client properties
    * @param logger - optional logger instance, defaults to undefined (no logging)
+   * @param reconnectOptions - options for automatic reconnection
    */
   constructor(
     vhost: string,
@@ -48,6 +119,7 @@ export abstract class AMQPBaseClient {
     heartbeat = 0,
     channelMax = 0,
     logger?: Logger | null,
+    reconnectOptions: ReconnectOptions = {},
   ) {
     this.vhost = vhost
     this.username = username
@@ -60,13 +132,25 @@ export abstract class AMQPBaseClient {
     if (platform) this.platform = platform
     this.logger = logger || undefined
     this.channels = [new AMQPChannel(this, 0)]
-    this.onerror = (error: AMQPError) => this.logger?.error("amqp-client connection closed", error.message)
+    this.onerror = (error: AMQPError) => {
+      this.logger?.error("amqp-client connection closed", error.message)
+      // Trigger reconnection on error if not manually closed
+      if (!this.stopped && !this.closed) {
+        this.ondisconnect?.(error)
+      }
+    }
     if (frameMax < 8192) throw new Error("frameMax must be 8192 or larger")
     this.frameMax = frameMax
     if (heartbeat < 0) throw new Error("heartbeat must be positive")
     this.heartbeat = heartbeat
     if (channelMax && channelMax < 0) throw new Error("channelMax must be positive")
     this.channelMax = channelMax
+    this.reconnectOptions = {
+      reconnectInterval: reconnectOptions.reconnectInterval ?? 1000,
+      maxReconnectInterval: reconnectOptions.maxReconnectInterval ?? 30000,
+      backoffMultiplier: reconnectOptions.backoffMultiplier ?? 2,
+      maxRetries: reconnectOptions.maxRetries ?? 0,
+    }
   }
 
   /**
@@ -92,12 +176,31 @@ export abstract class AMQPBaseClient {
   }
 
   /**
-   * Gracefully close the AMQP connection
+   * Gracefully close the AMQP connection.
+   * This will stop automatic reconnection.
    * @param [reason] might be logged by the server
    */
   close(reason = "", code = 200): Promise<void> {
     if (this.closed) return this.rejectClosed()
+    this.stopped = true // Prevent automatic reconnection
     this.closed = true
+
+    // Clear reconnect timer if pending
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = undefined
+    }
+
+    // Resolve any pending reconnect promise to unblock scheduleReconnect
+    if (this.reconnectResolve) {
+      this.reconnectResolve()
+      this.reconnectResolve = undefined
+    }
+
+    // Clear consumer definitions
+    this.consumerDefinitions.clear()
+    this.activeConsumers.clear()
+    
     const frame = new AMQPFrame.Writer({
       bufferSize: 512,
       type: AMQPFrame.Type.METHOD,
@@ -676,5 +779,239 @@ export abstract class AMQPBaseClient {
       }
       i += 1 // frame end
     }
+  }
+
+  /**
+   * Subscribe to a queue with automatic recovery on reconnection.
+   * The consumer will be automatically re-established after a reconnection.
+   *
+   * @param queue - Queue name to subscribe to
+   * @param params - Consumer parameters
+   * @param callback - Function called for each message
+   * @param options - Additional options for recovery (optional)
+   * @returns Consumer object (note: this may change after reconnection)
+   */
+  async subscribe(
+    queue: string,
+    params: ConsumeParams,
+    callback: (msg: AMQPMessage) => void | Promise<void>,
+    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown>; prefetch?: number },
+  ): Promise<AMQPConsumer>
+  async subscribe(
+    queue: string,
+    params: ConsumeParams,
+    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown>; prefetch?: number },
+  ): Promise<AMQPGeneratorConsumer>
+  async subscribe(
+    queue: string,
+    params: ConsumeParams = {},
+    callbackOrOptions?:
+      | ((msg: AMQPMessage) => void | Promise<void>)
+      | { queueParams?: QueueParams; queueArgs?: Record<string, unknown>; prefetch?: number },
+    options?: { queueParams?: QueueParams; queueArgs?: Record<string, unknown>; prefetch?: number },
+  ): Promise<AMQPConsumer | AMQPGeneratorConsumer> {
+    let callback: ((msg: AMQPMessage) => void | Promise<void>) | undefined
+    let queueParams: QueueParams | undefined
+    let queueArgs: Record<string, unknown> | undefined
+    let prefetch: number | undefined
+
+    if (typeof callbackOrOptions === "function") {
+      callback = callbackOrOptions
+      queueParams = options?.queueParams
+      queueArgs = options?.queueArgs
+      prefetch = options?.prefetch
+    } else if (callbackOrOptions) {
+      queueParams = callbackOrOptions.queueParams
+      queueArgs = callbackOrOptions.queueArgs
+      prefetch = callbackOrOptions.prefetch
+    }
+
+    const consumerId = this.generateConsumerId(queue, params.tag)
+
+    // Store the consumer definition for recovery
+    const definition: ConsumerDefinition = {
+      queue,
+      params,
+      callback: callback,
+      prefetch: prefetch,
+      queueParams: queueParams,
+      queueArgs: queueArgs,
+    }
+    this.consumerDefinitions.set(consumerId, definition)
+
+    // Create the actual consumer
+    const consumer = await this.createConsumer(definition)
+    this.activeConsumers.set(consumerId, consumer)
+
+    return consumer
+  }
+
+  /**
+   * Unsubscribe from a queue by consumer tag.
+   * This will also remove the consumer from automatic recovery.
+   *
+   * @param consumerTag - Consumer tag to cancel
+   */
+  async unsubscribe(consumerTag: string): Promise<void> {
+    // Find and remove the consumer definition
+    for (const [id, consumer] of this.activeConsumers) {
+      if (consumer.tag === consumerTag) {
+        this.consumerDefinitions.delete(id)
+        this.activeConsumers.delete(id)
+        break
+      }
+    }
+
+    // Cancel the actual consumer
+    if (!this.closed) {
+      const ch = await this.getInternalChannel()
+      await ch.basicCancel(consumerTag)
+    }
+  }
+
+  /**
+   * Trigger reconnection after connection loss.
+   * Called internally when the connection is lost.
+   * @internal
+   */
+  protected async scheduleReconnect(): Promise<void> {
+    if (this.stopped) return
+
+    this.reconnectAttempts++
+
+    // Check max retries (use >= to ensure we get exactly maxRetries attempts)
+    if (this.reconnectOptions.maxRetries > 0 && this.reconnectAttempts > this.reconnectOptions.maxRetries) {
+      this.stopped = true
+      this.onfailed?.(new Error(`Max reconnection attempts (${this.reconnectOptions.maxRetries}) reached`))
+      return
+    }
+
+    // Calculate delay with exponential backoff
+    const delay = Math.min(
+      this.reconnectOptions.reconnectInterval *
+        Math.pow(this.reconnectOptions.backoffMultiplier, this.reconnectAttempts - 1),
+      this.reconnectOptions.maxReconnectInterval,
+    )
+
+    this.logger?.debug(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`)
+
+    // Wait before reconnecting
+    await new Promise<void>((resolve) => {
+      this.reconnectResolve = resolve
+      this.reconnectTimer = setTimeout(resolve, delay)
+    })
+
+    // Clear the resolve callback after timeout completes
+    this.reconnectResolve = undefined
+
+    if (this.stopped) return
+
+    this.onreconnecting?.(this.reconnectAttempts)
+
+    try {
+      await this.reconnect()
+      this.reconnectAttempts = 0
+      await this.recoverConsumers()
+      // Call onconnect after successful reconnection and consumer recovery
+      this.onconnect?.()
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      this.logger?.warn("AMQP-Client reconnect error:", error.message)
+      this.ondisconnect?.(error)
+      // Schedule another reconnect attempt
+      void this.scheduleReconnect()
+    }
+  }
+
+  /**
+   * Attempt to reconnect. Must be implemented by subclasses.
+   * @internal
+   */
+  protected abstract reconnect(): Promise<void>
+
+  /**
+   * Reset internal state for a new connection.
+   * @internal
+   */
+  protected resetForReconnect(): void {
+    this.channels = [new AMQPChannel(this, 0)]
+    this.publishChannel = undefined
+  }
+
+  /**
+   * Recover consumers after reconnection.
+   * @internal
+   */
+  protected async recoverConsumers(): Promise<void> {
+    if (this.closed) return
+
+    this.activeConsumers.clear()
+
+    for (const [consumerId, definition] of this.consumerDefinitions) {
+      try {
+        const consumer = await this.createConsumer(definition)
+        this.activeConsumers.set(consumerId, consumer)
+        this.logger?.debug(`Recovered consumer for queue: ${definition.queue}`)
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        this.logger?.warn(`Failed to recover consumer for queue ${definition.queue}:`, error.message)
+      }
+    }
+  }
+
+  /**
+   * Create a consumer from a definition.
+   * @internal
+   */
+  protected async createConsumer(definition: ConsumerDefinition): Promise<AMQPConsumer | AMQPGeneratorConsumer> {
+    if (this.closed) {
+      throw new AMQPError("Not connected", this)
+    }
+
+    const ch = await this.channel()
+
+    // Set prefetch if specified
+    if (definition.prefetch !== undefined) {
+      await ch.basicQos(definition.prefetch)
+    }
+
+    // If queue params were provided, re-declare the queue (idempotent if it exists)
+    // Otherwise, use passive: true to check if queue exists without modifying it
+    let q: AMQPQueue
+    if (definition.queueParams) {
+      q = await ch.queue(definition.queue, definition.queueParams, definition.queueArgs || {})
+    } else {
+      q = await ch.queue(definition.queue, { passive: true })
+    }
+
+    if (definition.callback) {
+      return q.subscribe(definition.params, definition.callback)
+    }
+    return q.subscribe(definition.params)
+  }
+
+  /**
+   * Get an internal channel for operations.
+   * @internal
+   */
+  protected async getInternalChannel(): Promise<AMQPChannel> {
+    if (this.closed) {
+      throw new AMQPError("Not connected", this)
+    }
+
+    if (this.publishChannel && !this.publishChannel.closed) {
+      return this.publishChannel
+    }
+
+    this.publishChannel = await this.channel()
+    return this.publishChannel
+  }
+
+  /**
+   * Generate a unique consumer ID.
+   * @internal
+   */
+  private generateConsumerId(queue: string, tag?: string): string {
+    return tag || `${queue}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
   }
 }
