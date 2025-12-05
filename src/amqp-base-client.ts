@@ -74,6 +74,7 @@ export abstract class AMQPBaseClient {
   protected reconnectOptions: Required<ReconnectOptions>
   protected reconnectAttempts = 0
   protected reconnectTimer: ReturnType<typeof setTimeout> | undefined
+  protected reconnectResolve: (() => void) | undefined
   protected stopped = false
   protected readonly consumerDefinitions: Map<string, ConsumerDefinition> = new Map()
   protected activeConsumers: Map<string, AMQPConsumer | AMQPGeneratorConsumer> = new Map()
@@ -183,13 +184,19 @@ export abstract class AMQPBaseClient {
     if (this.closed) return this.rejectClosed()
     this.stopped = true // Prevent automatic reconnection
     this.closed = true
-    
+
     // Clear reconnect timer if pending
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = undefined
     }
-    
+
+    // Resolve any pending reconnect promise to unblock scheduleReconnect
+    if (this.reconnectResolve) {
+      this.reconnectResolve()
+      this.reconnectResolve = undefined
+    }
+
     // Clear consumer definitions
     this.consumerDefinitions.clear()
     this.activeConsumers.clear()
@@ -890,8 +897,12 @@ export abstract class AMQPBaseClient {
 
     // Wait before reconnecting
     await new Promise<void>((resolve) => {
+      this.reconnectResolve = resolve
       this.reconnectTimer = setTimeout(resolve, delay)
     })
+
+    // Clear the resolve callback after timeout completes
+    this.reconnectResolve = undefined
 
     if (this.stopped) return
 
