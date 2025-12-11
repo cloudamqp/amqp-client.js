@@ -239,7 +239,9 @@ describe("Compression", () => {
       const q = await ch.queue("")
       const body = JSON.stringify({ test: "data", array: [1, 2, 3] })
 
-      await ch.basicPublish("", q.name, body, { contentType: "application/json" }, false, false, { compression: algorithm })
+      await ch.basicPublish("", q.name, body, { contentType: "application/json" }, false, false, {
+        compression: algorithm,
+      })
 
       const msg = await ch.basicGet(q.name)
       expect(msg?.properties.contentEncoding).toBe(algorithm)
