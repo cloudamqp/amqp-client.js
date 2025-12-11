@@ -2,6 +2,7 @@ import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPChannel, ConsumeParams } from "./amqp-channel.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
+import type { PublishOptions } from "./amqp-compression.js"
 
 /**
  * Convenience class for queues
@@ -46,15 +47,17 @@ export class AMQPQueue {
    * Publish a message directly to the queue
    * @param body - the data to be published, can be a string or an uint8array
    * @param properties - publish properties
+   * @param options - publish options including compression settings
    * @return fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
   publish(
     body: string | Uint8Array | ArrayBuffer | Buffer | null,
     properties: AMQPProperties = {},
+    options?: PublishOptions,
   ): Promise<AMQPQueue> {
     return new Promise<AMQPQueue>((resolve, reject) => {
       this.channel
-        .basicPublish("", this.name, body, properties)
+        .basicPublish("", this.name, body, properties, false, false, options)
         .then(() => resolve(this))
         .catch(reject)
     })

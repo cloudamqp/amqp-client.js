@@ -67,8 +67,33 @@
     "url": "https://github.com/cloudamqp/amqp-client.js/issues"
   },
   "homepage": "https://github.com/cloudamqp/amqp-client.js#readme",
+  "peerDependencies": {
+    "lz4-napi": "^2.9.0",
+    "snappy": "^7.0.0",
+    "@mongodb-js/zstd": "^1.2.0",
+    "pako": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "lz4-napi": {
+      "optional": true
+    },
+    "snappy": {
+      "optional": true
+    },
+    "@mongodb-js/zstd": {
+      "optional": true
+    },
+    "pako": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@mongodb-js/zstd": "^1.2.0",
     "@types/node": "*",
+    "@types/pako": "^2.0.0",
+    "lz4-napi": "^2.9.0",
+    "pako": "^2.0.0",
+    "snappy": "^7.0.0",
     "@vitest/browser": "*",
     "@vitest/coverage-v8": "*",
     "eslint": "*",
