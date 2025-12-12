@@ -9,7 +9,7 @@ import * as tls from "tls"
 
 /**
  * AMQP 0-9-1 client over TCP socket.
- * 
+ *
  * Supports automatic reconnection with exponential backoff when connection is lost.
  */
 export class AMQPClient extends AMQPBaseClient {
@@ -111,7 +111,7 @@ export class AMQPClient extends AMQPBaseClient {
     this.framePos = 0
     this.frameSize = 0
     this.resetForReconnect()
-    
+
     await this.connect()
   }
 

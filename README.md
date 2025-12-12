@@ -98,11 +98,11 @@ async function run() {
     undefined, // TLS options
     undefined, // logger
     {
-      reconnectInterval: 1000,     // Initial delay before reconnecting (ms)
+      reconnectInterval: 1000, // Initial delay before reconnecting (ms)
       maxReconnectInterval: 30000, // Maximum delay between attempts (ms)
-      backoffMultiplier: 2,        // Exponential backoff multiplier
-      maxRetries: 0,               // 0 = infinite retries
-    }
+      backoffMultiplier: 2, // Exponential backoff multiplier
+      maxRetries: 0, // 0 = infinite retries
+    },
   )
 
   // Set up event callbacks
@@ -119,13 +119,18 @@ async function run() {
   const q = await ch.queue("my-queue", { durable: true })
 
   // Subscribe using the client's subscribe method for automatic consumer recovery
-  await client.subscribe("my-queue", { noAck: false }, async (msg) => {
-    console.log("Received:", msg.bodyString())
-    await msg.ack()
-  }, {
-    prefetch: 10,  // Set prefetch limit for this consumer
-    queueParams: { durable: true }  // Queue declaration parameters
-  })
+  await client.subscribe(
+    "my-queue",
+    { noAck: false },
+    async (msg) => {
+      console.log("Received:", msg.bodyString())
+      await msg.ack()
+    },
+    {
+      prefetch: 10, // Set prefetch limit for this consumer
+      queueParams: { durable: true }, // Queue declaration parameters
+    },
+  )
 
   // Publish messages
   await ch.basicPublish("", "my-queue", "Hello World")
@@ -162,6 +167,7 @@ This library provides two APIs that coexist:
 #### Reconnection Behavior
 
 When a connection is lost:
+
 - The client automatically attempts to reconnect using exponential backoff
 - After successful reconnection, consumers created with `client.subscribe()` are automatically re-established
 - Messages that were delivered but not acknowledged before disconnection will be redelivered by the broker (standard AMQP behavior)

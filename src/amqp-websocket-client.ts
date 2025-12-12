@@ -21,7 +21,7 @@ interface AMQPWebSocketInit {
 
 /**
  * WebSocket client for AMQP 0-9-1 servers.
- * 
+ *
  * Supports automatic reconnection with exponential backoff when connection is lost.
  */
 export class AMQPWebSocketClient extends AMQPBaseClient {
@@ -71,7 +71,18 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       reconnectOpts = url.reconnectOptions ?? reconnectOptions
       url = url.url
     }
-    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat, 0, logger, reconnectOpts)
+    super(
+      vhost,
+      username,
+      password,
+      name,
+      AMQPWebSocketClient.platform(),
+      frameMax,
+      heartbeat,
+      0,
+      logger,
+      reconnectOpts,
+    )
     this.url = url
     this.frameBuffer = new Uint8Array(frameMax)
   }
@@ -136,7 +147,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     this.framePos = 0
     this.frameSize = 0
     this.resetForReconnect()
-    
+
     await this.connect()
   }
 
@@ -223,4 +234,14 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   }
 }
 
-export { AMQPBaseClient, AMQPChannel, AMQPConsumer, AMQPError, AMQPMessage, AMQPQueue, AMQPView, VERSION, ReconnectOptions }
+export {
+  AMQPBaseClient,
+  AMQPChannel,
+  AMQPConsumer,
+  AMQPError,
+  AMQPMessage,
+  AMQPQueue,
+  AMQPView,
+  VERSION,
+  ReconnectOptions,
+}

@@ -127,7 +127,7 @@ test("subscribe stores consumer definition for recovery", async () => {
   const queueName = "test-queue-" + Math.random()
   const ch = await client.channel()
   const q = await ch.queue(queueName, { durable: false, autoDelete: true })
-  
+
   let messageReceived = false
   const consumer = await q.subscribe({ noAck: true }, async () => {
     messageReceived = true
@@ -137,7 +137,7 @@ test("subscribe stores consumer definition for recovery", async () => {
 
   // Wait for message to be received
   await new Promise((resolve) => setTimeout(resolve, 100))
-  
+
   expect(messageReceived).toBe(true)
   await consumer.cancel()
   await client.close()
@@ -150,7 +150,7 @@ test("can unsubscribe from consumer", async () => {
   const ch = await client.channel()
   const q = await ch.queue("")
   const consumer = await q.subscribe({ noAck: true }, () => {})
-  
+
   await q.unsubscribe(consumer.tag)
 
   await client.close()
@@ -222,7 +222,7 @@ test("subscribe method on client stores consumer for recovery", async () => {
   const queueName = "test-queue-" + Math.random()
   const ch = await client.channel()
   await ch.queue(queueName, { durable: false, autoDelete: true })
-  
+
   let messageReceived = false
   const consumer = await client.subscribe(queueName, { noAck: true }, async () => {
     messageReceived = true
@@ -233,7 +233,7 @@ test("subscribe method on client stores consumer for recovery", async () => {
 
   // Wait for message to be received
   await new Promise((resolve) => setTimeout(resolve, 100))
-  
+
   expect(messageReceived).toBe(true)
   await consumer.cancel()
   await client.close()
@@ -262,15 +262,20 @@ test("client.subscribe supports prefetch option", async () => {
   await ch.queue(queueName, { durable: false, autoDelete: true })
 
   let messagesReceived = 0
-  const consumer = await client.subscribe(queueName, { noAck: false }, async (msg) => {
-    messagesReceived++
-    // Don't ack immediately to test prefetch
-    if (messagesReceived === 2) {
-      await msg.ack()
-    }
-  }, {
-    prefetch: 1
-  })
+  const consumer = await client.subscribe(
+    queueName,
+    { noAck: false },
+    async (msg) => {
+      messagesReceived++
+      // Don't ack immediately to test prefetch
+      if (messagesReceived === 2) {
+        await msg.ack()
+      }
+    },
+    {
+      prefetch: 1,
+    },
+  )
 
   // Publish multiple messages
   const q2 = await ch.queue(queueName, { passive: true })
@@ -296,9 +301,13 @@ test("client.subscribe with AsyncGenerator supports prefetch", async () => {
   const ch = await client.channel()
   await ch.queue(queueName, { durable: false, autoDelete: true })
 
-  const consumer = await client.subscribe(queueName, { noAck: false }, {
-    prefetch: 2
-  })
+  const consumer = await client.subscribe(
+    queueName,
+    { noAck: false },
+    {
+      prefetch: 2,
+    },
+  )
 
   // Publish messages
   const q2 = await ch.queue(queueName, { passive: true })

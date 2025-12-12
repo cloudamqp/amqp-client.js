@@ -200,7 +200,7 @@ export abstract class AMQPBaseClient {
     // Clear consumer definitions
     this.consumerDefinitions.clear()
     this.activeConsumers.clear()
-    
+
     const frame = new AMQPFrame.Writer({
       bufferSize: 512,
       type: AMQPFrame.Type.METHOD,
