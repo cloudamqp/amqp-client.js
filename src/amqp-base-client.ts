@@ -71,6 +71,7 @@ export abstract class AMQPBaseClient {
   readonly bufferPool: AMQPView[] = []
 
   // Reconnection state
+  protected reconnectEnabled: boolean
   protected reconnectOptions: Required<ReconnectOptions>
   protected reconnectAttempts = 0
   protected reconnectTimer: ReturnType<typeof setTimeout> | undefined
@@ -145,6 +146,9 @@ export abstract class AMQPBaseClient {
     this.heartbeat = heartbeat
     if (channelMax && channelMax < 0) throw new Error("channelMax must be positive")
     this.channelMax = channelMax
+    // Reconnection is only enabled if reconnectOptions is explicitly provided with at least one property
+    this.reconnectEnabled =
+      reconnectOptions !== undefined && reconnectOptions !== null && Object.keys(reconnectOptions).length > 0
     this.reconnectOptions = {
       reconnectInterval: reconnectOptions.reconnectInterval ?? 1000,
       maxReconnectInterval: reconnectOptions.maxReconnectInterval ?? 30000,

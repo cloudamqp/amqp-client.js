@@ -70,8 +70,8 @@ export class AMQPClient extends AMQPBaseClient {
         if (!hadError && !clientClosed) {
           this.onerror(new AMQPError("Socket closed", this))
         }
-        // Schedule reconnection if not manually closed
-        if (!this.stopped && !clientClosed) {
+        // Schedule reconnection if not manually closed and reconnection is enabled
+        if (!this.stopped && !clientClosed && this.reconnectEnabled) {
           void this.scheduleReconnect()
         }
       })

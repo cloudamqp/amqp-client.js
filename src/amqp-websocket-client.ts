@@ -109,8 +109,8 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
             this.channels.forEach((ch) => ch?.setClosed(err))
             this.channels = [new AMQPChannel(this, 0)]
             this.onerror(err)
-            // Schedule reconnection if not manually closed
-            if (!this.stopped) {
+            // Schedule reconnection if not manually closed and reconnection is enabled
+            if (!this.stopped && this.reconnectEnabled) {
               void this.scheduleReconnect()
             }
           }
@@ -124,8 +124,8 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
             this.channels.forEach((ch) => ch?.setClosed(err))
             this.channels = [new AMQPChannel(this, 0)]
             this.onerror(err)
-            // Schedule reconnection if not manually closed
-            if (!this.stopped) {
+            // Schedule reconnection if not manually closed and reconnection is enabled
+            if (!this.stopped && this.reconnectEnabled) {
               void this.scheduleReconnect()
             }
           } else {
