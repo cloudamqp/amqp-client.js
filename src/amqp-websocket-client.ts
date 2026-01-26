@@ -234,14 +234,5 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   }
 }
 
-export {
-  AMQPBaseClient,
-  AMQPChannel,
-  AMQPConsumer,
-  AMQPError,
-  AMQPMessage,
-  AMQPQueue,
-  AMQPView,
-  VERSION,
-  ReconnectOptions,
-}
+export { AMQPBaseClient, AMQPChannel, AMQPConsumer, AMQPError, AMQPMessage, AMQPQueue, AMQPView, VERSION }
+export type { ReconnectOptions }
