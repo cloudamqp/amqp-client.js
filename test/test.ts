@@ -709,7 +709,7 @@ test("can set frameMax", async () => {
 })
 
 test("can't set too small frameMax", () => {
-  expect(() => getNewClient({ frameMax: 16 })).toThrow()
+  expect(() => getNewClient({ frameMax: 16 })).toThrow(/frame_?max/i)
 })
 
 test("can handle frames split over socket reads", async () => {
