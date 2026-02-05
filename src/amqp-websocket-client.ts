@@ -72,7 +72,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
    * Establish a AMQP connection over WebSocket
    */
   override connect(): Promise<AMQPBaseClient> {
-    const socket = new WebSocket(this.url)
+    const socket = new WebSocket(this.url, "amqp")
     this.socket = socket
     socket.binaryType = "arraybuffer"
     socket.onmessage = this.handleMessage.bind(this)
