@@ -7,3 +7,10 @@ export { AMQPError } from "./amqp-error.js"
 export { AMQPMessage } from "./amqp-message.js"
 export { AMQPProperties, Field } from "./amqp-properties.js"
 export { AMQPTlsOptions } from "./amqp-tls-options.js"
+export {
+  compressionRegistry,
+  CompressionError,
+  type CompressionAlgorithm,
+  type CompressionCodec,
+  type PublishOptions,
+} from "./amqp-compression.js"

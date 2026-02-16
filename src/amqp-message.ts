@@ -1,5 +1,6 @@
 import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPProperties } from "./amqp-properties.js"
+import { compressionRegistry, CompressionError } from "./amqp-compression.js"
 
 /**
  * AMQP message
@@ -31,6 +32,9 @@ export class AMQPMessage {
   replyCode?: number
   replyText?: string
 
+  /** Cached decompressed body */
+  private decompressedBody: Uint8Array | null = null
+
   /**
    * @param channel - Channel this message was delivered on
    */
@@ -38,15 +42,53 @@ export class AMQPMessage {
     this.channel = channel
   }
 
+  /** Known compression encodings */
+  private static readonly COMPRESSION_ENCODINGS: readonly string[] = ["gzip", "lz4", "snappy", "zstd"]
+
   /**
-   * Converts the message (which is deliviered as an uint8array) to a string
+   * Get the decompressed body if contentEncoding indicates compression,
+   * otherwise returns the raw body.
+   * @throws CompressionError if the required codec is not available/loaded
+   */
+  bodyDecompressed(): Uint8Array | null {
+    if (!this.body) return null
+
+    // Return cached if available
+    if (this.decompressedBody) return this.decompressedBody
+
+    const encoding = this.properties.contentEncoding
+    if (!encoding) return this.body
+
+    // Check if this is a known compression encoding
+    if (!AMQPMessage.COMPRESSION_ENCODINGS.includes(encoding)) {
+      // Unknown encoding, return raw body
+      return this.body
+    }
+
+    const codec = compressionRegistry.getCodecSync(encoding)
+    if (!codec) {
+      throw new CompressionError(
+        `Cannot decompress message: codec '${encoding}' is not loaded. Ensure the codec was used for compression first.`,
+        encoding as "gzip" | "lz4" | "snappy" | "zstd",
+      )
+    }
+
+    this.decompressedBody = codec.decompress(this.body)
+    return this.decompressedBody
+  }
+
+  /**
+   * Converts the message (which is delivered as an uint8array) to a string,
+   * auto-decompressing if the contentEncoding indicates compression.
    */
   bodyToString(): string | null {
-    if (this.body) {
-      if (typeof Buffer !== "undefined") return Buffer.from(this.body).toString()
-      else return new TextDecoder().decode(this.body)
+    const body = this.bodyDecompressed()
+    if (!body) return null
+
+    if (typeof Buffer !== "undefined") {
+      return Buffer.from(body).toString()
     } else {
-      return null
+      return new TextDecoder().decode(body)
     }
   }
 

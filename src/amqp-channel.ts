@@ -6,6 +6,7 @@ import { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPProperties } from "./amqp-properties.js"
+import { compressionRegistry, CompressionError, type PublishOptions } from "./amqp-compression.js"
 
 /**
  * Represents an AMQP Channel. Almost all actions in AMQP are performed on a Channel.
@@ -327,6 +328,7 @@ export class AMQPChannel {
    * @param properties - properties to be published
    * @param [mandatory] - if the message should be returned if there's no queue to be delivered to
    * @param [immediate] - if the message should be returned if it can't be delivered to a consumer immediately (not supported in RabbitMQ)
+   * @param options - publish options including compression settings
    * @return - fulfilled when the message is enqueue on the socket, or if publish confirm is enabled when the message is confirmed by the server
    */
   async basicPublish(
@@ -336,10 +338,14 @@ export class AMQPChannel {
     properties: AMQPProperties = {},
     mandatory = false,
     immediate = false,
+    options?: PublishOptions,
   ): Promise<number> {
     if (this.closed) return this.rejectClosed()
     if (this.connection.blocked)
       return Promise.reject(new AMQPError(`Connection blocked by server: ${this.connection.blocked}`, this.connection))
+
+    const compression = options?.compression
+    const compressionThreshold = options?.compressionThreshold ?? 0
 
     let body: Uint8Array
     if (typeof Buffer !== "undefined" && data instanceof Buffer) {
@@ -354,6 +360,20 @@ export class AMQPChannel {
       body = this.connection.textEncoder.encode(data)
     } else {
       throw new TypeError(`Invalid type ${typeof data} for parameter data`)
+    }
+
+    // Apply compression if requested and body exceeds threshold
+    const actualProperties = { ...properties }
+    if (compression && body.byteLength > compressionThreshold) {
+      const codec = await compressionRegistry.getCodec(compression)
+      if (!codec) {
+        throw new CompressionError(
+          `Compression codec '${compression}' is not available. Install the required peer dependency.`,
+          compression,
+        )
+      }
+      body = codec.compress(body)
+      actualProperties.contentEncoding = codec.contentEncoding
     }
 
     let j = 0
@@ -395,7 +415,7 @@ export class AMQPChannel {
     j += 4 // bodysize (upper 32 of 64 bits)
     buffer.setUint32(j, body.byteLength)
     j += 4 // bodysize
-    j += buffer.setProperties(j, properties)
+    j += buffer.setProperties(j, actualProperties)
     buffer.setUint8(j, AMQPFrame.End.CODE)
     j += 1
     buffer.setUint32(headerStart + 3, j - headerStart - 8) // update frameSize
