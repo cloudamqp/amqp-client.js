@@ -6,8 +6,8 @@ import type { AMQPMessage } from "./amqp-message.js"
  * A consumer, subscribed to a queue
  */
 export class AMQPConsumer {
-  readonly channel: AMQPChannel
-  readonly tag: string
+  protected _channel: AMQPChannel
+  protected _tag: string
   readonly onMessage: (msg: AMQPMessage) => void | Promise<void>
   protected closed = false
   protected closedError?: Error
@@ -15,15 +15,41 @@ export class AMQPConsumer {
   private rejectWait?: (err: Error) => void
   private timeoutId?: ReturnType<typeof setTimeout>
 
+  /** Called at the start of cancel() to remove from session tracking */
+  _onCancel?: () => void
+
+  get channel(): AMQPChannel {
+    return this._channel
+  }
+
+  get tag(): string {
+    return this._tag
+  }
+
   /**
    * @param channel - the consumer is created on
    * @param tag - consumer tag
    * @param onMessage - callback executed when a message arrive
    */
-  constructor(channel: AMQPChannel, tag: string, onMessage: (msg: AMQPMessage) => void | Promise<void>) {
-    this.channel = channel
-    this.tag = tag
+  constructor(
+    channel: AMQPChannel,
+    tag: string,
+    onMessage: (msg: AMQPMessage) => void | Promise<void>,
+  ) {
+    this._channel = channel
+    this._tag = tag
     this.onMessage = onMessage
+  }
+
+  /**
+   * Reset internals after reconnection.
+   * @internal
+   */
+  _update(channel: AMQPChannel, tag: string): void {
+    this._channel = channel
+    this._tag = tag
+    this.closed = false
+    delete this.closedError
   }
 
   /**
@@ -38,7 +64,8 @@ export class AMQPConsumer {
       this.resolveWait = resolve
       this.rejectWait = reject
       if (timeout) {
-        const onTimeout = () => reject(new AMQPError("Timeout", this.channel.connection))
+        const onTimeout = () =>
+          reject(new AMQPError("Timeout", this._channel.connection))
         this.timeoutId = setTimeout(onTimeout, timeout)
       }
     })
@@ -49,7 +76,9 @@ export class AMQPConsumer {
    * Note that any unacked messages are still unacked as they belong to the channel and not the consumer.
    */
   cancel() {
-    return this.channel.basicCancel(this.tag)
+    this._onCancel?.()
+    if (this._channel.closed) return Promise.resolve(this._channel)
+    return this._channel.basicCancel(this._tag)
   }
 
   /**

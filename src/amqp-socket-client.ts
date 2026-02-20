@@ -1,5 +1,8 @@
-import { AMQPBaseClient, ReconnectOptions } from "./amqp-base-client.js"
+import { AMQPBaseClient } from "./amqp-base-client.js"
+import { AMQPChannel } from "./amqp-channel.js"
 import { AMQPError } from "./amqp-error.js"
+import { AMQPSession } from "./amqp-session.js"
+import type { ReconnectOptions } from "./amqp-session.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
 import { AMQPView } from "./amqp-view.js"
@@ -9,8 +12,6 @@ import * as tls from "tls"
 
 /**
  * AMQP 0-9-1 client over TCP socket.
- *
- * Supports automatic reconnection with exponential backoff when connection is lost.
  */
 export class AMQPClient extends AMQPBaseClient {
   socket?: net.Socket | undefined
@@ -27,9 +28,8 @@ export class AMQPClient extends AMQPBaseClient {
    * @param url - uri to the server, example: amqp://user:passwd@localhost:5672/vhost
    * @param tlsOptions - optional TLS options
    * @param logger - optional logger instance, defaults to null (no logging)
-   * @param reconnectOptions - options for automatic reconnection
    */
-  constructor(url: string, tlsOptions?: AMQPTlsOptions, logger?: Logger | null, reconnectOptions?: ReconnectOptions) {
+  constructor(url: string, tlsOptions?: AMQPTlsOptions, logger?: Logger | null) {
     const u = new URL(url)
     const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
     const username = decodeURIComponent(u.username) || "guest"
@@ -39,7 +39,7 @@ export class AMQPClient extends AMQPBaseClient {
     const heartbeat = parseInt(u.searchParams.get("heartbeat") || "0")
     const channelMax = parseInt(u.searchParams.get("channelMax") || "0")
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
-    super(vhost, username, password, name, platform, frameMax, heartbeat, channelMax, logger, reconnectOptions)
+    super(vhost, username, password, name, platform, frameMax, heartbeat, channelMax, logger)
     this.tls = u.protocol === "amqps:"
     this.tlsOptions = tlsOptions
     this.host = u.hostname || "localhost"
@@ -54,11 +54,18 @@ export class AMQPClient extends AMQPBaseClient {
   }
 
   override connect(): Promise<AMQPBaseClient> {
-    this.stopped = false // Allow reconnection
+    this.framePos = 0
+    this.frameSize = 0
+    this.channels = [new AMQPChannel(this, 0)]
+
     let rejectConnection: (reason: Error) => void
+    let socketError: AMQPError | undefined
     const socket = this.connectSocket()
     socket.on("connect", () => {
-      socket.on("error", (err) => this.onerror(new AMQPError(err.message, this)))
+      socket.on("error", (err) => {
+        socketError = new AMQPError(err.message, this)
+        this.onerror(socketError)
+      })
       socket.on("end", () => {
         if (rejectConnection) {
           rejectConnection(new AMQPError("Connection ended", this))
@@ -67,13 +74,14 @@ export class AMQPClient extends AMQPBaseClient {
       socket.on("close", (hadError: boolean) => {
         const clientClosed = this.closed
         this.closed = true
-        if (!hadError && !clientClosed) {
-          this.onerror(new AMQPError("Socket closed", this))
+        const closeError = hadError ? socketError : clientClosed ? undefined : new AMQPError("Socket closed", this)
+        if (closeError && !hadError) {
+          this.onerror(closeError)
         }
-        // Schedule reconnection if not manually closed and reconnection is enabled
-        if (!this.stopped && !clientClosed && this.reconnectEnabled) {
-          void this.scheduleReconnect()
+        if (!clientClosed) {
+          this.ondisconnect?.(closeError)
         }
+        socketError = undefined
       })
     })
     Object.defineProperty(this, "socket", {
@@ -95,7 +103,6 @@ export class AMQPClient extends AMQPBaseClient {
           this.onerror(new AMQPError(`Heartbeat timeout`, this))
           this.closeSocket()
         })
-        this.onconnect?.()
         resolve(conn)
       }
       this.connectPromise = [onConnect, reject]
@@ -103,16 +110,11 @@ export class AMQPClient extends AMQPBaseClient {
   }
 
   /**
-   * Reconnect to the server. Called internally after connection loss.
-   * @internal
+   * Connect and return a session with automatic reconnection.
    */
-  protected override async reconnect(): Promise<void> {
-    // Reset state for new connection
-    this.framePos = 0
-    this.frameSize = 0
-    this.resetForReconnect()
-
+  async start(options?: ReconnectOptions): Promise<AMQPSession> {
     await this.connect()
+    return new AMQPSession(this, options)
   }
 
   private connectSocket(): net.Socket {

@@ -86,40 +86,32 @@ run()
 
 ### Automatic Reconnection
 
-Both `AMQPClient` and `AMQPWebSocketClient` support automatic reconnection with exponential backoff when the connection is lost. Configure reconnection via the constructor:
+Both `AMQPClient` and `AMQPWebSocketClient` support automatic reconnection via `client.start()`, which returns an `AMQPSession` that manages reconnection and consumer recovery:
 
 ```javascript
 import { AMQPClient } from "@cloudamqp/amqp-client"
 
 async function run() {
-  // Create a client with reconnection options
-  const client = new AMQPClient(
-    "amqp://localhost",
-    undefined, // TLS options
-    undefined, // logger
-    {
-      reconnectInterval: 1000, // Initial delay before reconnecting (ms)
-      maxReconnectInterval: 30000, // Maximum delay between attempts (ms)
-      backoffMultiplier: 2, // Exponential backoff multiplier
-      maxRetries: 0, // 0 = infinite retries
-    },
-  )
+  const client = new AMQPClient("amqp://localhost")
 
-  // Set up event callbacks
-  client.onconnect = () => console.log("Connected!")
-  client.ondisconnect = (err) => console.log("Disconnected:", err?.message)
-  client.onreconnecting = (attempt) => console.log("Reconnecting, attempt:", attempt)
-  client.onfailed = (err) => console.log("Failed to reconnect:", err?.message)
+  // start() connects and returns a session with automatic reconnection
+  const session = await client.start({
+    reconnectInterval: 1000, // Initial delay before reconnecting (ms)
+    maxReconnectInterval: 30000, // Maximum delay between attempts (ms)
+    backoffMultiplier: 2, // Exponential backoff multiplier
+    maxRetries: 0, // 0 = infinite retries
+  })
 
-  // Connect (will automatically reconnect on connection loss)
-  await client.connect()
+  // Set up event callbacks on the session
+  session.onconnect = () => console.log("Reconnected!")
+  session.ondisconnect = (err) => console.log("Disconnected:", err?.message)
+  session.onreconnecting = (attempt) => console.log("Reconnecting, attempt:", attempt)
+  session.onfailed = (err) => console.log("Failed to reconnect:", err?.message)
 
-  // Open a channel and declare a queue
-  const ch = await client.channel()
-  const q = await ch.queue("my-queue", { durable: true })
-
-  // Subscribe using the client's subscribe method for automatic consumer recovery
-  await client.subscribe(
+  // Subscribe via the session for automatic consumer recovery.
+  // Returns an AMQPConsumer that stays valid across reconnections —
+  // its internal channel and tag are swapped in-place on reconnect.
+  const consumer = await session.subscribe(
     "my-queue",
     { noAck: false },
     async (msg) => {
@@ -128,15 +120,15 @@ async function run() {
     },
     {
       prefetch: 10, // Set prefetch limit for this consumer
-      queueParams: { durable: true }, // Queue declaration parameters
+      queueParams: { durable: true }, // Queue declaration parameters for recovery
     },
   )
 
-  // Publish messages
-  await ch.basicPublish("", "my-queue", "Hello World")
+  // To stop consuming this queue (also removes it from auto-recovery):
+  // await consumer.cancel()
 
-  // When done, close the connection (this stops reconnection)
-  // await client.close()
+  // When done, stop the session (closes connection, stops reconnection)
+  // await session.stop()
 }
 
 run()
@@ -146,21 +138,21 @@ run()
 
 This library provides two APIs that coexist:
 
-1. **Low-level API** (unchanged): `client → channel → queue → subscribe`
+1. **Low-level API**: `client.connect()` → `channel()` → `queue.subscribe()`
    - Full control over channels and resources
-   - No automatic reconnection - you handle connection failures
+   - No automatic reconnection — you handle connection failures
    - Use when you need fine-grained control
 
-2. **High-level API** (new): `client.subscribe()`
+2. **High-level API**: `client.start()` → `session.subscribe()`
    - Automatic reconnection and consumer recovery
-   - Simplified API for common use cases
+   - Consumer objects stay valid across reconnections
    - Use for convenience when you don't need channel-level control
 
 #### Key Features
 
 - **Automatic reconnection**: Reconnects automatically when the connection is lost
 - **Exponential backoff**: Configurable delays between reconnection attempts
-- **Consumer recovery**: Consumers registered via `client.subscribe()` are automatically re-established after reconnection
+- **Consumer recovery**: Consumers registered via `session.subscribe()` are automatically re-established after reconnection
 - **Event callbacks**: Hooks for connection state changes (`onconnect`, `ondisconnect`, `onreconnecting`, `onfailed`)
 - **Prefetch control**: Set per-consumer prefetch limits
 
@@ -168,10 +160,11 @@ This library provides two APIs that coexist:
 
 When a connection is lost:
 
-- The client automatically attempts to reconnect using exponential backoff
-- After successful reconnection, consumers created with `client.subscribe()` are automatically re-established
-- Messages that were delivered but not acknowledged before disconnection will be redelivered by the broker (standard AMQP behavior)
-- Any acknowledgment attempts during disconnection will fail and should be handled in your code
+- `session.ondisconnect` fires once with the error
+- The session reconnects automatically with exponential backoff; `onreconnecting(attempt)` fires before each attempt
+- After a successful reconnect, consumers registered via `session.subscribe()` are re-established, then `onconnect` fires
+- Messages delivered but not acknowledged before disconnection are redelivered by the broker
+- `onfailed` fires and reconnection stops if `maxRetries` is exceeded
 
 ## WebSockets
 
