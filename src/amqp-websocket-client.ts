@@ -65,17 +65,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       logger = url.logger ?? logger
       url = url.url
     }
-    super(
-      vhost,
-      username,
-      password,
-      name,
-      AMQPWebSocketClient.platform(),
-      frameMax,
-      heartbeat,
-      0,
-      logger,
-    )
+    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat, 0, logger)
     this.url = url
     this.frameBuffer = new Uint8Array(frameMax)
   }

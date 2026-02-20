@@ -31,11 +31,7 @@ export class AMQPConsumer {
    * @param tag - consumer tag
    * @param onMessage - callback executed when a message arrive
    */
-  constructor(
-    channel: AMQPChannel,
-    tag: string,
-    onMessage: (msg: AMQPMessage) => void | Promise<void>,
-  ) {
+  constructor(channel: AMQPChannel, tag: string, onMessage: (msg: AMQPMessage) => void | Promise<void>) {
     this._channel = channel
     this._tag = tag
     this.onMessage = onMessage
@@ -64,8 +60,7 @@ export class AMQPConsumer {
       this.resolveWait = resolve
       this.rejectWait = reject
       if (timeout) {
-        const onTimeout = () =>
-          reject(new AMQPError("Timeout", this._channel.connection))
+        const onTimeout = () => reject(new AMQPError("Timeout", this._channel.connection))
         this.timeoutId = setTimeout(onTimeout, timeout)
       }
     })

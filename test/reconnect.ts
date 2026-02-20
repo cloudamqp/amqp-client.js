@@ -207,13 +207,9 @@ test("session.subscribe returns consumer with working cancel", async () => {
   await ch.queue(queueName, { durable: false, autoDelete: true })
 
   let messageReceived = false
-  const consumer = await session.subscribe(
-    queueName,
-    { noAck: true },
-    async () => {
-      messageReceived = true
-    },
-  )
+  const consumer = await session.subscribe(queueName, { noAck: true }, async () => {
+    messageReceived = true
+  })
 
   const q2 = await ch.queue(queueName, { passive: true })
   await q2.publish("test")

@@ -137,31 +137,18 @@ export class AMQPSession {
 
     this.reconnectAttempts++
 
-    if (
-      this.options.maxRetries > 0 &&
-      this.reconnectAttempts > this.options.maxRetries
-    ) {
+    if (this.options.maxRetries > 0 && this.reconnectAttempts > this.options.maxRetries) {
       this.stopped = true
-      this.onfailed?.(
-        new Error(
-          `Max reconnection attempts (${this.options.maxRetries}) reached`,
-        ),
-      )
+      this.onfailed?.(new Error(`Max reconnection attempts (${this.options.maxRetries}) reached`))
       return
     }
 
     const delay = Math.min(
-      this.options.reconnectInterval *
-        Math.pow(
-          this.options.backoffMultiplier,
-          this.reconnectAttempts - 1,
-        ),
+      this.options.reconnectInterval * Math.pow(this.options.backoffMultiplier, this.reconnectAttempts - 1),
       this.options.maxReconnectInterval,
     )
 
-    this.client.logger?.debug(
-      `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`,
-    )
+    this.client.logger?.debug(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`)
 
     await new Promise<void>((resolve) => {
       this.reconnectResolve = resolve
@@ -180,10 +167,7 @@ export class AMQPSession {
       this.onconnect?.()
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err))
-      this.client.logger?.warn(
-        "AMQP-Client reconnect error:",
-        error.message,
-      )
+      this.client.logger?.warn("AMQP-Client reconnect error:", error.message)
       void this.scheduleReconnect()
     }
   }
@@ -200,17 +184,10 @@ export class AMQPSession {
         }
 
         const q = definition.queueParams
-          ? await ch.queue(
-              definition.queue,
-              definition.queueParams,
-              definition.queueArgs || {},
-            )
+          ? await ch.queue(definition.queue, definition.queueParams, definition.queueArgs || {})
           : await ch.queue(definition.queue, { passive: true })
 
-        const newConsumer = await q.subscribe(
-          definition.params,
-          definition.callback,
-        )
+        const newConsumer = await q.subscribe(definition.params, definition.callback)
 
         // Swap: replace the new consumer in the channel map with
         // the user's existing reference so message delivery and
@@ -219,15 +196,10 @@ export class AMQPSession {
         ch.consumers.set(newConsumer.tag, oldConsumer)
         oldConsumer._update(ch, newConsumer.tag)
 
-        this.client.logger?.debug(
-          `Recovered consumer for queue: ${definition.queue}`,
-        )
+        this.client.logger?.debug(`Recovered consumer for queue: ${definition.queue}`)
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err))
-        this.client.logger?.warn(
-          `Failed to recover consumer for queue ${definition.queue}:`,
-          error.message,
-        )
+        this.client.logger?.warn(`Failed to recover consumer for queue ${definition.queue}:`, error.message)
       }
     }
   }
