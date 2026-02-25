@@ -705,7 +705,7 @@ test("onerror is not called when conn is closed by client", async () => {
 })
 
 test("will throw on too large headers", async () => {
-  const amqp = getNewClient()
+  const amqp = getNewClient({ frameMax: 8192 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await expect(
@@ -717,7 +717,7 @@ test("will throw on too large headers", async () => {
 })
 
 test("will split body over multiple frames", async () => {
-  const amqp = getNewClient()
+  const amqp = getNewClient({ frameMax: 8192 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")

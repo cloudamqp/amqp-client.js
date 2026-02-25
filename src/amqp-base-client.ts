@@ -6,7 +6,6 @@ import { AMQPView } from "./amqp-view.js"
 import type { Logger } from "./types.js"
 
 export const VERSION = "3.4.1"
-export const MIN_FRAME_SIZE = 4096 // 8192
 
 /**
  * Base class for AMQPClients.
@@ -35,6 +34,12 @@ export abstract class AMQPBaseClient {
   readonly bufferPool: AMQPView[] = []
 
   /**
+   * Callback when connection is lost
+   * @param error - The error that caused the disconnection, if any
+   */
+  ondisconnect?: (error?: Error) => void
+
+  /**
    * @param name - name of the connection, set in client properties
    * @param platform - used in client properties
    * @param logger - optional logger instance, defaults to undefined (no logging)
@@ -45,7 +50,7 @@ export abstract class AMQPBaseClient {
     password: string,
     name?: string,
     platform?: string,
-    frameMax = MIN_FRAME_SIZE,
+    frameMax = 8192,
     heartbeat = 0,
     channelMax = 0,
     logger?: Logger | null,
@@ -61,8 +66,10 @@ export abstract class AMQPBaseClient {
     if (platform) this.platform = platform
     this.logger = logger || undefined
     this.channels = [new AMQPChannel(this, 0)]
-    this.onerror = (error: AMQPError) => this.logger?.error("amqp-client connection closed", error.message)
-    if (frameMax < MIN_FRAME_SIZE) throw new Error(`frameMax must be ${MIN_FRAME_SIZE} or larger`)
+    this.onerror = (error: AMQPError) => {
+      this.logger?.error("amqp-client connection closed", error.message)
+    }
+    if (frameMax < 8192) throw new Error("frameMax must be 8192 or larger")
     this.frameMax = frameMax
     if (heartbeat < 0) throw new Error("heartbeat must be positive")
     this.heartbeat = heartbeat
@@ -93,12 +100,13 @@ export abstract class AMQPBaseClient {
   }
 
   /**
-   * Gracefully close the AMQP connection
+   * Gracefully close the AMQP connection.
    * @param [reason] might be logged by the server
    */
   close(reason = "", code = 200): Promise<void> {
     if (this.closed) return this.rejectClosed()
     this.closed = true
+
     const frame = new AMQPFrame.Writer({
       bufferSize: 512,
       type: AMQPFrame.Type.METHOD,
@@ -322,6 +330,7 @@ export abstract class AMQPBaseClient {
                     this.logger?.warn("Error while sending Connection#CloseOk", err),
                   )
                   this.onerror(err)
+                  this.ondisconnect?.(err)
                   this.rejectConnect(err)
                   this.onUpdateSecretOk?.()
                   break

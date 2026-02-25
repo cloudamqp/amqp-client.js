@@ -1,4 +1,5 @@
-import { AMQPBaseClient, MIN_FRAME_SIZE } from "./amqp-base-client.js"
+import { AMQPBaseClient } from "./amqp-base-client.js"
+import { AMQPChannel } from "./amqp-channel.js"
 import { AMQPError } from "./amqp-error.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
@@ -32,7 +33,7 @@ export class AMQPClient extends AMQPBaseClient {
     const username = decodeURIComponent(u.username) || "guest"
     const password = decodeURIComponent(u.password) || "guest"
     const name = u.searchParams.get("name") || ""
-    const frameMax = parseInt(u.searchParams.get("frameMax") || MIN_FRAME_SIZE.toString())
+    const frameMax = parseInt(u.searchParams.get("frameMax") || "8192")
     const heartbeat = parseInt(u.searchParams.get("heartbeat") || "0")
     const channelMax = parseInt(u.searchParams.get("channelMax") || "0")
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`
@@ -51,10 +52,18 @@ export class AMQPClient extends AMQPBaseClient {
   }
 
   override connect(): Promise<AMQPBaseClient> {
+    this.framePos = 0
+    this.frameSize = 0
+    this.channels = [new AMQPChannel(this, 0)]
+
     let rejectConnection: (reason: Error) => void
+    let socketError: AMQPError | undefined
     const socket = this.connectSocket()
     socket.on("connect", () => {
-      socket.on("error", (err) => this.onerror(new AMQPError(err.message, this)))
+      socket.on("error", (err) => {
+        socketError = new AMQPError(err.message, this)
+        this.onerror(socketError)
+      })
       socket.on("end", () => {
         if (rejectConnection) {
           rejectConnection(new AMQPError("Connection ended", this))
@@ -63,7 +72,20 @@ export class AMQPClient extends AMQPBaseClient {
       socket.on("close", (hadError: boolean) => {
         const clientClosed = this.closed
         this.closed = true
-        if (!hadError && !clientClosed) this.onerror(new AMQPError("Socket closed", this))
+        const closeError = hadError ? socketError : clientClosed ? undefined : new AMQPError("Socket closed", this)
+        if (!clientClosed) {
+          const err = closeError ?? new AMQPError("Socket closed", this)
+          this.channels.forEach((ch) => ch?.setClosed(err))
+          this.channels = [new AMQPChannel(this, 0)]
+        }
+        if (closeError && !hadError) {
+          this.onerror(closeError)
+        }
+        if (!clientClosed) {
+          this.ondisconnect?.(closeError)
+        }
+        this.socket = undefined
+        socketError = undefined
       })
     })
     Object.defineProperty(this, "socket", {

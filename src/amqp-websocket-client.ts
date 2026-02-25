@@ -1,4 +1,4 @@
-import { AMQPBaseClient, VERSION, MIN_FRAME_SIZE } from "./amqp-base-client.js"
+import { AMQPBaseClient, VERSION } from "./amqp-base-client.js"
 import { AMQPView } from "./amqp-view.js"
 import { AMQPError } from "./amqp-error.js"
 import { AMQPChannel } from "./amqp-channel.js"
@@ -19,7 +19,7 @@ interface AMQPWebSocketInit {
 }
 
 /**
- * WebSocket client for AMQP 0-9-1 servers
+ * WebSocket client for AMQP 0-9-1 servers.
  */
 export class AMQPWebSocketClient extends AMQPBaseClient {
   readonly url: string
@@ -49,7 +49,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     username = "guest",
     password = "guest",
     name?: string,
-    frameMax = MIN_FRAME_SIZE,
+    frameMax = 8192,
     heartbeat = 0,
     logger?: Logger | null,
   ) {
@@ -72,6 +72,10 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
    * Establish a AMQP connection over WebSocket
    */
   override connect(): Promise<AMQPBaseClient> {
+    this.framePos = 0
+    this.frameSize = 0
+    this.channels = [new AMQPChannel(this, 0)]
+
     const socket = new WebSocket(this.url)
     this.socket = socket
     socket.binaryType = "arraybuffer"
@@ -85,10 +89,11 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
           if (!this.closed) {
             const err = new AMQPError(ev.toString(), this)
             this.closed = true
-            // Close all channels and their consumers when there's an error
             this.channels.forEach((ch) => ch?.setClosed(err))
             this.channels = [new AMQPChannel(this, 0)]
             this.onerror(err)
+            this.ondisconnect?.(err)
+            this.socket = undefined
           }
         })
         socket.addEventListener("close", (ev: CloseEvent) => {
@@ -96,14 +101,17 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
           this.closed = true
           if (!(ev.wasClean && clientClosed)) {
             const err = new AMQPError(`connection not cleanly closed (${ev.code})`, this)
-            // Close all channels and their consumers when connection is lost
             this.channels.forEach((ch) => ch?.setClosed(err))
             this.channels = [new AMQPChannel(this, 0)]
             this.onerror(err)
+            if (!clientClosed) {
+              this.ondisconnect?.(err)
+            }
           } else {
             this.channels.forEach((ch) => ch?.setClosed())
             this.channels = [new AMQPChannel(this, 0)]
           }
+          this.socket = undefined
         })
         socket.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
       })
@@ -194,3 +202,5 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
 }
 
 export { AMQPBaseClient, AMQPChannel, AMQPConsumer, AMQPError, AMQPMessage, AMQPQueue, AMQPView, VERSION }
+export { AMQPSession } from "./amqp-session.js"
+export type { AMQPSessionOptions } from "./amqp-session.js"
