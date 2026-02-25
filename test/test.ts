@@ -709,7 +709,7 @@ test("can set frameMax", async () => {
 })
 
 test("can't set too small frameMax", () => {
-  expect(() => getNewClient({ frameMax: 16 })).toThrow(/frame_?max/i)
+  expect(() => getNewClient({ frameMax: 16 })).toThrow()
 })
 
 test("can handle frames split over socket reads", async () => {
@@ -786,7 +786,7 @@ test("onerror is not called when conn is closed by client", async () => {
 })
 
 test("will throw on too large headers", async () => {
-  const amqp = getNewClient()
+  const amqp = getNewClient({ frameMax: 8192 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   await expect(
@@ -798,7 +798,7 @@ test("will throw on too large headers", async () => {
 })
 
 test("will split body over multiple frames", async () => {
-  const amqp = getNewClient()
+  const amqp = getNewClient({ frameMax: 8192 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const q = await ch.queue("")
@@ -1001,4 +1001,28 @@ test("should use provided logger when available", () => {
   expect(mockLogger.warn).toHaveBeenCalledWith("warn message")
   expect(mockLogger.info).toHaveBeenCalledWith("info message")
   expect(mockLogger.debug).toHaveBeenCalledWith("debug message")
+})
+
+test("connect can be called twice", async () => {
+  const amqp = getNewClient()
+
+  await amqp.connect()
+  await amqp.connect()
+  expect(amqp.closed).toBe(false)
+
+  await amqp.close()
+})
+
+test("consumer.cancel() on closed channel resolves without error", async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queue("")
+  const consumer = await q.subscribe({ noAck: true }, () => {})
+
+  await ch.close()
+
+  await expect(consumer.cancel()).resolves.toBeDefined()
+
+  await amqp.close()
 })

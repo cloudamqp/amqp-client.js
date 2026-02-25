@@ -84,6 +84,90 @@ async function run() {
 run()
 ```
 
+### Automatic Reconnection
+
+Use `AMQPSession.connect(url, options)` to get a session that manages reconnection and consumer recovery. The transport is chosen from the URL scheme (`amqp://` / `amqps://` → TCP socket; `ws://` / `wss://` → WebSocket):
+
+```javascript
+import { AMQPSession } from "@cloudamqp/amqp-client"
+
+async function run() {
+  // connect() picks the right transport and returns a ready session
+  const session = await AMQPSession.connect("amqp://localhost", {
+    reconnectInterval: 1000, // Initial delay before reconnecting (ms)
+    maxReconnectInterval: 30000, // Maximum delay between attempts (ms)
+    backoffMultiplier: 2, // Exponential backoff multiplier
+    maxRetries: 0, // 0 = infinite retries
+  })
+
+  // Set up event callbacks on the session
+  session.onconnect = () => console.log("Reconnected!")
+  session.onfailed = (err) => console.log("Failed to reconnect:", err?.message)
+
+  // Subscribe with a callback — returns an AMQPSubscription.
+  const sub = await session.subscribe(
+    "my-queue",
+    { noAck: false },
+    async (msg) => {
+      console.log("Received:", msg.bodyString())
+      await msg.ack()
+    },
+    {
+      prefetch: 10, // Set prefetch limit for this consumer
+      queue: { durable: true }, // Queue declaration parameters for recovery
+    },
+  )
+
+  // sub.consumerTag and sub.channel reflect the current consumer (updated on reconnect)
+  // To stop consuming this queue (also removes it from auto-recovery):
+  // await sub.cancel()
+
+  // Subscribe without a callback — returns an AMQPGeneratorSubscription (async-iterable).
+  // const sub = await session.subscribe("my-queue", { noAck: true })
+  // for await (const msg of sub) {
+  //   console.log("Received:", msg.bodyString())
+  // }
+  // await sub.cancel()
+
+  // When done, stop the session (closes connection, stops reconnection)
+  // await session.stop()
+}
+
+run()
+```
+
+#### Two APIs for Different Use Cases
+
+This library provides two APIs that coexist:
+
+1. **Low-level API**: `client.connect()` → `channel()` → `queue.subscribe()`
+   - Full control over channels and resources
+   - No automatic reconnection — you handle connection failures
+   - Use when you need fine-grained control
+
+2. **High-level API**: `AMQPSession.connect()` → `session.subscribe()`
+   - Automatic reconnection and consumer recovery
+   - Consumer objects stay valid across reconnections
+   - Use for convenience when you don't need channel-level control
+
+#### Key Features
+
+- **Automatic reconnection**: Reconnects automatically when the connection is lost
+- **Exponential backoff**: Configurable delays between reconnection attempts
+- **Consumer recovery**: Consumers registered via `session.subscribe()` are automatically re-established after reconnection
+- **Event callbacks**: Hooks for connection state changes (`onconnect`, `onfailed`)
+- **Prefetch control**: Set per-consumer prefetch limits
+
+#### Reconnection Behavior
+
+When a connection is lost:
+
+- The session reconnects automatically with exponential backoff
+- After a successful reconnect, consumers registered via `session.subscribe()` are re-established, then `onconnect` fires
+- Messages delivered but not acknowledged before disconnection are redelivered by the broker
+- `onfailed` fires and reconnection stops if `maxRetries` is exceeded
+- For disconnect detection, set `client.ondisconnect` directly
+
 ## WebSockets
 
 This library can be used in the browser to access an AMQP server over WebSockets. For servers such as RabbitMQ that doesn't support WebSockets natively a [WebSocket TCP relay](https://github.com/cloudamqp/websocket-tcp-relay/) have to be used as a proxy. All CloudAMQP servers has this proxy configured. More information can be found [in this blog post](https://www.cloudamqp.com/blog/cloudamqp-releases-amqp-websockets.html).
