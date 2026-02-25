@@ -49,6 +49,7 @@ export class AMQPConsumer {
    * Note that any unacked messages are still unacked as they belong to the channel and not the consumer.
    */
   cancel() {
+    if (this.channel.closed) return Promise.resolve(this.channel)
     return this.channel.basicCancel(this.tag)
   }
 
