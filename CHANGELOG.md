@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `AMQPSession` — high-level client with automatic reconnection and consumer recovery ([#185](https://github.com/cloudamqp/amqp-client.js/pull/185))
+  - `AMQPSession.connect(url, options?)` factory: picks TCP or WebSocket transport from the URL scheme
+  - Exponential backoff with configurable `reconnectInterval`, `maxReconnectInterval`, `backoffMultiplier`, and `maxRetries`
+  - `session.subscribe(queue, params, callback?, options?)` — returns an `AMQPSubscription` (or `AMQPGeneratorSubscription` for async-iterable usage) that survives reconnections
+  - `session.onconnect` / `session.onfailed` lifecycle hooks
+  - `session.stop()` — cancels reconnection, clears all subscriptions, and closes the connection
+- `AMQPSubscription` — stable handle across reconnections: exposes `channel`, `consumerTag`, and `cancel()`
+- `AMQPGeneratorSubscription` — extends `AMQPSubscription` with `AsyncIterable<AMQPMessage>` support; bridges the iterator across reconnects
+- `ondisconnect` hook on `AMQPBaseClient` (TCP and WebSocket) — fires when the connection drops
+
 ## [3.4.1] - 2025-11-28
 
 ### Fixed
