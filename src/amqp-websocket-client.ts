@@ -1,4 +1,4 @@
-import { AMQPBaseClient, VERSION } from "./amqp-base-client.js"
+import { AMQPBaseClient, VERSION, MIN_FRAME_SIZE } from "./amqp-base-client.js"
 import { AMQPView } from "./amqp-view.js"
 import { AMQPError } from "./amqp-error.js"
 import { AMQPChannel } from "./amqp-channel.js"
@@ -49,7 +49,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     username = "guest",
     password = "guest",
     name?: string,
-    frameMax = 8192,
+    frameMax = MIN_FRAME_SIZE,
     heartbeat = 0,
     logger?: Logger | null,
   ) {

@@ -1,4 +1,4 @@
-import { AMQPBaseClient } from "./amqp-base-client.js"
+import { AMQPBaseClient, MIN_FRAME_SIZE } from "./amqp-base-client.js"
 import { AMQPChannel } from "./amqp-channel.js"
 import { AMQPError } from "./amqp-error.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
@@ -33,7 +33,7 @@ export class AMQPClient extends AMQPBaseClient {
     const username = decodeURIComponent(u.username) || "guest"
     const password = decodeURIComponent(u.password) || "guest"
     const name = u.searchParams.get("name") || ""
-    const frameMax = parseInt(u.searchParams.get("frameMax") || "8192")
+    const frameMax = parseInt(u.searchParams.get("frameMax") || MIN_FRAME_SIZE.toString())
     const heartbeat = parseInt(u.searchParams.get("heartbeat") || "0")
     const channelMax = parseInt(u.searchParams.get("channelMax") || "0")
     const platform = `${process.release.name} ${process.version} ${process.platform} ${process.arch}`

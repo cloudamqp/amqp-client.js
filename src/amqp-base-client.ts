@@ -6,6 +6,7 @@ import { AMQPView } from "./amqp-view.js"
 import type { Logger } from "./types.js"
 
 export const VERSION = "3.4.1"
+export const MIN_FRAME_SIZE = 8192
 
 /**
  * Base class for AMQPClients.
@@ -50,7 +51,7 @@ export abstract class AMQPBaseClient {
     password: string,
     name?: string,
     platform?: string,
-    frameMax = 8192,
+    frameMax = MIN_FRAME_SIZE,
     heartbeat = 0,
     channelMax = 0,
     logger?: Logger | null,
@@ -69,7 +70,7 @@ export abstract class AMQPBaseClient {
     this.onerror = (error: AMQPError) => {
       this.logger?.error("amqp-client connection closed", error.message)
     }
-    if (frameMax < 8192) throw new Error("frameMax must be 8192 or larger")
+    if (frameMax < MIN_FRAME_SIZE) throw new Error(`frameMax must be ${MIN_FRAME_SIZE} or larger`)
     this.frameMax = frameMax
     if (heartbeat < 0) throw new Error("heartbeat must be positive")
     this.heartbeat = heartbeat
