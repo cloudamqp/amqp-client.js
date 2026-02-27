@@ -6,6 +6,18 @@ beforeEach(() => {
   expect.hasAssertions()
 })
 
+// Helpers for tests that need direct broker access (setup, publishing)
+async function makeClient() {
+  const client = new AMQPClient("amqp://127.0.0.1")
+  await client.connect()
+  return client
+}
+
+function destroySocket(session: AMQPSession) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;((session as any).client as AMQPClient).socket?.destroy()
+}
+
 test("AMQPSession.connect() returns a session", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1", { reconnectInterval: 500 })
   expect(session).toBeInstanceOf(AMQPSession)
@@ -13,11 +25,19 @@ test("AMQPSession.connect() returns a session", async () => {
   await session.stop()
 })
 
+test("session.closed reflects connection state", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  expect(session.closed).toBe(false)
+  await session.stop()
+  expect(session.closed).toBe(true)
+})
+
 test("session.subscribe delivers messages via callback", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const client = await makeClient()
 
   const queueName = "test-queue-" + Math.random()
-  const ch = await session.client.channel()
+  const ch = await client.channel()
   await ch.queue(queueName, { durable: false, autoDelete: true })
 
   let messageReceived = false
@@ -32,12 +52,14 @@ test("session.subscribe delivers messages via callback", async () => {
   expect(messageReceived).toBe(true)
   await sub.cancel()
   await session.stop()
+  await client.close()
 })
 
 test("session.subscribe accepts an AMQPQueue object", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const client = await makeClient()
 
-  const ch = await session.client.channel()
+  const ch = await client.channel()
   const q = await ch.queue("", { durable: false, autoDelete: true })
 
   let messageReceived = false
@@ -51,25 +73,29 @@ test("session.subscribe accepts an AMQPQueue object", async () => {
   expect(messageReceived).toBe(true)
   await sub.cancel()
   await session.stop()
+  await client.close()
 })
 
 test("subscription.cancel() removes it from session recovery", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const client = await makeClient()
 
-  const ch = await session.client.channel()
+  const ch = await client.channel()
   const q = await ch.queue("")
   const sub = await session.subscribe(q.name, { noAck: true }, () => {})
 
   await expect(sub.cancel()).resolves.toBeUndefined()
 
   await session.stop()
+  await client.close()
 })
 
 test("session.subscribe supports prefetch option", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const client = await makeClient()
 
   const queueName = "test-prefetch-queue-" + Math.random()
-  const ch = await session.client.channel()
+  const ch = await client.channel()
   await ch.queue(queueName, { durable: false, autoDelete: true })
 
   let messagesReceived = 0
@@ -97,13 +123,15 @@ test("session.subscribe supports prefetch option", async () => {
 
   await sub.cancel()
   await session.stop()
+  await client.close()
 })
 
 test("session.subscribe yields messages via async generator", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const client = await makeClient()
 
   const queueName = "test-generator-" + Math.random()
-  const ch = await session.client.channel()
+  const ch = await client.channel()
   await ch.queue(queueName, { durable: false, autoDelete: true })
 
   const sub = await session.subscribe(queueName, { noAck: true })
@@ -121,6 +149,7 @@ test("session.subscribe yields messages via async generator", async () => {
   expect(received).toEqual(["msg1", "msg2"])
   await sub.cancel()
   await session.stop()
+  await client.close()
 })
 
 test("session.onfailed fires when maxRetries exhausted", async () => {
@@ -132,9 +161,10 @@ test("session.onfailed fires when maxRetries exhausted", async () => {
   const onfailed = vi.fn()
   session.onfailed = onfailed
 
-  const connectSpy = vi.spyOn(session.client, "connect").mockRejectedValue(new Error("forced failure"))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const connectSpy = vi.spyOn((session as any).client, "connect").mockRejectedValue(new Error("forced failure"))
 
-  ;(session.client as AMQPClient).socket?.destroy()
+  destroySocket(session)
 
   // Wait long enough for 2 retries + backoff (50ms + 100ms) with buffer
   await new Promise((resolve) => setTimeout(resolve, 500))
@@ -163,7 +193,7 @@ test("session.onconnect fires after successful reconnection", async () => {
     }
   })
 
-  ;(session.client as AMQPClient).socket?.destroy()
+  destroySocket(session)
 
   await reconnected
   expect(reconnectCount).toBe(1)
@@ -176,11 +206,12 @@ test("subscription recovers and receives messages after reconnection", async () 
     reconnectInterval: 50,
     maxRetries: 5,
   })
+  const client = await makeClient()
 
   const queueName = "test-recovery-" + Math.random()
 
   // Pre-declare the queue so it survives reconnection (non-exclusive, autoDelete: false)
-  const setupCh = await session.client.channel()
+  const setupCh = await client.channel()
   await setupCh.queue(queueName, { durable: false, autoDelete: false })
   await setupCh.close()
 
@@ -195,7 +226,7 @@ test("subscription recovers and receives messages after reconnection", async () 
   )
 
   // Publish a message before disconnect
-  const ch1 = await session.client.channel()
+  const ch1 = await client.channel()
   const q1 = await ch1.queue(queueName, { passive: true })
   await q1.publish("before-disconnect")
   await new Promise((resolve) => setTimeout(resolve, 100))
@@ -208,12 +239,12 @@ test("subscription recovers and receives messages after reconnection", async () 
     }
   })
 
-  ;(session.client as AMQPClient).socket?.destroy()
+  destroySocket(session)
 
   await reconnected
 
   // Publish a message after reconnection
-  const ch2 = await session.client.channel()
+  const ch2 = await client.channel()
   const q2 = await ch2.queue(queueName, { passive: true })
   await q2.publish("after-reconnect")
   await new Promise((resolve) => setTimeout(resolve, 200))
@@ -226,10 +257,11 @@ test("subscription recovers and receives messages after reconnection", async () 
 
   await sub.cancel()
 
-  const cleanCh = await session.client.channel()
+  const cleanCh = await client.channel()
   await cleanCh.queueDelete(queueName)
 
   await session.stop()
+  await client.close()
 })
 
 test("session.stop() during reconnection stops the loop", async () => {
@@ -238,9 +270,10 @@ test("session.stop() during reconnection stops the loop", async () => {
     maxRetries: 10,
   })
 
-  const connectSpy = vi.spyOn(session.client, "connect").mockRejectedValue(new Error("forced failure"))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const connectSpy = vi.spyOn((session as any).client, "connect").mockRejectedValue(new Error("forced failure"))
 
-  ;(session.client as AMQPClient).socket?.destroy()
+  destroySocket(session)
 
   // Stop before the first reconnection attempt fires
   await new Promise((resolve) => setTimeout(resolve, 50))
@@ -256,7 +289,7 @@ test("session.stop() during reconnection stops the loop", async () => {
 test("session.stop() when already disconnected does not throw", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1", { maxRetries: 1 })
 
-  ;(session.client as AMQPClient).socket?.destroy()
+  destroySocket(session)
   await new Promise((resolve) => setTimeout(resolve, 50))
 
   await expect(session.stop()).resolves.toBeUndefined()

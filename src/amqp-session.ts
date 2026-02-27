@@ -30,9 +30,7 @@ export type { SubscribeOptions } from "./amqp-subscription.js"
 /**
  * High-level session with automatic reconnection and consumer recovery.
  *
- * Create via `AMQPSession.connect(url, options)`. The session owns its
- * underlying transport; use `session.client` only to inspect state, not
- * to open channels directly.
+ * Create via `AMQPSession.connect(url, options)`.
  */
 export class AMQPSession {
   /** Fires after a successful (re)connection and consumer recovery */
@@ -40,12 +38,12 @@ export class AMQPSession {
   /** Fires when max retries are exhausted */
   onfailed?: (error?: Error) => void
 
-  /**
-   * Underlying transport. Exposed for state inspection (e.g. `client.closed`)
-   * and test access. Do not open channels on this directly, and do not
-   * overwrite `client.ondisconnect` — the session uses it to drive reconnection.
-   */
-  readonly client: AMQPBaseClient
+  private readonly client: AMQPBaseClient
+
+  /** Whether the underlying connection is currently closed. */
+  get closed(): boolean {
+    return this.client.closed
+  }
 
   private readonly options: {
     reconnectInterval: number
