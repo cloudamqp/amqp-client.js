@@ -93,6 +93,8 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
   }
 
   async *[Symbol.asyncIterator](): AsyncGenerator<AMQPMessage, void, undefined> {
+    const autoAck = !this.def.consumeParams.noAck
+    let prev: AMQPMessage | undefined
     while (!this.stopped) {
       const consumer = this.consumer
       if (!(consumer instanceof AMQPGeneratorConsumer)) {
@@ -101,11 +103,15 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
       try {
         for await (const msg of consumer.messages) {
           if (this.stopped) return
+          if (autoAck) await prev?.ack()
+          prev = msg
           yield msg
         }
       } catch {
         // Consumer's channel was closed — wait for reconnect to provide a new consumer
       }
+      // Reset on disconnect; unacked messages are requeued by the server when the channel closes
+      prev = undefined
       if (!this.stopped) {
         await new Promise<void>((resolve) => {
           this.consumerReady = resolve

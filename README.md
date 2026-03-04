@@ -40,17 +40,18 @@ const session = await AMQPSession.connect("amqp://localhost")
 const q = await session.queue("my-queue")
 await q.publish("Hello World", { deliveryMode: 2 })
 
-// Subscribe with a callback — consumer recovers automatically on reconnect
-const sub = await q.subscribe({ noAck: false }, async (msg) => {
+// Subscribe with a callback — consumer recovers automatically on reconnect.
+// Messages are acked after the callback returns. If it throws, the message is
+// nacked and requeued. Call msg.ack() / msg.nack() yourself to override.
+const sub = await q.subscribe(async (msg) => {
   console.log(msg.bodyString())
-  await msg.ack()
 })
 
-// Or subscribe with an async iterator
-const iterSub = await q.subscribe({ noAck: false })
+// Or subscribe with an async iterator — messages are acked when the loop advances.
+// Call msg.ack() / msg.nack() before the next iteration to override.
+const iterSub = await q.subscribe()
 for await (const msg of iterSub) {
   console.log(msg.bodyString())
-  await msg.ack()
 }
 
 // Exchanges work the same way
@@ -81,8 +82,8 @@ Subscriptions created via `queue.subscribe()` are automatically re-established a
 
 ```javascript
 const q = await session.queue("my-queue", { durable: true })
-const sub = await q.subscribe({ noAck: false, prefetch: 10 }, async (msg) => {
-  await msg.ack()
+const sub = await q.subscribe({ prefetch: 10 }, async (msg) => {
+  // process msg — acked on return, nacked and requeued on throw
 })
 
 // sub.consumerTag and sub.channel reflect the current consumer (updated on reconnect)

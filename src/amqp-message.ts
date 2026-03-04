@@ -30,6 +30,12 @@ export class AMQPMessage {
   messageCount?: number
   replyCode?: number
   replyText?: string
+  #acked = false
+
+  /** True if the message has already been acked, nacked, or rejected. */
+  get isAcked(): boolean {
+    return this.#acked
+  }
 
   /**
    * @param channel - Channel this message was delivered on
@@ -56,16 +62,22 @@ export class AMQPMessage {
 
   /** Acknowledge the message */
   ack(multiple = false) {
+    if (this.#acked) return Promise.resolve()
+    this.#acked = true
     return this.channel.basicAck(this.deliveryTag, multiple)
   }
 
   /** Negative acknowledgment (same as reject) */
   nack(requeue = false, multiple = false) {
+    if (this.#acked) return Promise.resolve()
+    this.#acked = true
     return this.channel.basicNack(this.deliveryTag, requeue, multiple)
   }
 
-  /** Rejected the message */
+  /** Reject the message */
   reject(requeue = false) {
+    if (this.#acked) return Promise.resolve()
+    this.#acked = true
     return this.channel.basicReject(this.deliveryTag, requeue)
   }
 

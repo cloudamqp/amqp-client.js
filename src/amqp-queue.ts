@@ -14,6 +14,11 @@ import { publishConfirmed, publishNoConfirm, type Body } from "./amqp-publisher.
 export type QueueSubscribeParams = ConsumeParams & {
   /** Per-consumer prefetch limit (sets QoS on the channel before consuming). */
   prefetch?: number
+  /**
+   * Whether to requeue messages that are nacked due to a callback error.
+   * Defaults to `true`.
+   */
+  requeueOnNack?: boolean
 }
 
 /** Options for {@link AMQPQueue#publish}. */
@@ -56,27 +61,48 @@ export class AMQPQueue {
     return this
   }
 
-  /**
-   * Subscribe to this queue with automatic consumer recovery on reconnection.
-   * @param params - consume and prefetch parameters
-   * @param callback - called for each delivered message
-   */
+  /** Subscribe with a callback. Messages are acked after the callback returns, nacked on error. */
+  subscribe(callback: (msg: AMQPMessage) => void | Promise<void>): Promise<AMQPSubscription>
+  /** Subscribe with a callback and custom params. */
   subscribe(
     params: QueueSubscribeParams,
     callback: (msg: AMQPMessage) => void | Promise<void>,
   ): Promise<AMQPSubscription>
   /**
-   * Subscribe to this queue with automatic consumer recovery on reconnection.
-   * Messages are delivered through an async-iterable subscription that continues
-   * across reconnections.
-   * @param [params] - consume and prefetch parameters
+   * Subscribe via an async iterator. Messages continue yielding across reconnections.
+   * @example
+   * ```ts
+   * for await (const msg of await q.subscribe()) {
+   *   console.log(msg.bodyString())
+   *   await msg.ack()
+   * }
+   * ```
    */
   subscribe(params?: QueueSubscribeParams): Promise<AMQPGeneratorSubscription>
   async subscribe(
-    params?: QueueSubscribeParams,
+    params?: QueueSubscribeParams | ((msg: AMQPMessage) => void | Promise<void>),
     callback?: (msg: AMQPMessage) => void | Promise<void>,
   ): Promise<AMQPSubscription | AMQPGeneratorSubscription> {
-    const { prefetch, ...consumeParams } = params ?? {}
+    if (typeof params === "function") [callback, params] = [params, undefined]
+    const { prefetch, requeueOnNack = true, ...consumeParams } = params ?? {}
+    // When auto-acking (callback or generator), force noAck: false so the server
+    // tracks delivery tags. basicConsume defaults noAck to true, so we must be explicit.
+    if (callback !== undefined && !consumeParams.noAck) {
+      consumeParams.noAck = false
+      const userCallback = callback
+      callback = async (msg: AMQPMessage) => {
+        try {
+          await userCallback(msg)
+          await msg.ack()
+        } catch {
+          await msg.nack(requeueOnNack)
+        }
+      }
+    }
+    // Generator form: also force noAck: false for auto-ack unless caller opted out.
+    if (callback === undefined && consumeParams.noAck !== true) {
+      consumeParams.noAck = false
+    }
     const def: ConsumerDefinition = {
       queueName: this.name,
       consumeParams,

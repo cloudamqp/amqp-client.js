@@ -47,11 +47,17 @@ export class AMQPConsumer {
   /**
    * Cancel/abort/stop the consumer. No more messages will be deliviered to the consumer.
    * Note that any unacked messages are still unacked as they belong to the channel and not the consumer.
+   * Safe to call multiple times — concurrent calls share the same underlying wire operation.
    */
   cancel() {
     if (this.channel.closed) return Promise.resolve(this.channel)
-    return this.channel.basicCancel(this.tag)
+    if (!this._cancelPromise) {
+      this._cancelPromise = this.channel.basicCancel(this.tag)
+    }
+    return this._cancelPromise
   }
+
+  private _cancelPromise?: Promise<AMQPChannel>
 
   /**
    * @ignore
