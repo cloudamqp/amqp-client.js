@@ -74,22 +74,18 @@ test("session.subscribe supports prefetch option", async () => {
 
   const q = await session.queue("test-prefetch-queue-" + Math.random(), { durable: false, autoDelete: true })
 
-  let messagesReceived = 0
-  const sub = await q.subscribe({ noAck: false, prefetch: 1 }, async (msg) => {
-    messagesReceived++
-    if (messagesReceived === 2) {
-      await msg.ack()
-    }
-  })
-
   await q.publish("message 1", { confirm: false })
   await q.publish("message 2", { confirm: false })
   await q.publish("message 3", { confirm: false })
 
+  const received: string[] = []
+  const sub = await q.subscribe({ prefetch: 1 }, async (msg) => {
+    received.push(msg.bodyString() ?? "")
+  })
+
   await new Promise((resolve) => setTimeout(resolve, 200))
 
-  // With prefetch=1, only 1 message is delivered until acked
-  expect(messagesReceived).toBe(1)
+  expect(received).toEqual(["message 1", "message 2", "message 3"])
 
   await sub.cancel()
   await session.stop()
@@ -477,5 +473,183 @@ test("AMQPQueue.delete() removes the queue", async () => {
   const q = await session.queue("test-q-del-" + Math.random(), { durable: false, autoDelete: false })
 
   await expect(q.delete()).resolves.toBeDefined()
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() acks message after callback returns", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-autoack-default-" + Math.random(), { durable: false, autoDelete: true })
+  await q.publish("hello")
+
+  const ackSpy = vi.spyOn(AMQPMessage.prototype, "ack")
+
+  const received: string[] = []
+  const sub = await q.subscribe(async (msg) => {
+    received.push(msg.bodyString() ?? "")
+  })
+
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  expect(received).toEqual(["hello"])
+  expect(ackSpy).toHaveBeenCalledOnce()
+
+  ackSpy.mockRestore()
+  await sub.cancel()
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() acks message after successful callback with prefetch", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-autoack-" + Math.random(), { durable: false, autoDelete: true })
+  await q.publish("hello")
+
+  const ackSpy = vi.spyOn(AMQPMessage.prototype, "ack")
+
+  const received: string[] = []
+  const sub = await q.subscribe({ prefetch: 1 }, async (msg) => {
+    received.push(msg.bodyString() ?? "")
+  })
+
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  expect(received).toEqual(["hello"])
+  expect(ackSpy).toHaveBeenCalledOnce()
+
+  ackSpy.mockRestore()
+  await sub.cancel()
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() nacks message when callback throws", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-autoack-nack-" + Math.random(), { durable: false, autoDelete: true })
+  await q.publish("fail")
+
+  const nackSpy = vi.spyOn(AMQPMessage.prototype, "nack")
+
+  let callCount = 0
+  const sub = await q.subscribe({ requeueOnNack: false, prefetch: 1 }, async () => {
+    callCount++
+    throw new Error("boom")
+  })
+
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  expect(callCount).toBe(1)
+  expect(nackSpy).toHaveBeenCalledWith(false)
+
+  nackSpy.mockRestore()
+  await sub.cancel()
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() does not ack when noAck is true", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-autoack-noack-" + Math.random(), { durable: false, autoDelete: true })
+  await q.publish("hi")
+
+  const ackSpy = vi.spyOn(AMQPMessage.prototype, "ack")
+
+  const received: string[] = []
+
+  const sub = await q.subscribe({ noAck: true, prefetch: 1 }, async (msg) => {
+    received.push(msg.bodyString() ?? "")
+  })
+
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  expect(received).toEqual(["hi"])
+  expect(ackSpy).not.toHaveBeenCalled()
+
+  ackSpy.mockRestore()
+  await sub.cancel()
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() async iterator auto-acks on advance", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-iter-autoack-" + Math.random(), { durable: false, autoDelete: true })
+
+  await q.publish("msg1")
+  await q.publish("msg2")
+
+  const msgs: AMQPMessage[] = []
+  const sub = await q.subscribe()
+  for await (const msg of sub) {
+    msgs.push(msg)
+    if (msgs.length >= 2) break
+  }
+
+  // msg1 was auto-acked when the loop advanced to msg2; msg2 was not (loop broke)
+  expect(msgs[0]!.isAcked).toBe(true)
+  expect(msgs[1]!.isAcked).toBe(false)
+
+  await sub.cancel()
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() async iterator does not ack when noAck is true", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-iter-noack-" + Math.random(), { durable: false, autoDelete: true })
+
+  await q.publish("msg1")
+  await q.publish("msg2")
+
+  const msgs: AMQPMessage[] = []
+  const sub = await q.subscribe({ noAck: true })
+  for await (const msg of sub) {
+    msgs.push(msg)
+    if (msgs.length >= 2) break
+  }
+
+  expect(msgs[0]!.isAcked).toBe(false)
+  expect(msgs[1]!.isAcked).toBe(false)
+
+  await sub.cancel()
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() async iterator does not double-ack if message already acked", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-iter-double-ack-" + Math.random(), { durable: false, autoDelete: true })
+
+  await q.publish("msg1")
+  await q.publish("msg2")
+
+  const { AMQPChannel } = await import("../src/amqp-channel.js")
+  const basicAckSpy = vi.spyOn(AMQPChannel.prototype, "basicAck")
+
+  const sub = await q.subscribe()
+  for await (const msg of sub) {
+    await msg.ack() // manual ack inside the loop
+    if (basicAckSpy.mock.calls.length >= 1) break
+  }
+
+  // Only one wire call despite auto-ack also running
+  expect(basicAckSpy).toHaveBeenCalledOnce()
+
+  basicAckSpy.mockRestore()
+  await sub.cancel()
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() does not double-ack if callback already acked", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-no-double-ack-" + Math.random(), { durable: false, autoDelete: true })
+  await q.publish("hello")
+
+  const { AMQPChannel } = await import("../src/amqp-channel.js")
+  const basicAckSpy = vi.spyOn(AMQPChannel.prototype, "basicAck")
+
+  const sub = await q.subscribe(async (msg) => {
+    await msg.ack()
+  })
+
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  expect(basicAckSpy).toHaveBeenCalledOnce()
+
+  basicAckSpy.mockRestore()
+  await sub.cancel()
   await session.stop()
 })

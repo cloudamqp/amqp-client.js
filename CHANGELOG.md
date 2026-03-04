@@ -19,12 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `session.closed` — `true` when the underlying connection is closed
   - `session.stop()` — cancels reconnection, clears all subscriptions, and closes the connection
 - `AMQPQueue` — reconnect-safe queue handle returned by `session.queue()`, with `publish()`, `subscribe()`, `get()`, `bind()`, `unbind()`, `purge()`, `delete()` ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
-  - `subscribe(params?, callback?)` accepts `QueueSubscribeParams` — `ConsumeParams` plus an optional `prefetch` that sets channel QoS before each consume, including after reconnect
+  - `subscribe(callback)` / `subscribe(params, callback)` — auto-acks after the callback returns; nacks and requeues on throw; call `msg.ack()` / `msg.nack()` inside the callback to override; pass `{ noAck: true }` to skip acking entirely; `requeueOnNack` controls requeue behaviour on error ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
+  - `subscribe()` / `subscribe(params)` — async-iterator form; auto-acks the previous message when the loop advances; the last message (after `break`) is left unacked; call `msg.ack()` / `msg.nack()` before advancing to override; pass `{ noAck: true }` to skip acking ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
   - Subscriptions survive reconnection automatically; the async-iterator form continues yielding without any caller changes
 - `AMQPExchange` — reconnect-safe exchange handle returned by `session.exchange()`, with `publish()`, `bind()`, `unbind()`, `delete()` ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
 - `AMQPSubscription` — stable consumer handle across reconnections: exposes `channel`, `consumerTag`, and `cancel()`
 - `AMQPGeneratorSubscription` — extends `AMQPSubscription` with `AsyncIterable<AMQPMessage>` support
-- `QueueSubscribeParams` — exported type combining `ConsumeParams` with `prefetch?`
+- `QueueSubscribeParams` — exported type combining `ConsumeParams` with `prefetch?` and `requeueOnNack?` (default `true`) ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
 - `QueuePublishOptions` / `ExchangePublishOptions` — exported types for publish options; both extend `AMQPProperties` with a `confirm?` flag; `ExchangePublishOptions` adds `routingKey?`
 - `ondisconnect` hook on `AMQPBaseClient` (TCP and WebSocket) — fires when the connection drops
 
