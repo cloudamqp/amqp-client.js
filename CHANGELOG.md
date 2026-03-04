@@ -9,15 +9,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `AMQPSession` — high-level client with automatic reconnection and consumer recovery ([#185](https://github.com/cloudamqp/amqp-client.js/pull/185))
-  - `AMQPSession.connect(url, options?)` factory: picks TCP or WebSocket transport from the URL scheme
+- `AMQPSession` — high-level client with automatic reconnection and consumer recovery ([#185](https://github.com/cloudamqp/amqp-client.js/pull/185), [#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+  - `AMQPSession.connect(url, options?)` factory: picks TCP or WebSocket transport from the URL scheme (`amqp://` / `amqps://` → TCP; `ws://` / `wss://` → WebSocket)
   - Exponential backoff with configurable `reconnectInterval`, `maxReconnectInterval`, `backoffMultiplier`, and `maxRetries`
-  - `session.subscribe(queue, params, callback?, options?)` — returns an `AMQPSubscription` (or `AMQPGeneratorSubscription` for async-iterable usage) that survives reconnections
+  - `session.queue(name, params?, args?)` — declare and return an `AMQPQueue` handle
+  - `session.exchange(name, type, params?, args?)` — declare and return an `AMQPExchange` handle
+  - Shorthand exchange factories: `directExchange()`, `fanoutExchange()`, `topicExchange()`, `headersExchange()`
   - `session.onconnect` / `session.onfailed` lifecycle hooks
+  - `session.closed` — `true` when the underlying connection is closed
   - `session.stop()` — cancels reconnection, clears all subscriptions, and closes the connection
-- `AMQPSubscription` — stable handle across reconnections: exposes `channel`, `consumerTag`, and `cancel()`
-- `AMQPGeneratorSubscription` — extends `AMQPSubscription` with `AsyncIterable<AMQPMessage>` support; bridges the iterator across reconnects
+- `AMQPQueue` — reconnect-safe queue handle returned by `session.queue()`, with `publish()`, `subscribe()`, `get()`, `bind()`, `unbind()`, `purge()`, `delete()` ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+  - `subscribe(params?, callback?)` accepts `QueueSubscribeParams` — `ConsumeParams` plus an optional `prefetch` that sets channel QoS before each consume, including after reconnect
+  - Subscriptions survive reconnection automatically; the async-iterator form continues yielding without any caller changes
+- `AMQPExchange` — reconnect-safe exchange handle returned by `session.exchange()`, with `publish()`, `bind()`, `unbind()`, `delete()` ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+- `AMQPSubscription` — stable consumer handle across reconnections: exposes `channel`, `consumerTag`, and `cancel()`
+- `AMQPGeneratorSubscription` — extends `AMQPSubscription` with `AsyncIterable<AMQPMessage>` support
+- `QueueSubscribeParams` — exported type combining `ConsumeParams` with `prefetch?`
+- `QueuePublishOptions` / `ExchangePublishOptions` — exported types for publish options; both extend `AMQPProperties` with a `confirm?` flag; `ExchangePublishOptions` adds `routingKey?`
 - `ondisconnect` hook on `AMQPBaseClient` (TCP and WebSocket) — fires when the connection drops
+
+### Changed
+
+- **Breaking:** `AMQPChannel.queue()` removed ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186)). Use `ch.queueDeclare()` with low-level channel methods, or `session.queue()` for the high-level API. See the migration guide below.
+- **Breaking:** `AMQPQueue` is now a session-only class — no longer returned by channel methods, no longer accepts a channel in its constructor. ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+- **Breaking:** `AMQPQueue` is no longer re-exported from `AMQPClient` or `AMQPWebSocketClient`. Import from the main package entry point instead. ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+
+### Migration guide
+
+The v3 `AMQPQueue` was tied to a single channel. In v4, `AMQPQueue` is a session-level handle that is reconnect-safe.
+
+If you were using `ch.queue()`:
+
+```diff
+-const ch = await conn.channel()
+-const q = await ch.queue("my-queue")
+-await q.publish("hello")
+-const consumer = await q.subscribe({ noAck: false }, (msg) => msg.ack())
+-const msg = await q.get()
+-await q.bind("amq.topic", "routing.key")
+-await q.delete()
+
++// Low-level (no reconnection)
++const ch = await conn.channel()
++const { name } = await ch.queueDeclare("my-queue")
++await ch.basicPublish("", name, "hello")
++const consumer = await ch.basicConsume(name, { noAck: false }, (msg) => msg.ack())
++const msg = await ch.basicGet(name)
++await ch.queueBind(name, "amq.topic", "routing.key")
++await ch.queueDelete(name)
+
++// High-level (automatic reconnection)
++const session = await AMQPSession.connect("amqp://localhost")
++const q = await session.queue("my-queue")
++await q.publish("hello")
++const sub = await q.subscribe({ noAck: false }, (msg) => msg.ack())
++const msg = await q.get()
++await q.bind("amq.topic", "routing.key")
++await q.delete()
+```
 
 ## [3.4.1] - 2025-11-28
 

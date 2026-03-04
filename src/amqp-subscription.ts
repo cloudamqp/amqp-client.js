@@ -2,26 +2,14 @@ import { AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
-import type { ConsumeParams, QueueParams } from "./amqp-channel.js"
-
-/**
- * Options for queue declaration and channel settings used by {@link AMQPSession.subscribe}.
- */
-export interface SubscribeOptions {
-  /** Queue declaration params for (re-)declaring on each reconnect. Omit for passive declare. */
-  queue?: QueueParams
-  /** Extra queue declare arguments — only used when `queue` is also provided. */
-  queueArgs?: Record<string, unknown>
-  /** Per-consumer prefetch limit. */
-  prefetch?: number
-}
+import type { ConsumeParams } from "./amqp-channel.js"
 
 /** @internal */
 export interface ConsumerDefinition {
   queueName: string
   consumeParams: ConsumeParams
   callback?: (msg: AMQPMessage) => void | Promise<void>
-  options: SubscribeOptions
+  prefetch?: number
 }
 
 /**

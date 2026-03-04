@@ -1,11 +1,9 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
-import type { ConsumeParams } from "./amqp-channel.js"
-import type { AMQPMessage } from "./amqp-message.js"
-import type { AMQPQueue } from "./amqp-queue.js"
-import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription.js"
-import type { ConsumerDefinition, SubscribeOptions } from "./amqp-subscription.js"
+import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
+import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
+import { AMQPExchange } from "./amqp-exchange.js"
 
 /**
  * Options for {@link AMQPSession.connect}.
@@ -23,16 +21,18 @@ export interface AMQPSessionOptions {
   tlsOptions?: AMQPTlsOptions
   /** Logger instance. Pass `null` to disable logging explicitly. */
   logger?: Logger | null
+  /**
+   * AMQP virtual host. For WebSocket URLs the URL path is the relay endpoint,
+   * not the vhost — use this option to specify the vhost explicitly.
+   * Defaults to `"/"` for WebSocket connections and to the URL path for TCP connections.
+   */
+  vhost?: string
 }
-
-export type { SubscribeOptions } from "./amqp-subscription.js"
 
 /**
  * High-level session with automatic reconnection and consumer recovery.
  *
- * Create via `AMQPSession.connect(url, options)`. The session owns its
- * underlying transport; use `session.client` only to inspect state, not
- * to open channels directly.
+ * Create via `AMQPSession.connect(url, options)`.
  */
 export class AMQPSession {
   /** Fires after a successful (re)connection and consumer recovery */
@@ -40,12 +40,17 @@ export class AMQPSession {
   /** Fires when max retries are exhausted */
   onfailed?: (error?: Error) => void
 
-  /**
-   * Underlying transport. Exposed for state inspection (e.g. `client.closed`)
-   * and test access. Do not open channels on this directly, and do not
-   * overwrite `client.ondisconnect` — the session uses it to drive reconnection.
-   */
-  readonly client: AMQPBaseClient
+  private readonly client: AMQPBaseClient
+
+  /** `true` when the underlying connection is closed. */
+  get closed(): boolean {
+    return this.client.closed
+  }
+
+  /** @internal */
+  get logger(): Logger | null | undefined {
+    return this.client.logger
+  }
 
   private readonly options: {
     reconnectInterval: number
@@ -53,12 +58,20 @@ export class AMQPSession {
     backoffMultiplier: number
     maxRetries: number
   }
-  private readonly consumers = new Set<AMQPSubscription>()
+  private readonly queues = new Map<string, AMQPQueue>()
   private reconnectAttempts = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined
   private reconnectResolve: (() => void) | undefined
   private reconnecting = false
   private stopped = false
+
+  // Channels managed by the session. Both are created lazily and reset to null
+  // when the connection drops so they are re-opened transparently on next use.
+  private opsChannel: AMQPChannel | null = null // management + unconfirmed publish
+  private confirmChannel: AMQPChannel | null = null // confirmed publish (confirmSelect enabled)
+  // In-flight creation promises prevent concurrent callers from opening duplicate channels.
+  private opsChannelPromise: Promise<AMQPChannel> | null = null
+  private confirmChannelPromise: Promise<AMQPChannel> | null = null
 
   private constructor(client: AMQPBaseClient, options?: AMQPSessionOptions) {
     this.client = client
@@ -69,6 +82,10 @@ export class AMQPSession {
       maxRetries: options?.maxRetries ?? 0,
     }
     this.client.ondisconnect = () => {
+      this.opsChannel = null
+      this.confirmChannel = null
+      this.opsChannelPromise = null
+      this.confirmChannelPromise = null
       if (!this.stopped && !this.reconnecting) {
         void this.reconnectLoop()
       }
@@ -87,7 +104,7 @@ export class AMQPSession {
     let client: AMQPBaseClient
     if (u.protocol === "ws:" || u.protocol === "wss:") {
       const { AMQPWebSocketClient } = await import("./amqp-websocket-client.js")
-      const vhost = decodeURIComponent(u.pathname.slice(1)) || "/"
+      const vhost = options?.vhost ?? "/"
       const username = decodeURIComponent(u.username) || "guest"
       const password = decodeURIComponent(u.password) || "guest"
       const wsUrl = `${u.protocol}//${u.host}${u.pathname}${u.search}`
@@ -101,55 +118,127 @@ export class AMQPSession {
   }
 
   /**
-   * Subscribe to a queue with automatic consumer recovery on reconnection.
-   * Messages will be delivered asynchronously to the callback.
-   * @param queue - queue name or {@link AMQPQueue} object
-   * @param consumeParams - consume parameters (noAck, exclusive, tag, args)
-   * @param callback - called for each delivered message
-   * @param [options] - queue declaration and prefetch settings for recovery
+   * Return the shared ops channel, opening a new one if needed.
+   * Used by queue/exchange handles for management operations and fire-and-forget publishes.
+   * @internal
    */
-  async subscribe(
-    queue: string | AMQPQueue,
-    consumeParams: ConsumeParams,
-    callback: (msg: AMQPMessage) => void | Promise<void>,
-    options?: SubscribeOptions,
-  ): Promise<AMQPSubscription>
+  getOpsChannel(): Promise<AMQPChannel> {
+    if (this.opsChannel && !this.opsChannel.closed) return Promise.resolve(this.opsChannel)
+    if (this.opsChannelPromise) return this.opsChannelPromise
+    this.opsChannelPromise = this.client.channel().then((ch) => {
+      this.opsChannel = ch
+      this.opsChannelPromise = null
+      return ch
+    })
+    this.opsChannelPromise.catch(() => {
+      this.opsChannelPromise = null
+    })
+    return this.opsChannelPromise
+  }
+
   /**
-   * Subscribe to a queue with automatic consumer recovery on reconnection.
-   * Messages will be delivered through an async-iterable subscription that
-   * continues yielding across reconnections.
-   * @param queue - queue name or {@link AMQPQueue} object
-   * @param consumeParams - consume parameters (noAck, exclusive, tag, args)
-   * @param [options] - queue declaration and prefetch settings for recovery
+   * Return the shared confirm channel, opening and enabling publish confirms if needed.
+   * Used by queue/exchange handles for confirmed publishes.
+   * @internal
    */
-  async subscribe(
-    queue: string | AMQPQueue,
-    consumeParams: ConsumeParams,
-    callback?: undefined,
-    options?: SubscribeOptions,
-  ): Promise<AMQPGeneratorSubscription>
-  async subscribe(
-    queue: string | AMQPQueue,
-    consumeParams: ConsumeParams,
-    callback?: (msg: AMQPMessage) => void | Promise<void>,
-    options?: SubscribeOptions,
-  ): Promise<AMQPSubscription | AMQPGeneratorSubscription> {
-    const def: ConsumerDefinition = {
-      queueName: typeof queue === "string" ? queue : queue.name,
-      consumeParams,
-      ...(callback !== undefined && { callback }),
-      options: options ?? {},
-    }
+  getConfirmChannel(): Promise<AMQPChannel> {
+    if (this.confirmChannel && !this.confirmChannel.closed) return Promise.resolve(this.confirmChannel)
+    if (this.confirmChannelPromise) return this.confirmChannelPromise
+    this.confirmChannelPromise = this.client.channel().then(async (ch) => {
+      await ch.confirmSelect()
+      this.confirmChannel = ch
+      this.confirmChannelPromise = null
+      return ch
+    })
+    this.confirmChannelPromise.catch(() => {
+      this.confirmChannelPromise = null
+    })
+    return this.confirmChannelPromise
+  }
 
-    const consumer = await this.bindConsumer(def)
-    const sub = callback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription(consumer, def)
+  /**
+   * Open a fresh dedicated channel. Used by queue handles for consumer channels.
+   * @internal
+   */
+  openChannel(): Promise<AMQPChannel> {
+    return this.client.channel()
+  }
 
-    this.consumers.add(sub)
-    sub.onCancel = () => {
-      this.consumers.delete(sub)
-    }
+  /**
+   * Declare a queue and return a session-bound {@link AMQPQueue} handle.
+   * The returned queue's `subscribe` uses auto-recovery and `publish` waits for
+   * a broker confirm.
+   * @param name - queue name (use "" to let the broker generate a name)
+   * @param [params] - queue declaration parameters
+   * @param [args] - optional queue arguments (e.g. `x-message-ttl`)
+   */
+  async queue(name: string, params?: QueueParams, args?: Record<string, unknown>): Promise<AMQPQueue> {
+    const ch = await this.getOpsChannel()
+    const res = await ch.queueDeclare(name, params, args)
+    const existing = this.queues.get(res.name)
+    if (existing) return existing
+    const q = new AMQPQueue(this, res.name)
+    this.queues.set(res.name, q)
+    return q
+  }
 
-    return sub
+  /**
+   * Declare an exchange and return a session-bound {@link AMQPExchange} handle.
+   * @param name - exchange name
+   * @param type - exchange type: `"direct"`, `"fanout"`, `"topic"`, `"headers"`, or a custom type
+   * @param [params] - exchange declaration parameters
+   * @param [args] - optional exchange arguments
+   */
+  async exchange(
+    name: string,
+    type: ExchangeType,
+    params?: ExchangeParams,
+    args?: Record<string, unknown>,
+  ): Promise<AMQPExchange> {
+    const ch = await this.getOpsChannel()
+    await ch.exchangeDeclare(name, type, params, args)
+    return new AMQPExchange(this, name)
+  }
+
+  /**
+   * Declare a direct exchange and return a session-bound {@link AMQPExchange} handle.
+   * @param [name="amq.direct"] - exchange name
+   */
+  async directExchange(
+    name = "amq.direct",
+    params?: ExchangeParams,
+    args?: Record<string, unknown>,
+  ): Promise<AMQPExchange> {
+    if (name === "") return new AMQPExchange(this, "") // default exchange — no declare needed
+    return this.exchange(name, "direct", params, args)
+  }
+
+  /**
+   * Declare a fanout exchange and return a session-bound {@link AMQPExchange} handle.
+   * @param [name="amq.fanout"] - exchange name
+   */
+  fanoutExchange(name = "amq.fanout", params?: ExchangeParams, args?: Record<string, unknown>): Promise<AMQPExchange> {
+    return this.exchange(name, "fanout", params, args)
+  }
+
+  /**
+   * Declare a topic exchange and return a session-bound {@link AMQPExchange} handle.
+   * @param [name="amq.topic"] - exchange name
+   */
+  topicExchange(name = "amq.topic", params?: ExchangeParams, args?: Record<string, unknown>): Promise<AMQPExchange> {
+    return this.exchange(name, "topic", params, args)
+  }
+
+  /**
+   * Declare a headers exchange and return a session-bound {@link AMQPExchange} handle.
+   * @param [name="amq.headers"] - exchange name
+   */
+  headersExchange(
+    name = "amq.headers",
+    params?: ExchangeParams,
+    args?: Record<string, unknown>,
+  ): Promise<AMQPExchange> {
+    return this.exchange(name, "headers", params, args)
   }
 
   /**
@@ -159,11 +248,10 @@ export class AMQPSession {
   async stop(reason?: string): Promise<void> {
     this.stopped = true
     this.cancelWait()
-    const subs = [...this.consumers]
-    this.consumers.clear()
-    for (const sub of subs) {
-      sub.cancel().catch(() => {})
+    for (const queue of this.queues.values()) {
+      queue.cancelAll()
     }
+    this.queues.clear()
     delete this.client.ondisconnect
     if (!this.client.closed) {
       await this.client.close(reason)
@@ -204,7 +292,7 @@ export class AMQPSession {
 
       // Re-establish consumers on the fresh connection
       this.reconnectAttempts = 0
-      await this.recoverConsumers()
+      await this.recoverQueues()
       if (this.stopped || this.client.closed) continue // stop() called, or connection dropped during recovery
 
       this.onconnect?.()
@@ -228,29 +316,10 @@ export class AMQPSession {
     this.reconnectResolve = undefined
   }
 
-  private async bindConsumer(def: ConsumerDefinition) {
-    const ch = await this.client.channel()
-    if (def.options.prefetch !== undefined) {
-      await ch.basicQos(def.options.prefetch)
-    }
-    const q = def.options.queue
-      ? await ch.queue(def.queueName, def.options.queue, def.options.queueArgs || {})
-      : await ch.queue(def.queueName, { passive: true })
-    return def.callback ? await q.subscribe(def.consumeParams, def.callback) : await q.subscribe(def.consumeParams)
-  }
-
-  private async recoverConsumers(): Promise<void> {
+  private async recoverQueues(): Promise<void> {
     if (this.client.closed) return
-
-    for (const sub of this.consumers) {
-      try {
-        const consumer = await this.bindConsumer(sub.def)
-        sub.setConsumer(consumer)
-        this.client.logger?.debug(`Recovered consumer for queue: ${sub.def.queueName}`)
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err))
-        this.client.logger?.warn(`Failed to recover consumer for queue ${sub.def.queueName}:`, error.message)
-      }
+    for (const queue of this.queues.values()) {
+      await queue.recover()
     }
   }
 }

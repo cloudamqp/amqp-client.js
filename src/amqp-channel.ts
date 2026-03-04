@@ -1,7 +1,6 @@
 import { AMQPError } from "./amqp-error.js"
 import * as AMQPFrame from "./amqp-frame.js"
 import { AMQPView } from "./amqp-view.js"
-import { AMQPQueue } from "./amqp-queue.js"
 import { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPBaseClient } from "./amqp-base-client.js"
@@ -54,21 +53,6 @@ export class AMQPChannel {
     channelOpen.writeUint8(0) // reserved1
     channelOpen.finalize()
     return this.sendRpc(channelOpen)
-  }
-
-  /**
-   * Declare a queue and return an AMQPQueue instance.
-   */
-  queue(
-    name = "",
-    { passive = false, durable = name !== "", autoDelete = name === "", exclusive = name === "" }: QueueParams = {},
-    args = {},
-  ): Promise<AMQPQueue> {
-    return new Promise((resolve, reject) => {
-      this.queueDeclare(name, { passive, durable, autoDelete, exclusive }, args)
-        .then(({ name }) => resolve(new AMQPQueue(this, name)))
-        .catch(reject)
-    })
   }
 
   /**
