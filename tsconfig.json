@@ -32,6 +32,7 @@
     "allowUnusedLabels": false,                       /* Disable error reporting for unused labels. */
     "allowUnreachableCode": false,                    /* Disable error reporting for unreachable code. */
     "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true                              /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true,                             /* Skip type checking all .d.ts files. */
+    "stripInternal": true                             /* Strip @internal declarations from emitted .d.ts files. */
   }
 }

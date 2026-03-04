@@ -19,10 +19,10 @@ test("can batch send message", async () => {
   const amqp = new AMQPClient("amqps://localhost?insecure=1")
   const connection = await amqp.connect()
   const channel = await connection.channel()
-  const queue = await channel.queue("bug137")
+  await channel.queueDeclare("bug137")
   await channel.confirmSelect()
   const sendMsgs = messages.map((message) =>
-    queue.publish(JSON.stringify(message), {
+    channel.basicPublish("", "bug137", JSON.stringify(message), {
       contentType: "application/json",
       deliveryMode: 2,
     }),

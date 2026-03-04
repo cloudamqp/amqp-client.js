@@ -22,151 +22,108 @@ Start node with `--enable-source-maps` to get proper stacktraces as the library 
 
 ## Example usage
 
-Using AMQP in Node.js:
+This library provides two APIs:
 
-```javascript
-import { AMQPClient } from "@cloudamqp/amqp-client"
+- **High-level** (`AMQPSession`): automatic reconnection, consumer recovery — use `queue()` / `exchange()` handles for reconnect-safe operations
+- **Low-level** (`AMQPClient` / `AMQPWebSocketClient`): direct channel access with `queueDeclare`, `basicPublish`, `basicConsume`, etc.
 
-async function run() {
-  try {
-    const amqp = new AMQPClient("amqp://localhost")
-    const conn = await amqp.connect()
-    const ch = await conn.channel()
-    const q = await ch.queue()
-    const consumer = await q.subscribe({ noAck: true }, async (msg) => {
-      console.log(msg.bodyToString())
-      await consumer.cancel()
-    })
-    await q.publish("Hello World", { deliveryMode: 2 })
-    await consumer.wait() // will block until consumer is canceled or throw an error if server closed channel/connection
-    await conn.close()
-  } catch (e) {
-    console.error("ERROR", e)
-    e.connection.close()
-    setTimeout(run, 1000) // will try to reconnect in 1s
-  }
-}
+### High-level API (recommended)
 
-run()
-```
-
-### Using AsyncGenerator for consuming messages
-
-As an alternative to the callback-based approach, you can use an AsyncGenerator for a more modern, iteration-based API:
-
-```javascript
-import { AMQPClient } from "@cloudamqp/amqp-client"
-
-async function run() {
-  try {
-    const amqp = new AMQPClient("amqp://localhost")
-    const conn = await amqp.connect()
-    const ch = await conn.channel()
-    const q = await ch.queue()
-
-    await q.publish("Hello World", { deliveryMode: 2 })
-
-    // Subscribe without a callback and use consumer.messages for AsyncGenerator
-    const consumer = await q.subscribe({ noAck: false })
-    for await (const msg of consumer.messages) {
-      console.log(msg.bodyToString())
-      await msg.ack()
-      break // breaking automatically cancels the consumer
-    }
-
-    await conn.close()
-  } catch (e) {
-    console.error("ERROR", e)
-    e.connection.close()
-  }
-}
-
-run()
-```
-
-### Automatic Reconnection
-
-Use `AMQPSession.connect(url, options)` to get a session that manages reconnection and consumer recovery. The transport is chosen from the URL scheme (`amqp://` / `amqps://` → TCP socket; `ws://` / `wss://` → WebSocket):
+Use `AMQPSession.connect(url, options)` to get a session with automatic reconnection and consumer recovery. The transport is chosen from the URL scheme (`amqp://` / `amqps://` → TCP; `ws://` / `wss://` → WebSocket):
 
 ```javascript
 import { AMQPSession } from "@cloudamqp/amqp-client"
 
-async function run() {
-  // connect() picks the right transport and returns a ready session
-  const session = await AMQPSession.connect("amqp://localhost", {
-    reconnectInterval: 1000, // Initial delay before reconnecting (ms)
-    maxReconnectInterval: 30000, // Maximum delay between attempts (ms)
-    backoffMultiplier: 2, // Exponential backoff multiplier
-    maxRetries: 0, // 0 = infinite retries
-  })
+const session = await AMQPSession.connect("amqp://localhost")
 
-  // Set up event callbacks on the session
-  session.onconnect = () => console.log("Reconnected!")
-  session.onfailed = (err) => console.log("Failed to reconnect:", err?.message)
+// Declare a queue and publish a message (waits for broker confirmation)
+const q = await session.queue("my-queue")
+await q.publish("Hello World", { deliveryMode: 2 })
 
-  // Subscribe with a callback — returns an AMQPSubscription.
-  const sub = await session.subscribe(
-    "my-queue",
-    { noAck: false },
-    async (msg) => {
-      console.log("Received:", msg.bodyString())
-      await msg.ack()
-    },
-    {
-      prefetch: 10, // Set prefetch limit for this consumer
-      queue: { durable: true }, // Queue declaration parameters for recovery
-    },
-  )
+// Subscribe with a callback — consumer recovers automatically on reconnect
+const sub = await q.subscribe({ noAck: false }, async (msg) => {
+  console.log(msg.bodyString())
+  await msg.ack()
+})
 
-  // sub.consumerTag and sub.channel reflect the current consumer (updated on reconnect)
-  // To stop consuming this queue (also removes it from auto-recovery):
-  // await sub.cancel()
-
-  // Subscribe without a callback — returns an AMQPGeneratorSubscription (async-iterable).
-  // const sub = await session.subscribe("my-queue", { noAck: true })
-  // for await (const msg of sub) {
-  //   console.log("Received:", msg.bodyString())
-  // }
-  // await sub.cancel()
-
-  // When done, stop the session (closes connection, stops reconnection)
-  // await session.stop()
+// Or subscribe with an async iterator
+const iterSub = await q.subscribe({ noAck: false })
+for await (const msg of iterSub) {
+  console.log(msg.bodyString())
+  await msg.ack()
 }
 
-run()
+// Exchanges work the same way
+const x = await session.topicExchange("events")
+await x.publish("user signed up", { routingKey: "events.user.created" })
+
+// When done
+await session.stop()
 ```
 
-#### Two APIs for Different Use Cases
+#### Reconnection options
 
-This library provides two APIs that coexist:
+```javascript
+const session = await AMQPSession.connect("amqp://localhost", {
+  reconnectInterval: 1000, // initial delay before reconnecting (ms)
+  maxReconnectInterval: 30000, // maximum delay between attempts (ms)
+  backoffMultiplier: 2, // exponential backoff multiplier
+  maxRetries: 0, // 0 = infinite retries
+})
 
-1. **Low-level API**: `client.connect()` → `channel()` → `queue.subscribe()`
-   - Full control over channels and resources
-   - No automatic reconnection — you handle connection failures
-   - Use when you need fine-grained control
+session.onconnect = () => console.log("Reconnected!")
+session.onfailed = (err) => console.error("Gave up:", err?.message)
+```
 
-2. **High-level API**: `AMQPSession.connect()` → `session.subscribe()`
-   - Automatic reconnection and consumer recovery
-   - Consumer objects stay valid across reconnections
-   - Use for convenience when you don't need channel-level control
+#### Consumer recovery
 
-#### Key Features
+Subscriptions created via `queue.subscribe()` are automatically re-established after reconnection. Include `prefetch` in the subscribe params to set QoS on each connection:
 
-- **Automatic reconnection**: Reconnects automatically when the connection is lost
-- **Exponential backoff**: Configurable delays between reconnection attempts
-- **Consumer recovery**: Consumers registered via `session.subscribe()` are automatically re-established after reconnection
-- **Event callbacks**: Hooks for connection state changes (`onconnect`, `onfailed`)
-- **Prefetch control**: Set per-consumer prefetch limits
+```javascript
+const q = await session.queue("my-queue", { durable: true })
+const sub = await q.subscribe({ noAck: false, prefetch: 10 }, async (msg) => {
+  await msg.ack()
+})
 
-#### Reconnection Behavior
+// sub.consumerTag and sub.channel reflect the current consumer (updated on reconnect)
+// await sub.cancel()  // stops consuming and removes from auto-recovery
+```
 
-When a connection is lost:
+### Low-level API
 
-- The session reconnects automatically with exponential backoff
-- After a successful reconnect, consumers registered via `session.subscribe()` are re-established, then `onconnect` fires
-- Messages delivered but not acknowledged before disconnection are redelivered by the broker
-- `onfailed` fires and reconnection stops if `maxRetries` is exceeded
-- For disconnect detection, set `client.ondisconnect` directly
+For full control over channels and resources, use the transport clients directly:
+
+```javascript
+import { AMQPClient } from "@cloudamqp/amqp-client"
+
+const amqp = new AMQPClient("amqp://localhost")
+const conn = await amqp.connect()
+const ch = await conn.channel()
+
+// Declare a queue
+const q = await ch.queueDeclare("my-queue")
+
+// Publish
+await ch.basicPublish("", q.name, "Hello World", { deliveryMode: 2 })
+
+// Consume with a callback
+const consumer = await ch.basicConsume(q.name, { noAck: false }, async (msg) => {
+  console.log(msg.bodyToString())
+  await msg.ack()
+  await consumer.cancel()
+})
+await consumer.wait()
+
+// Or consume with an async iterator
+const consumer = await ch.basicConsume(q.name, { noAck: false })
+for await (const msg of consumer.messages) {
+  console.log(msg.bodyToString())
+  await msg.ack()
+  break // breaking automatically cancels the consumer
+}
+
+await conn.close()
+```
 
 ## WebSockets
 
@@ -174,7 +131,21 @@ This library can be used in the browser to access an AMQP server over WebSockets
 
 For web browsers a [compiled](https://www.typescriptlang.org/) and [rolled up](https://www.rollupjs.org/) version is available at <https://github.com/cloudamqp/amqp-client.js/releases>.
 
-Using AMQP over WebSockets in a browser:
+`AMQPSession` works with WebSocket URLs out of the box — pass a `ws://` or `wss://` URL and transport is chosen automatically:
+
+```javascript
+import { AMQPSession } from "@cloudamqp/amqp-client"
+
+const session = await AMQPSession.connect("wss://my.cloudamqp.com/ws/", {
+  vhost: "my-vhost",
+})
+const q = await session.queue("my-queue")
+const sub = await q.subscribe({ noAck: true }, (msg) => {
+  console.log(msg.bodyString())
+})
+```
+
+For lower-level control without reconnection, use `AMQPWebSocketClient` directly:
 
 ```html
 <!DOCTYPE html>
@@ -195,9 +166,9 @@ Using AMQP over WebSockets in a browser:
           const conn = await amqp.connect()
           const ch = await conn.channel()
           attachPublish(ch)
-          const q = await ch.queue("")
-          await q.bind("amq.fanout")
-          const consumer = await q.subscribe({ noAck: false }, (msg) => {
+          const q = await ch.queueDeclare("")
+          await ch.queueBind(q.name, "amq.fanout", "")
+          const consumer = await ch.basicConsume(q.name, { noAck: false }, (msg) => {
             console.log(msg)
             textarea.value += msg.bodyToString() + "\n"
             msg.ack()

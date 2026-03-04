@@ -1,10 +1,19 @@
 import { expect, test, vi, beforeEach } from "vitest"
 import { AMQPClient } from "../src/amqp-socket-client.js"
 import { AMQPSession } from "../src/amqp-session.js"
+import { AMQPQueue } from "../src/amqp-queue.js"
+import { AMQPExchange } from "../src/amqp-exchange.js"
+import { AMQPMessage } from "../src/amqp-message.js"
+import type { AMQPBaseClient } from "../src/amqp-base-client.js"
 
 beforeEach(() => {
   expect.hasAssertions()
 })
+
+/** Access the private client for test-only operations (socket destruction, spying). */
+function testClient(session: AMQPSession): AMQPBaseClient {
+  return (session as unknown as { client: AMQPBaseClient }).client
+}
 
 test("AMQPSession.connect() returns a session", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1", { reconnectInterval: 500 })
@@ -16,17 +25,14 @@ test("AMQPSession.connect() returns a session", async () => {
 test("session.subscribe delivers messages via callback", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1")
 
-  const queueName = "test-queue-" + Math.random()
-  const ch = await session.client.channel()
-  await ch.queue(queueName, { durable: false, autoDelete: true })
+  const q = await session.queue("test-queue-" + Math.random(), { durable: false, autoDelete: true })
 
   let messageReceived = false
-  const sub = await session.subscribe(queueName, { noAck: true }, async () => {
+  const sub = await q.subscribe({ noAck: true }, async () => {
     messageReceived = true
   })
 
-  const q2 = await ch.queue(queueName, { passive: true })
-  await q2.publish("test")
+  await q.publish("test", { confirm: false })
   await new Promise((resolve) => setTimeout(resolve, 100))
 
   expect(messageReceived).toBe(true)
@@ -34,18 +40,17 @@ test("session.subscribe delivers messages via callback", async () => {
   await session.stop()
 })
 
-test("session.subscribe accepts an AMQPQueue object", async () => {
+test("session.subscribe accepts a broker-named queue", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1")
 
-  const ch = await session.client.channel()
-  const q = await ch.queue("", { durable: false, autoDelete: true })
+  const q = await session.queue("", { durable: false, autoDelete: true })
 
   let messageReceived = false
-  const sub = await session.subscribe(q, { noAck: true }, async () => {
+  const sub = await q.subscribe({ noAck: true }, async () => {
     messageReceived = true
   })
 
-  await q.publish("test")
+  await q.publish("test", { confirm: false })
   await new Promise((resolve) => setTimeout(resolve, 100))
 
   expect(messageReceived).toBe(true)
@@ -56,9 +61,8 @@ test("session.subscribe accepts an AMQPQueue object", async () => {
 test("subscription.cancel() removes it from session recovery", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1")
 
-  const ch = await session.client.channel()
-  const q = await ch.queue("")
-  const sub = await session.subscribe(q.name, { noAck: true }, () => {})
+  const q = await session.queue("test-cancel-" + Math.random(), { durable: false, autoDelete: true })
+  const sub = await q.subscribe({ noAck: true }, () => {})
 
   await expect(sub.cancel()).resolves.toBeUndefined()
 
@@ -68,27 +72,19 @@ test("subscription.cancel() removes it from session recovery", async () => {
 test("session.subscribe supports prefetch option", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1")
 
-  const queueName = "test-prefetch-queue-" + Math.random()
-  const ch = await session.client.channel()
-  await ch.queue(queueName, { durable: false, autoDelete: true })
+  const q = await session.queue("test-prefetch-queue-" + Math.random(), { durable: false, autoDelete: true })
 
   let messagesReceived = 0
-  const sub = await session.subscribe(
-    queueName,
-    { noAck: false },
-    async (msg) => {
-      messagesReceived++
-      if (messagesReceived === 2) {
-        await msg.ack()
-      }
-    },
-    { prefetch: 1 },
-  )
+  const sub = await q.subscribe({ noAck: false, prefetch: 1 }, async (msg) => {
+    messagesReceived++
+    if (messagesReceived === 2) {
+      await msg.ack()
+    }
+  })
 
-  const q2 = await ch.queue(queueName, { passive: true })
-  await q2.publish("message 1")
-  await q2.publish("message 2")
-  await q2.publish("message 3")
+  await q.publish("message 1", { confirm: false })
+  await q.publish("message 2", { confirm: false })
+  await q.publish("message 3", { confirm: false })
 
   await new Promise((resolve) => setTimeout(resolve, 200))
 
@@ -102,15 +98,12 @@ test("session.subscribe supports prefetch option", async () => {
 test("session.subscribe yields messages via async generator", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1")
 
-  const queueName = "test-generator-" + Math.random()
-  const ch = await session.client.channel()
-  await ch.queue(queueName, { durable: false, autoDelete: true })
+  const q = await session.queue("test-generator-" + Math.random(), { durable: false, autoDelete: true })
 
-  const sub = await session.subscribe(queueName, { noAck: true })
+  const sub = await q.subscribe({ noAck: true })
 
-  const q2 = await ch.queue(queueName, { passive: true })
-  await q2.publish("msg1")
-  await q2.publish("msg2")
+  await q.publish("msg1", { confirm: false })
+  await q.publish("msg2", { confirm: false })
 
   const received: string[] = []
   for await (const msg of sub) {
@@ -132,9 +125,10 @@ test("session.onfailed fires when maxRetries exhausted", async () => {
   const onfailed = vi.fn()
   session.onfailed = onfailed
 
-  const connectSpy = vi.spyOn(session.client, "connect").mockRejectedValue(new Error("forced failure"))
+  const client = testClient(session)
+  const connectSpy = vi.spyOn(client, "connect").mockRejectedValue(new Error("forced failure"))
 
-  ;(session.client as AMQPClient).socket?.destroy()
+  ;(client as AMQPClient).socket?.destroy()
 
   // Wait long enough for 2 retries + backoff (50ms + 100ms) with buffer
   await new Promise((resolve) => setTimeout(resolve, 500))
@@ -163,7 +157,7 @@ test("session.onconnect fires after successful reconnection", async () => {
     }
   })
 
-  ;(session.client as AMQPClient).socket?.destroy()
+  ;(testClient(session) as AMQPClient).socket?.destroy()
 
   await reconnected
   expect(reconnectCount).toBe(1)
@@ -177,27 +171,15 @@ test("subscription recovers and receives messages after reconnection", async () 
     maxRetries: 5,
   })
 
-  const queueName = "test-recovery-" + Math.random()
-
-  // Pre-declare the queue so it survives reconnection (non-exclusive, autoDelete: false)
-  const setupCh = await session.client.channel()
-  await setupCh.queue(queueName, { durable: false, autoDelete: false })
-  await setupCh.close()
+  const q = await session.queue("test-recovery-" + Math.random(), { durable: false, autoDelete: false })
 
   const received: string[] = []
-  const sub = await session.subscribe(
-    queueName,
-    { noAck: true },
-    (msg) => {
-      received.push(msg.bodyString() || "")
-    },
-    { queue: { durable: false, autoDelete: false } },
-  )
+  const sub = await q.subscribe({ noAck: true }, (msg) => {
+    received.push(msg.bodyString() || "")
+  })
 
   // Publish a message before disconnect
-  const ch1 = await session.client.channel()
-  const q1 = await ch1.queue(queueName, { passive: true })
-  await q1.publish("before-disconnect")
+  await q.publish("before-disconnect", { confirm: false })
   await new Promise((resolve) => setTimeout(resolve, 100))
 
   const reconnected = new Promise<void>((resolve, reject) => {
@@ -208,14 +190,12 @@ test("subscription recovers and receives messages after reconnection", async () 
     }
   })
 
-  ;(session.client as AMQPClient).socket?.destroy()
+  ;(testClient(session) as AMQPClient).socket?.destroy()
 
   await reconnected
 
   // Publish a message after reconnection
-  const ch2 = await session.client.channel()
-  const q2 = await ch2.queue(queueName, { passive: true })
-  await q2.publish("after-reconnect")
+  await q.publish("after-reconnect", { confirm: false })
   await new Promise((resolve) => setTimeout(resolve, 200))
 
   expect(received).toContain("before-disconnect")
@@ -225,10 +205,7 @@ test("subscription recovers and receives messages after reconnection", async () 
   expect(sub.channel.closed).toBe(false)
 
   await sub.cancel()
-
-  const cleanCh = await session.client.channel()
-  await cleanCh.queueDelete(queueName)
-
+  await q.delete()
   await session.stop()
 })
 
@@ -238,9 +215,10 @@ test("session.stop() during reconnection stops the loop", async () => {
     maxRetries: 10,
   })
 
-  const connectSpy = vi.spyOn(session.client, "connect").mockRejectedValue(new Error("forced failure"))
+  const client = testClient(session)
+  const connectSpy = vi.spyOn(client, "connect").mockRejectedValue(new Error("forced failure"))
 
-  ;(session.client as AMQPClient).socket?.destroy()
+  ;(client as AMQPClient).socket?.destroy()
 
   // Stop before the first reconnection attempt fires
   await new Promise((resolve) => setTimeout(resolve, 50))
@@ -256,8 +234,248 @@ test("session.stop() during reconnection stops the loop", async () => {
 test("session.stop() when already disconnected does not throw", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1", { maxRetries: 1 })
 
-  ;(session.client as AMQPClient).socket?.destroy()
+  ;(testClient(session) as AMQPClient).socket?.destroy()
   await new Promise((resolve) => setTimeout(resolve, 50))
 
   await expect(session.stop()).resolves.toBeUndefined()
+})
+
+test("session.queue() declares a queue and returns AMQPQueue", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+
+  const q = await session.queue("test-sq-" + Math.random(), { durable: false, autoDelete: true })
+  expect(q).toBeInstanceOf(AMQPQueue)
+  expect(q.name).toMatch(/^test-sq-/)
+
+  await session.stop()
+})
+
+test("AMQPQueue (session-backed).publish() and get() round-trip", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+
+  const q = await session.queue("test-sq-rtt-" + Math.random(), { durable: false, autoDelete: true })
+  await q.publish("round-trip")
+
+  const msg = await q.get({ noAck: true })
+  expect(msg?.bodyString()).toBe("round-trip")
+
+  await session.stop()
+})
+
+test("AMQPQueue (session-backed).subscribe() recovers after reconnect", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    reconnectInterval: 50,
+    maxRetries: 5,
+  })
+  const qName = "test-sq-recovery-" + Math.random()
+
+  const q = await session.queue(qName, { durable: false, autoDelete: false })
+
+  const received: string[] = []
+  const sub = await q.subscribe({ noAck: true }, (msg) => {
+    received.push(msg.bodyString() ?? "")
+  })
+
+  await q.publish("before-disconnect")
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const reconnected = new Promise<void>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("reconnect timed out")), 10_000)
+    session.onconnect = () => {
+      clearTimeout(t)
+      resolve()
+    }
+  })
+  ;(testClient(session) as AMQPClient).socket?.destroy()
+  await reconnected
+
+  await q.publish("after-reconnect")
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  expect(received).toContain("before-disconnect")
+  expect(received).toContain("after-reconnect")
+
+  await sub.cancel()
+  await q.delete()
+  await session.stop()
+})
+
+test("session.exchange() declares an exchange and returns AMQPExchange", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const xName = "test-exchange-" + Math.random()
+
+  const x = await session.exchange(xName, "direct", { durable: false, autoDelete: true })
+  expect(x).toBeInstanceOf(AMQPExchange)
+  expect(x.name).toBe(xName)
+
+  await x.delete()
+  await session.stop()
+})
+
+test("session.fanoutExchange() publishes to all bound queues", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const xName = "test-fanout-" + Math.random()
+  const qName = "test-fanout-q-" + Math.random()
+
+  const x = await session.fanoutExchange(xName, { durable: false, autoDelete: true })
+  const q = await session.queue(qName, { durable: false, autoDelete: true })
+  await q.bind(xName, "")
+
+  await x.publish("fanout msg")
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const msg = await q.get({ noAck: true })
+  expect(msg?.bodyString()).toBe("fanout msg")
+
+  await session.stop()
+})
+
+test("session.topicExchange() routes by pattern", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const xName = "test-topic-" + Math.random()
+  const qName = "test-topic-q-" + Math.random()
+
+  const x = await session.topicExchange(xName, { durable: false, autoDelete: true })
+  const q = await session.queue(qName, { durable: false, autoDelete: true })
+  await q.bind(xName, "events.#")
+
+  await x.publish("topic msg", { routingKey: "events.user.created" })
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const msg = await q.get({ noAck: true })
+  expect(msg?.bodyString()).toBe("topic msg")
+
+  await session.stop()
+})
+
+test("session.directExchange('') returns the default exchange handle", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const qName = "test-default-x-" + Math.random()
+
+  const x = await session.directExchange("")
+  expect(x.name).toBe("")
+
+  const q = await session.queue(qName, { durable: false, autoDelete: true })
+
+  await x.publish("via default exchange", { routingKey: qName })
+  await new Promise((resolve) => setTimeout(resolve, 100))
+
+  const msg = await q.get({ noAck: true })
+  expect(msg?.bodyString()).toBe("via default exchange")
+
+  await session.stop()
+})
+
+test("AMQPExchange.bind() and unbind() work", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const srcName = "test-xe-src-" + Math.random()
+  const dstName = "test-xe-dst-" + Math.random()
+
+  const src = await session.fanoutExchange(srcName, { durable: false, autoDelete: true })
+  const dst = await session.fanoutExchange(dstName, { durable: false, autoDelete: true })
+
+  await expect(dst.bind(src)).resolves.toBeInstanceOf(AMQPExchange)
+  await expect(dst.unbind(src)).resolves.toBeInstanceOf(AMQPExchange)
+
+  await session.stop()
+})
+
+test("AMQPExchange.delete() removes the exchange", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const xName = "test-del-x-" + Math.random()
+
+  const x = await session.exchange(xName, "direct", { durable: false, autoDelete: false })
+  await expect(x.delete()).resolves.toBeUndefined()
+
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() delivers messages via callback", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-q-sub-" + Math.random(), { durable: false, autoDelete: true })
+
+  await q.publish("hello queue")
+  const received = await new Promise<string>((resolve) => {
+    q.subscribe({ noAck: true }, (msg) => resolve(msg.bodyString()!))
+  })
+
+  expect(received).toBe("hello queue")
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() nack", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-q-nack-" + Math.random(), { durable: false, autoDelete: true })
+
+  await q.publish("nack me")
+  const msg = await new Promise<AMQPMessage>((resolve) => {
+    q.subscribe({ noAck: false }, (m) => {
+      m.nack()
+      resolve(m)
+    })
+  })
+
+  expect(msg.bodyString()).toBe("nack me")
+  await session.stop()
+})
+
+test("AMQPQueue.subscribe() async generator", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-q-gen-" + Math.random(), { durable: false, autoDelete: true })
+
+  await q.publish("msg1")
+  await q.publish("msg2")
+
+  const received: string[] = []
+  const sub = await q.subscribe({ noAck: true })
+  for await (const msg of sub) {
+    received.push(msg.bodyString()!)
+    if (received.length >= 2) break
+  }
+
+  expect(received).toEqual(["msg1", "msg2"])
+  await session.stop()
+})
+
+test("AMQPQueue.publish({ confirm: false }) sends without waiting for confirm", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-q-paf-" + Math.random(), { durable: false, autoDelete: true })
+
+  await q.publish("fire and forget", { confirm: false })
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  const msg = await q.get({ noAck: true })
+  expect(msg?.bodyString()).toBe("fire and forget")
+  await session.stop()
+})
+
+test("AMQPQueue.bind() and unbind()", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-q-bind-" + Math.random(), { durable: false, autoDelete: true })
+
+  await expect(q.bind("amq.topic", "test.key")).resolves.toBeInstanceOf(AMQPQueue)
+  await expect(q.unbind("amq.topic", "test.key")).resolves.toBeInstanceOf(AMQPQueue)
+
+  await session.stop()
+})
+
+test("AMQPQueue.purge() empties the queue", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-q-purge-" + Math.random(), { durable: false, autoDelete: true })
+
+  await q.publish("msg1", { confirm: false })
+  await q.publish("msg2", { confirm: false })
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  const result = await q.purge()
+  expect(result.messageCount).toBe(2)
+  await session.stop()
+})
+
+test("AMQPQueue.delete() removes the queue", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1")
+  const q = await session.queue("test-q-del-" + Math.random(), { durable: false, autoDelete: false })
+
+  await expect(q.delete()).resolves.toBeDefined()
+  await session.stop()
 })

@@ -4,7 +4,6 @@ import { AMQPError } from "./amqp-error.js"
 import { AMQPChannel } from "./amqp-channel.js"
 import { AMQPConsumer } from "./amqp-consumer.js"
 import { AMQPMessage } from "./amqp-message.js"
-import { AMQPQueue } from "./amqp-queue.js"
 import type { Logger } from "./types.js"
 
 interface AMQPWebSocketInit {
@@ -201,6 +200,6 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   }
 }
 
-export { AMQPBaseClient, AMQPChannel, AMQPConsumer, AMQPError, AMQPMessage, AMQPQueue, AMQPView, VERSION }
+export { AMQPBaseClient, AMQPChannel, AMQPConsumer, AMQPError, AMQPMessage, AMQPView, VERSION }
 export { AMQPSession } from "./amqp-session.js"
 export type { AMQPSessionOptions } from "./amqp-session.js"
