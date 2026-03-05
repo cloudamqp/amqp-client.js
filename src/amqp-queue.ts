@@ -85,10 +85,11 @@ export class AMQPQueue {
   ): Promise<AMQPSubscription | AMQPGeneratorSubscription> {
     if (typeof params === "function") [callback, params] = [params, undefined]
     const { prefetch, requeueOnNack = true, ...consumeParams } = params ?? {}
-    // When auto-acking (callback or generator), force noAck: false so the server
-    // tracks delivery tags. basicConsume defaults noAck to true, so we must be explicit.
-    if (callback !== undefined && !consumeParams.noAck) {
-      consumeParams.noAck = false
+    // Force noAck: false when auto-acking so the server tracks delivery tags.
+    // basicConsume defaults noAck to true, so we must be explicit.
+    const autoAck = !consumeParams.noAck
+    if (autoAck) consumeParams.noAck = false
+    if (autoAck && callback !== undefined) {
       const userCallback = callback
       callback = async (msg: AMQPMessage) => {
         try {
@@ -98,10 +99,6 @@ export class AMQPQueue {
           await msg.nack(requeueOnNack)
         }
       }
-    }
-    // Generator form: also force noAck: false for auto-ack unless caller opted out.
-    if (callback === undefined && consumeParams.noAck !== true) {
-      consumeParams.noAck = false
     }
     const def: ConsumerDefinition = {
       queueName: this.name,
