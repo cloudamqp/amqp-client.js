@@ -1019,4 +1019,3 @@ test("consumer.cancel() on closed channel resolves without error", async () => {
 
   await amqp.close()
 })
-

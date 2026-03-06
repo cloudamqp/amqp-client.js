@@ -7,7 +7,7 @@ import type { AMQPSubscription } from "./amqp-subscription.js"
  * Callback invoked for each incoming RPC request.
  * Return the response body to send back to the caller.
  */
-export type RPCHandler = (body: Body, msg: AMQPMessage) => Body | Promise<Body>
+export type RPCHandler = (msg: AMQPMessage) => Body | Promise<Body>
 
 /**
  * An RPC server that consumes messages from a queue and replies to each caller.
@@ -18,8 +18,8 @@ export type RPCHandler = (body: Body, msg: AMQPMessage) => Body | Promise<Body>
  * @example
  * ```ts
  * const session = await AMQPSession.connect("amqp://localhost")
- * const server = await session.rpcServer("my_rpc_queue", async (body, msg) => {
- *   return `reply:${body}`
+ * const server = await session.rpcServer("my_rpc_queue", async (msg) => {
+ *   return `processed:${msg.bodyString()}`
  * })
  * // later…
  * await session.stop()
@@ -44,7 +44,7 @@ export class AMQPRPCServer {
         await msg.nack(false)
         return
       }
-      const result = await handler(msg.body, msg)
+      const result = await handler(msg)
       await msg.channel.basicPublish("", replyTo, result, {
         ...(correlationId !== undefined && { correlationId }),
       })

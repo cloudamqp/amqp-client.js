@@ -1,8 +1,5 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
-import type { AMQPMessage } from "./amqp-message.js"
-import type { AMQPProperties } from "./amqp-properties.js"
-import type { Body } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
@@ -280,29 +277,6 @@ export class AMQPSession {
     const server = new AMQPRPCServer(this)
     await server.start(queue, handler, prefetch)
     return server
-  }
-
-  /**
-   * Perform a one-shot RPC call: opens a temporary channel, publishes a message,
-   * waits for the reply, and closes the channel.
-   *
-   * For multiple calls, prefer {@link rpcClient} to avoid the overhead of
-   * opening/closing a channel per call.
-   *
-   * @param queue - The routing key / queue name of the RPC server
-   * @param body - The request body
-   * @param options - Optional AMQP properties and timeout
-   * @param options.timeout - Timeout in milliseconds
-   * @returns The reply {@link AMQPMessage}
-   */
-  async rpcCall(queue: string, body: Body, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage> {
-    const rpc = new AMQPRPCClient(this)
-    await rpc.start()
-    try {
-      return await rpc.call(queue, body, options)
-    } finally {
-      await rpc.close()
-    }
   }
 
   /**

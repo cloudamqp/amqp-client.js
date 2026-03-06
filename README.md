@@ -100,22 +100,20 @@ import { AMQPSession } from "@cloudamqp/amqp-client"
 const session = await AMQPSession.connect("amqp://localhost")
 
 // Start an RPC server that listens on a queue
-const server = await session.rpcServer("my_rpc_queue", async (_body, msg) => {
-  return `reply:${msg.bodyString()}`
+const server = await session.rpcServer("my_rpc_queue", async (msg) => {
+  return `processed:${msg.bodyString()}`
 })
 
-// Create a reusable RPC client (best for multiple calls)
+// Create a reusable RPC client
 const rpc = await session.rpcClient()
 const reply = await rpc.call("my_rpc_queue", "hello", { timeout: 5000 })
-console.log(reply.bodyToString()) // "reply:hello"
-// Or use rpcCall() for one-shot requests (creates and disposes a client per call)
-const reply2 = await session.rpcCall("my_rpc_queue", "ping", { timeout: 5000 })
-console.log(reply2.bodyToString())
+console.log(reply.bodyToString()) // "processed:hello"
 
+await rpc.close()
 await session.stop() // closes all RPC clients, servers, and consumers
 ```
 
-RPC servers and reusable clients created via `session.rpcClient()` are automatically recovered after a reconnection. One-shot `rpcCall()` creates a temporary client that is not recovered on reconnect.
+RPC servers and reusable clients created via `session.rpcClient()` are automatically recovered after a reconnection.
 
 ### Low-level API
 

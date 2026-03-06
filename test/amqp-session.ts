@@ -617,7 +617,7 @@ test("AMQPQueue.subscribe() does not double-ack if callback already acked", () =
 
 test("session.rpcClient() and session.rpcServer() round-trip", () =>
   withSession(async (session) => {
-    await session.rpcServer("rpc-test-queue", (_body, msg) => {
+    await session.rpcServer("rpc-test-queue", (msg) => {
       return `reply:${msg.bodyString()}`
     })
 
@@ -630,7 +630,7 @@ test("session.rpcClient() and session.rpcServer() round-trip", () =>
 
 test("session.rpcClient() can do multiple calls", () =>
   withSession(async (session) => {
-    await session.rpcServer("rpc-multi-queue", (_body, msg) => {
+    await session.rpcServer("rpc-multi-queue", (msg) => {
       return `re:${msg.bodyString()}`
     })
 
@@ -643,18 +643,6 @@ test("session.rpcClient() can do multiple calls", () =>
     expect(r2.bodyString()).toEqual("re:b")
 
     await session.queue("rpc-multi-queue").then((q) => q.delete())
-  }))
-
-test("session.rpcCall() one-shot round-trip", () =>
-  withSession(async (session) => {
-    await session.rpcServer("rpc-oneshot-queue", (_body, msg) => {
-      return `got:${msg.bodyString()}`
-    })
-
-    const reply = await session.rpcCall("rpc-oneshot-queue", "ping")
-    expect(reply.bodyString()).toEqual("got:ping")
-
-    await session.queue("rpc-oneshot-queue").then((q) => q.delete())
   }))
 
 test("session.rpcClient() rejects on timeout", () =>
