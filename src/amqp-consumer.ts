@@ -51,13 +51,13 @@ export class AMQPConsumer {
    */
   cancel() {
     if (this.channel.closed) return Promise.resolve(this.channel)
-    if (!this._cancelPromise) {
-      this._cancelPromise = this.channel.basicCancel(this.tag)
+    if (!this.cancelPromise) {
+      this.cancelPromise = this.channel.basicCancel(this.tag)
     }
-    return this._cancelPromise
+    return this.cancelPromise
   }
 
-  private _cancelPromise?: Promise<AMQPChannel>
+  private cancelPromise?: Promise<AMQPChannel>
 
   /**
    * @ignore
@@ -78,7 +78,7 @@ export class AMQPConsumer {
 export class AMQPGeneratorConsumer extends AMQPConsumer {
   private messageQueue: AMQPMessage[] = []
   private messageResolver: ((msg: AMQPMessage) => void) | null = null
-  private _generator?: AsyncGenerator<AMQPMessage, void, undefined>
+  private generator?: AsyncGenerator<AMQPMessage, void, undefined>
 
   constructor(channel: AMQPChannel, tag: string) {
     super(channel, tag, (msg: AMQPMessage) => {
@@ -97,12 +97,12 @@ export class AMQPGeneratorConsumer extends AMQPConsumer {
    * @return An AsyncGenerator that yields messages
    */
   get messages(): AsyncGenerator<AMQPMessage, void, undefined> {
-    if (this._generator) {
-      return this._generator
+    if (this.generator) {
+      return this.generator
     }
 
-    this._generator = this.generateMessages()
-    return this._generator
+    this.generator = this.generateMessages()
+    return this.generator
   }
 
   private async *generateMessages(): AsyncGenerator<AMQPMessage, void, undefined> {
