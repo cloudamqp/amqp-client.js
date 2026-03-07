@@ -1,9 +1,15 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
+import type { AMQPMessage } from "./amqp-message.js"
+import type { AMQPProperties } from "./amqp-properties.js"
+import type { Body } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
 import { AMQPExchange } from "./amqp-exchange.js"
+import { AMQPRPCClient } from "./amqp-rpc-client.js"
+import { AMQPRPCServer } from "./amqp-rpc-server.js"
+import type { RPCHandler } from "./amqp-rpc-server.js"
 
 /**
  * Options for {@link AMQPSession.connect}.
@@ -59,6 +65,7 @@ export class AMQPSession {
     maxRetries: number
   }
   private readonly queues = new Map<string, AMQPQueue>()
+  private readonly rpcClients = new Set<AMQPRPCClient>()
   private reconnectAttempts = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined
   private reconnectResolve: (() => void) | undefined
@@ -242,6 +249,64 @@ export class AMQPSession {
   }
 
   /**
+   * Perform an RPC call: publish a message and wait for the response.
+   * Creates a temporary client per call — simple and sufficient for most use cases.
+   *
+   * For high-throughput scenarios where the per-call channel overhead matters,
+   * use {@link rpcClient} to create a reusable client instead.
+   *
+   * @param queue - The routing key / queue name of the RPC server
+   * @param body - The request body
+   * @param options - Optional AMQP properties and timeout
+   * @param options.timeout - Timeout in milliseconds
+   * @returns The reply {@link AMQPMessage}
+   */
+  async rpcCall(queue: string, body: Body, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage> {
+    const rpc = new AMQPRPCClient(this)
+    await rpc.start()
+    try {
+      return await rpc.call(queue, body, options)
+    } finally {
+      await rpc.close()
+    }
+  }
+
+  /**
+   * Create and start a reusable RPC client that keeps its channel open
+   * across multiple calls. Prefer {@link rpcCall} for simplicity; use this
+   * when you need to avoid the per-call channel overhead.
+   *
+   * @returns A started {@link AMQPRPCClient} ready for {@link AMQPRPCClient.call} invocations.
+   */
+  async rpcClient(): Promise<AMQPRPCClient> {
+    const rpc = new AMQPRPCClient(this)
+    await rpc.start()
+    this.rpcClients.add(rpc)
+    return rpc
+  }
+
+  /** @internal Remove an RPC client from session recovery tracking. */
+  untrackRPCClient(rpc: AMQPRPCClient): void {
+    this.rpcClients.delete(rpc)
+  }
+
+  /**
+   * Create and start an RPC server that consumes from the given queue.
+   * Each incoming message is passed to `handler`; the returned value is
+   * published back to the caller's `replyTo` address.
+   *
+   * @param queue - Queue name to consume from
+   * @param handler - Callback that receives the message body and full message, returns the response body
+   * @param prefetch - Channel prefetch count (default: 1)
+   * @returns A started {@link AMQPRPCServer}
+   */
+  async rpcServer(queue: string, handler: RPCHandler, prefetch?: number): Promise<AMQPRPCServer> {
+    const server = new AMQPRPCServer(this)
+    await server.start(queue, handler, prefetch)
+    return server
+  }
+
+  /**
    * Stop the session: cancel reconnection, clear consumer tracking,
    * and close the underlying connection.
    */
@@ -252,6 +317,10 @@ export class AMQPSession {
       queue.cancelAll()
     }
     this.queues.clear()
+    for (const rpc of this.rpcClients) {
+      rpc.close().catch(() => {})
+    }
+    this.rpcClients.clear()
     delete this.client.ondisconnect
     if (!this.client.closed) {
       await this.client.close(reason)
@@ -320,6 +389,15 @@ export class AMQPSession {
     if (this.client.closed) return
     for (const queue of this.queues.values()) {
       await queue.recover()
+    }
+    for (const rpc of this.rpcClients) {
+      try {
+        await rpc.recover()
+        this.client.logger?.debug("Recovered RPC client")
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        this.client.logger?.warn("Failed to recover RPC client:", error.message)
+      }
     }
   }
 }

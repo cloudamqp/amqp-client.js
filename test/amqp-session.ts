@@ -614,3 +614,71 @@ test("AMQPQueue.subscribe() does not double-ack if callback already acked", () =
     basicAckSpy.mockRestore()
     await sub.cancel()
   }))
+
+test("session.rpcClient() and session.rpcServer() round-trip", () =>
+  withSession(async (session) => {
+    await session.rpcServer("rpc-test-queue", (msg) => {
+      return `reply:${msg.bodyString()}`
+    })
+
+    const rpc = await session.rpcClient()
+    const reply = await rpc.call("rpc-test-queue", "hello")
+    expect(reply.bodyString()).toEqual("reply:hello")
+
+    await session.queue("rpc-test-queue").then((q) => q.delete())
+  }))
+
+test("session.rpcClient() can do multiple calls", () =>
+  withSession(async (session) => {
+    await session.rpcServer("rpc-multi-queue", (msg) => {
+      return `re:${msg.bodyString()}`
+    })
+
+    const rpc = await session.rpcClient()
+
+    const r1 = await rpc.call("rpc-multi-queue", "a")
+    expect(r1.bodyString()).toEqual("re:a")
+
+    const r2 = await rpc.call("rpc-multi-queue", "b")
+    expect(r2.bodyString()).toEqual("re:b")
+
+    await session.queue("rpc-multi-queue").then((q) => q.delete())
+  }))
+
+test("session.rpcCall() one-shot round-trip", () =>
+  withSession(async (session) => {
+    await session.rpcServer("rpc-oneshot-queue", (msg) => {
+      return `got:${msg.bodyString()}`
+    })
+
+    const reply = await session.rpcCall("rpc-oneshot-queue", "ping")
+    expect(reply.bodyString()).toEqual("got:ping")
+
+    await session.queue("rpc-oneshot-queue").then((q) => q.delete())
+  }))
+
+test("session.rpcClient() rejects on timeout", () =>
+  withSession(async (session) => {
+    // Declare queue so the message routes somewhere, but no consumer to reply
+    await session.queue("rpc-timeout-queue")
+
+    const rpc = await session.rpcClient()
+
+    await expect(rpc.call("rpc-timeout-queue", "hello", { timeout: 100 })).rejects.toThrow(/No response received/)
+
+    await session.queue("rpc-timeout-queue").then((q) => q.delete())
+  }))
+
+test("session.rpcClient() close rejects pending calls", () =>
+  withSession(async (session) => {
+    await session.queue("rpc-close-queue")
+
+    const rpc = await session.rpcClient()
+
+    const pending = rpc.call("rpc-close-queue", "hello")
+    const expectRejection = expect(pending).rejects.toThrow(/RPC client closed/)
+    await rpc.close()
+
+    await expectRejection
+    await session.queue("rpc-close-queue").then((q) => q.delete())
+  }))

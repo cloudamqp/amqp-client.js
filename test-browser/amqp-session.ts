@@ -167,3 +167,32 @@ test("session.exchange() and AMQPExchange.publish() route messages", async () =>
 
   await session.stop()
 })
+
+test("session.rpcClient() and session.rpcServer() round-trip", async () => {
+  const session = await AMQPSession.connect(WS_URL)
+  const qName = "test-ws-rpc-" + Math.random()
+
+  await session.rpcServer(qName, (msg) => {
+    return `reply:${msg.bodyString()}`
+  })
+
+  const rpc = await session.rpcClient()
+  const reply = await rpc.call(qName, "hello")
+  expect(reply.bodyString()).toEqual("reply:hello")
+
+  await session.stop()
+})
+
+test("session.rpcCall() one-shot round-trip", async () => {
+  const session = await AMQPSession.connect(WS_URL)
+  const qName = "test-ws-rpc-oneshot-" + Math.random()
+
+  await session.rpcServer(qName, (msg) => {
+    return `got:${msg.bodyString()}`
+  })
+
+  const reply = await session.rpcCall(qName, "ping")
+  expect(reply.bodyString()).toEqual("got:ping")
+
+  await session.stop()
+})

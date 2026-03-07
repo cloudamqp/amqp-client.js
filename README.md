@@ -90,6 +90,35 @@ const sub = await q.subscribe({ prefetch: 10 }, async (msg) => {
 // await sub.cancel()  // stops consuming and removes from auto-recovery
 ```
 
+#### RPC (Remote Procedure Call)
+
+The session provides built-in RPC support using the direct reply-to feature:
+
+```javascript
+import { AMQPSession } from "@cloudamqp/amqp-client"
+
+const session = await AMQPSession.connect("amqp://localhost")
+
+// Start an RPC server that listens on a queue
+const server = await session.rpcServer("my_rpc_queue", async (msg) => {
+  return `processed:${msg.bodyString()}`
+})
+
+// Simple RPC call — creates a temporary client per call
+const reply = await session.rpcCall("my_rpc_queue", "hello", { timeout: 5000 })
+console.log(reply.bodyToString()) // "processed:hello"
+
+// For high-throughput scenarios, reuse a client to avoid per-call channel overhead
+const rpc = await session.rpcClient()
+const r1 = await rpc.call("my_rpc_queue", "a")
+const r2 = await rpc.call("my_rpc_queue", "b")
+await rpc.close()
+
+await session.stop() // closes all RPC clients, servers, and consumers
+```
+
+RPC servers and reusable clients created via `session.rpcClient()` are automatically recovered after a reconnection.
+
 ### Low-level API
 
 For full control over channels and resources, use the transport clients directly:
