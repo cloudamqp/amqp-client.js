@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses session-level queue subscribe for automatic consumer recovery on reconnect
   - Handler receives the full `AMQPMessage` and returns the response body
 - Session-level RPC convenience methods ([#191](https://github.com/cloudamqp/amqp-client.js/pull/191))
-  - `session.rpcClient()` — create and start an `AMQPRPCClient`
+  - `session.rpcCall(queue, body, options?)` — simple one-shot RPC call (recommended for most use cases)
+  - `session.rpcClient()` — create a reusable `AMQPRPCClient` for high-throughput scenarios
   - `session.rpcServer(queue, handler, prefetch?)` — create and start an `AMQPRPCServer`
 - `AMQPSession` — high-level client with automatic reconnection and consumer recovery ([#185](https://github.com/cloudamqp/amqp-client.js/pull/185), [#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
   - `AMQPSession.connect(url, options?)` factory: picks TCP or WebSocket transport from the URL scheme (`amqp://` / `amqps://` → TCP; `ws://` / `wss://` → WebSocket)

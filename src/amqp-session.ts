@@ -1,5 +1,8 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
+import type { AMQPMessage } from "./amqp-message.js"
+import type { AMQPProperties } from "./amqp-properties.js"
+import type { Body } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
@@ -246,8 +249,32 @@ export class AMQPSession {
   }
 
   /**
-   * Create and start a reusable RPC client.
-   * The client opens its own channel and listens on the direct reply-to pseudo-queue.
+   * Perform an RPC call: publish a message and wait for the response.
+   * Creates a temporary client per call — simple and sufficient for most use cases.
+   *
+   * For high-throughput scenarios where the per-call channel overhead matters,
+   * use {@link rpcClient} to create a reusable client instead.
+   *
+   * @param queue - The routing key / queue name of the RPC server
+   * @param body - The request body
+   * @param options - Optional AMQP properties and timeout
+   * @param options.timeout - Timeout in milliseconds
+   * @returns The reply {@link AMQPMessage}
+   */
+  async rpcCall(queue: string, body: Body, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage> {
+    const rpc = new AMQPRPCClient(this)
+    await rpc.start()
+    try {
+      return await rpc.call(queue, body, options)
+    } finally {
+      await rpc.close()
+    }
+  }
+
+  /**
+   * Create and start a reusable RPC client that keeps its channel open
+   * across multiple calls. Prefer {@link rpcCall} for simplicity; use this
+   * when you need to avoid the per-call channel overhead.
    *
    * @returns A started {@link AMQPRPCClient} ready for {@link AMQPRPCClient.call} invocations.
    */

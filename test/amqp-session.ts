@@ -645,6 +645,18 @@ test("session.rpcClient() can do multiple calls", () =>
     await session.queue("rpc-multi-queue").then((q) => q.delete())
   }))
 
+test("session.rpcCall() one-shot round-trip", () =>
+  withSession(async (session) => {
+    await session.rpcServer("rpc-oneshot-queue", (msg) => {
+      return `got:${msg.bodyString()}`
+    })
+
+    const reply = await session.rpcCall("rpc-oneshot-queue", "ping")
+    expect(reply.bodyString()).toEqual("got:ping")
+
+    await session.queue("rpc-oneshot-queue").then((q) => q.delete())
+  }))
+
 test("session.rpcClient() rejects on timeout", () =>
   withSession(async (session) => {
     // Declare queue so the message routes somewhere, but no consumer to reply

@@ -104,12 +104,16 @@ const server = await session.rpcServer("my_rpc_queue", async (msg) => {
   return `processed:${msg.bodyString()}`
 })
 
-// Create a reusable RPC client
-const rpc = await session.rpcClient()
-const reply = await rpc.call("my_rpc_queue", "hello", { timeout: 5000 })
+// Simple RPC call — creates a temporary client per call
+const reply = await session.rpcCall("my_rpc_queue", "hello", { timeout: 5000 })
 console.log(reply.bodyToString()) // "processed:hello"
 
+// For high-throughput scenarios, reuse a client to avoid per-call channel overhead
+const rpc = await session.rpcClient()
+const r1 = await rpc.call("my_rpc_queue", "a")
+const r2 = await rpc.call("my_rpc_queue", "b")
 await rpc.close()
+
 await session.stop() // closes all RPC clients, servers, and consumers
 ```
 
