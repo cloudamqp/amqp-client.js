@@ -12,6 +12,16 @@ export interface AMQPCoder {
   decode(body: Uint8Array, properties: AMQPProperties): Promise<Uint8Array>
 }
 
+function isBodyType(data: unknown): data is string | Uint8Array | ArrayBuffer | Buffer | null {
+  return (
+    data === null ||
+    data === undefined ||
+    typeof data === "string" ||
+    data instanceof Uint8Array ||
+    data instanceof ArrayBuffer
+  )
+}
+
 function toBytes(data: string | Uint8Array | ArrayBuffer | Buffer | null): Uint8Array {
   if (data === null || data === undefined) return new Uint8Array(0)
   if (data instanceof Uint8Array) return data
@@ -112,10 +122,15 @@ export class AMQPCodecRegistry {
   }
 
   enableBuiltinCoders(): this {
-    if (typeof CompressionStream === "undefined" || typeof DecompressionStream === "undefined") {
+    if (
+      typeof CompressionStream === "undefined" ||
+      typeof DecompressionStream === "undefined" ||
+      typeof Blob === "undefined" ||
+      typeof Response === "undefined"
+    ) {
       throw new Error(
-        "Built-in coders require CompressionStream/DecompressionStream (Node 18+, modern browsers). " +
-          "Register custom coders via registerCoder() instead.",
+        "Built-in coders require CompressionStream, DecompressionStream, Blob, and Response " +
+          "(Node 18+, modern browsers). Register custom coders via registerCoder() instead.",
       )
     }
     this.coders.set("gzip", GzipCoder)
@@ -147,11 +162,21 @@ export class AMQPCodecRegistry {
       const parser = this.parsers.get(props.contentType)
       if (parser) {
         bytes = parser.serialize(body, props)
+      } else if (isBodyType(body)) {
+        bytes = toBytes(body)
       } else {
-        bytes = toBytes(body as string | Uint8Array | ArrayBuffer | Buffer | null)
+        throw new Error(
+          `No parser registered for content-type "${props.contentType}" and body is not a string/Buffer/Uint8Array. ` +
+            `Register a parser via registerParser() or use enableBuiltinParsers().`,
+        )
       }
+    } else if (isBodyType(body)) {
+      bytes = toBytes(body)
     } else {
-      bytes = toBytes(body as string | Uint8Array | ArrayBuffer | Buffer | null)
+      throw new Error(
+        "Cannot serialize body: no contentType specified and body is not a string/Buffer/Uint8Array. " +
+          "Set contentType or configure a defaultContentType on the session.",
+      )
     }
 
     if (props.contentEncoding) {
