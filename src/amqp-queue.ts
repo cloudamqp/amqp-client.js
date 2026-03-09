@@ -51,7 +51,7 @@ export class AMQPQueue {
    * @param [options.confirm=true] - wait for broker confirmation
    * @returns `this` for chaining
    */
-  async publish(body: Body, options: QueuePublishOptions = {}): Promise<AMQPQueue> {
+  async publish(body: Body | unknown, options: QueuePublishOptions = {}): Promise<AMQPQueue> {
     const { confirm = true, ...properties } = options
     if (confirm) {
       await publishConfirmed(this.session, "", this.name, body, properties)
@@ -89,6 +89,17 @@ export class AMQPQueue {
     // basicConsume defaults noAck to true, so we must be explicit.
     const autoAck = !consumeParams.noAck
     if (autoAck) consumeParams.noAck = false
+
+    // Attach codec registry to each delivered message
+    const codecs = this.session.codecs
+    if (callback !== undefined) {
+      const innerCallback = callback
+      callback = (msg: AMQPMessage) => {
+        if (codecs) msg.codecRegistry = codecs
+        return innerCallback(msg)
+      }
+    }
+
     if (autoAck && callback !== undefined) {
       const userCallback = callback
       callback = async (msg: AMQPMessage) => {
@@ -105,6 +116,7 @@ export class AMQPQueue {
       consumeParams,
       ...(callback !== undefined && { callback }),
       ...(prefetch !== undefined && { prefetch }),
+      ...(this.session.codecs && { codecs: this.session.codecs }),
     }
     const consumer = await this.openConsumer(def)
     const sub = callback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription(consumer, def)
@@ -121,7 +133,9 @@ export class AMQPQueue {
    */
   async get(params?: { noAck?: boolean }): Promise<AMQPMessage | null> {
     const ch = await this.session.getOpsChannel()
-    return ch.basicGet(this.name, params)
+    const msg = await ch.basicGet(this.name, params)
+    if (msg && this.session.codecs) msg.codecRegistry = this.session.codecs
+    return msg
   }
 
   /**

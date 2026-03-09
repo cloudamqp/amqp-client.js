@@ -1,5 +1,6 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
+import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { Body } from "./amqp-publisher.js"
@@ -27,6 +28,12 @@ export interface AMQPSessionOptions {
   tlsOptions?: AMQPTlsOptions
   /** Logger instance. Pass `null` to disable logging explicitly. */
   logger?: Logger | null
+  /** Codec registry for automatic message encoding/decoding. */
+  codecs?: AMQPCodecRegistry
+  /** Default content-type applied to published messages when not set explicitly. */
+  defaultContentType?: string
+  /** Default content-encoding applied to published messages when not set explicitly. */
+  defaultContentEncoding?: string
   /**
    * AMQP virtual host. For WebSocket URLs the URL path is the relay endpoint,
    * not the vhost — use this option to specify the vhost explicitly.
@@ -58,6 +65,13 @@ export class AMQPSession {
     return this.client.logger
   }
 
+  /** @internal Codec registry for publish encoding and consume decoding. */
+  readonly codecs?: AMQPCodecRegistry
+  /** @internal Default content-type for published messages. */
+  readonly defaultContentType?: string
+  /** @internal Default content-encoding for published messages. */
+  readonly defaultContentEncoding?: string
+
   private readonly options: {
     reconnectInterval: number
     maxReconnectInterval: number
@@ -82,6 +96,9 @@ export class AMQPSession {
 
   private constructor(client: AMQPBaseClient, options?: AMQPSessionOptions) {
     this.client = client
+    if (options?.codecs) this.codecs = options.codecs
+    if (options?.defaultContentType) this.defaultContentType = options.defaultContentType
+    if (options?.defaultContentEncoding) this.defaultContentEncoding = options.defaultContentEncoding
     this.options = {
       reconnectInterval: options?.reconnectInterval ?? 1000,
       maxReconnectInterval: options?.maxReconnectInterval ?? 30000,

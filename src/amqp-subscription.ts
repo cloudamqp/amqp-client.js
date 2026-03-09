@@ -1,5 +1,6 @@
 import { AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import type { AMQPChannel } from "./amqp-channel.js"
+import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { ConsumeParams } from "./amqp-channel.js"
@@ -10,6 +11,7 @@ export interface ConsumerDefinition {
   consumeParams: ConsumeParams
   callback?: (msg: AMQPMessage) => void | Promise<void>
   prefetch?: number
+  codecs?: AMQPCodecRegistry
 }
 
 /**
@@ -104,6 +106,7 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
         for await (const msg of consumer.messages) {
           if (this.stopped) return
           if (autoAck) await prev?.ack()
+          if (this.def.codecs) msg.codecRegistry = this.def.codecs
           prev = msg
           yield msg
         }
