@@ -181,9 +181,13 @@ export class AMQPCodecRegistry {
 
     if (props.contentEncoding) {
       const coder = this.coders.get(props.contentEncoding)
-      if (coder) {
-        bytes = await coder.encode(bytes, props)
+      if (!coder) {
+        throw new Error(
+          `No coder registered for content-encoding "${props.contentEncoding}". ` +
+            `Register a coder via registerCoder() or use enableBuiltinCoders().`,
+        )
       }
+      bytes = await coder.encode(bytes, props)
     }
 
     return { body: bytes, properties: props }
