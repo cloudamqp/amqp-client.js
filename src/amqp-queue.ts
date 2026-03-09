@@ -5,7 +5,7 @@ import { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription.js"
 import type { ConsumerDefinition } from "./amqp-subscription.js"
 import type { AMQPSession } from "./amqp-session.js"
-import { publishConfirmed, publishNoConfirm, type Body } from "./amqp-publisher.js"
+import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
 
 /**
  * Options for {@link AMQPQueue#subscribe}.
@@ -48,10 +48,15 @@ export class AMQPQueue {
 
   /**
    * Publish a message directly to this queue (via the default exchange).
+   *
+   * When the session has a codec registry configured, `body` can be any value
+   * (objects, arrays, etc.) and will be serialized according to `contentType`.
+   * Without codecs, `body` must be a string, Buffer, Uint8Array, or null.
+   *
    * @param options - publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
-  async publish(body: Body | unknown, options: QueuePublishOptions = {}): Promise<AMQPQueue> {
+  async publish(body: unknown, options: QueuePublishOptions = {}): Promise<AMQPQueue> {
     const { confirm = true, ...properties } = options
     if (confirm) {
       await publishConfirmed(this.session, "", this.name, body, properties)

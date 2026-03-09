@@ -1,6 +1,6 @@
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
-import { publishConfirmed, publishNoConfirm, type Body } from "./amqp-publisher.js"
+import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
 
 /** Options for {@link AMQPExchange#publish}. */
 export type ExchangePublishOptions = AMQPProperties & {
@@ -29,10 +29,15 @@ export class AMQPExchange {
 
   /**
    * Publish a message to this exchange.
+   *
+   * When the session has a codec registry configured, `body` can be any value
+   * (objects, arrays, etc.) and will be serialized according to `contentType`.
+   * Without codecs, `body` must be a string, Buffer, Uint8Array, or null.
+   *
    * @param options - routing key, publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
-  async publish(body: Body | unknown, options: ExchangePublishOptions = {}): Promise<AMQPExchange> {
+  async publish(body: unknown, options: ExchangePublishOptions = {}): Promise<AMQPExchange> {
     const { confirm = true, routingKey = "", ...properties } = options
     if (confirm) {
       await publishConfirmed(this.session, this.name, routingKey, body, properties)

@@ -701,13 +701,14 @@ test("codec: publish JSON object and parse via callback", () =>
 
     await q.publish(obj, { contentType: "application/json" })
 
-    const parsed = await new Promise<unknown>((resolve) => {
-      q.subscribe({ noAck: true }, async (msg) => {
-        resolve(await msg.parse())
-      })
+    let parsed: unknown
+    const sub = await q.subscribe({ noAck: true }, async (msg) => {
+      parsed = await msg.parse()
     })
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(parsed).toEqual(obj)
+    await sub.cancel()
   }))
 
 test("codec: publish with default contentType", () =>
