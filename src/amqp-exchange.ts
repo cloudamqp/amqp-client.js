@@ -32,7 +32,7 @@ export class AMQPExchange {
    * @param options - routing key, publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
-  async publish(body: Body, options: ExchangePublishOptions = {}): Promise<AMQPExchange> {
+  async publish(body: Body | unknown, options: ExchangePublishOptions = {}): Promise<AMQPExchange> {
     const { confirm = true, routingKey = "", ...properties } = options
     if (confirm) {
       await publishConfirmed(this.session, this.name, routingKey, body, properties)
