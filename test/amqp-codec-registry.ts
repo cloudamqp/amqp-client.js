@@ -163,6 +163,20 @@ describe("AMQPCodecRegistry", () => {
       const result = await codecs.decodeAndParse(body, {})
       expect(result).toEqual(raw)
     })
+
+    test("throws for non-bytes body with unregistered contentType", async () => {
+      const codecs = new AMQPCodecRegistry()
+
+      await expect(codecs.serializeAndEncode({ foo: "bar" }, { contentType: "application/xml" })).rejects.toThrow(
+        /No parser registered/,
+      )
+    })
+
+    test("throws for non-bytes body without contentType", async () => {
+      const codecs = new AMQPCodecRegistry()
+
+      await expect(codecs.serializeAndEncode({ foo: "bar" }, {})).rejects.toThrow(/no contentType specified/)
+    })
   })
 
   describe("custom codecs", () => {
