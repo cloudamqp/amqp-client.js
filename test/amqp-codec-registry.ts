@@ -70,8 +70,9 @@ describe("AMQPCodecRegistry", () => {
       })
 
       expect(properties.contentEncoding).toBe("gzip")
-      // Compressed body should differ from the plaintext
-      expect(new TextDecoder().decode(body)).not.toBe(original)
+      // Compressed body should differ from the raw bytes
+      const uncompressed = new TextEncoder().encode(original)
+      expect(body).not.toEqual(uncompressed)
 
       const parsed = await codecs.decodeAndParse(body, properties)
       expect(parsed).toBe(original)

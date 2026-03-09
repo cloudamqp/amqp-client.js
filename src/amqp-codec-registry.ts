@@ -112,6 +112,12 @@ export class AMQPCodecRegistry {
   }
 
   enableBuiltinCoders(): this {
+    if (typeof CompressionStream === "undefined" || typeof DecompressionStream === "undefined") {
+      throw new Error(
+        "Built-in coders require CompressionStream/DecompressionStream (Node 18+, modern browsers). " +
+          "Register custom coders via registerCoder() instead.",
+      )
+    }
     this.coders.set("gzip", GzipCoder)
     this.coders.set("deflate", DeflateCoder)
     return this
