@@ -4,6 +4,7 @@ import { AMQPSession } from "../src/amqp-session.js"
 import { AMQPQueue } from "../src/amqp-queue.js"
 import { AMQPExchange } from "../src/amqp-exchange.js"
 import { AMQPMessage } from "../src/amqp-message.js"
+import { AMQPCodecRegistry } from "../src/amqp-codec-registry.js"
 import type { AMQPBaseClient } from "../src/amqp-base-client.js"
 
 beforeEach(() => {
@@ -681,4 +682,147 @@ test("session.rpcClient() close rejects pending calls", () =>
 
     await expectRejection
     await session.queue("rpc-close-queue").then((q) => q.delete())
+  }))
+
+// --- Codec registry integration tests ---
+
+function withCodecSession(
+  fn: (session: AMQPSession) => Promise<void>,
+  codecOpts?: { defaultContentType?: string; defaultContentEncoding?: string },
+): Promise<void> {
+  const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
+  return withSession(fn, { codecs, ...codecOpts })
+}
+
+test("codec: publish JSON object and parse via callback", () =>
+  withCodecSession(async (session) => {
+    const q = await session.queue("test-codec-json-" + Math.random(), { durable: false, autoDelete: true })
+    const obj = { users: ["alice", "bob"], count: 2 }
+
+    await q.publish(obj, { contentType: "application/json" })
+
+    const parsed = await new Promise<unknown>((resolve) => {
+      q.subscribe({ noAck: true }, async (msg) => {
+        resolve(await msg.parse())
+      })
+    })
+
+    expect(parsed).toEqual(obj)
+  }))
+
+test("codec: publish with default contentType", () =>
+  withCodecSession(
+    async (session) => {
+      const q = await session.queue("test-codec-default-ct-" + Math.random(), { durable: false, autoDelete: true })
+
+      await q.publish({ key: "value" })
+
+      const msg = await q.get({ noAck: true })
+      expect(msg).not.toBeNull()
+      expect(msg!.properties.contentType).toBe("application/json")
+
+      const parsed = await msg!.parse()
+      expect(parsed).toEqual({ key: "value" })
+    },
+    { defaultContentType: "application/json" },
+  ))
+
+test("codec: explicit contentType overrides default", () =>
+  withCodecSession(
+    async (session) => {
+      const q = await session.queue("test-codec-override-" + Math.random(), { durable: false, autoDelete: true })
+
+      await q.publish("plain text", { contentType: "text/plain" })
+
+      const msg = await q.get({ noAck: true })
+      expect(msg!.properties.contentType).toBe("text/plain")
+
+      const parsed = await msg!.parse()
+      expect(parsed).toBe("plain text")
+    },
+    { defaultContentType: "application/json" },
+  ))
+
+test("codec: JSON + gzip round-trip via get", () =>
+  withCodecSession(async (session) => {
+    const q = await session.queue("test-codec-gzip-" + Math.random(), { durable: false, autoDelete: true })
+    const data = { compressed: true, items: [1, 2, 3] }
+
+    await q.publish(data, { contentType: "application/json", contentEncoding: "gzip" })
+
+    const msg = await q.get({ noAck: true })
+    expect(msg).not.toBeNull()
+    expect(msg!.properties.contentEncoding).toBe("gzip")
+
+    const parsed = await msg!.parse()
+    expect(parsed).toEqual(data)
+  }))
+
+test("codec: default contentEncoding compresses automatically", () =>
+  withCodecSession(
+    async (session) => {
+      const q = await session.queue("test-codec-default-ce-" + Math.random(), { durable: false, autoDelete: true })
+
+      await q.publish({ auto: "compressed" })
+
+      const msg = await q.get({ noAck: true })
+      expect(msg!.properties.contentType).toBe("application/json")
+      expect(msg!.properties.contentEncoding).toBe("gzip")
+
+      const parsed = await msg!.parse()
+      expect(parsed).toEqual({ auto: "compressed" })
+    },
+    { defaultContentType: "application/json", defaultContentEncoding: "gzip" },
+  ))
+
+test("codec: async generator receives parseable messages", () =>
+  withCodecSession(
+    async (session) => {
+      const q = await session.queue("test-codec-gen-" + Math.random(), { durable: false, autoDelete: true })
+
+      await q.publish({ n: 1 })
+      await q.publish({ n: 2 })
+
+      const results: unknown[] = []
+      const sub = await q.subscribe({ noAck: true })
+      for await (const msg of sub) {
+        results.push(await msg.parse())
+        if (results.length >= 2) break
+      }
+
+      expect(results).toEqual([{ n: 1 }, { n: 2 }])
+      await sub.cancel()
+    },
+    { defaultContentType: "application/json" },
+  ))
+
+test("codec: exchange publish encodes messages", () =>
+  withCodecSession(async (session) => {
+    const xName = "test-codec-x-" + Math.random()
+    const qName = "test-codec-xq-" + Math.random()
+
+    const x = await session.fanoutExchange(xName, { durable: false, autoDelete: true })
+    const q = await session.queue(qName, { durable: false, autoDelete: true })
+    await q.bind(xName, "")
+
+    await x.publish({ via: "exchange" }, { contentType: "application/json" })
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    const msg = await q.get({ noAck: true })
+    expect(msg).not.toBeNull()
+
+    const parsed = await msg!.parse()
+    expect(parsed).toEqual({ via: "exchange" })
+  }))
+
+test("codec: no codecs configured leaves messages untouched", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-no-codec-" + Math.random(), { durable: false, autoDelete: true })
+
+    await q.publish("raw string")
+
+    const msg = await q.get({ noAck: true })
+    expect(msg?.bodyString()).toBe("raw string")
+    // parse() should throw without a registry
+    await expect(msg!.parse()).rejects.toThrow("No codec registry")
   }))
