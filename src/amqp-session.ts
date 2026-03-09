@@ -1,8 +1,8 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
-import type { AMQPMessage } from "./amqp-message.js"
+import type { ParserMap, CoderMap, ParserRegistry, CoderRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { Body } from "./amqp-publisher.js"
+import type { ResolveBody } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
@@ -10,11 +10,17 @@ import { AMQPExchange } from "./amqp-exchange.js"
 import { AMQPRPCClient } from "./amqp-rpc-client.js"
 import { AMQPRPCServer } from "./amqp-rpc-server.js"
 import type { RPCHandler } from "./amqp-rpc-server.js"
+import type { AMQPMessage } from "./amqp-message.js"
 
 /**
  * Options for {@link AMQPSession.connect}.
  */
-export interface AMQPSessionOptions {
+export interface AMQPSessionOptions<
+  P extends ParserMap = {},
+  C extends CoderMap = {},
+  KP extends keyof P & string = never,
+  KC extends keyof C & string = never,
+> {
   /** Initial delay in milliseconds before reconnecting (default: 1000) */
   reconnectInterval?: number
   /** Maximum delay in milliseconds between reconnection attempts (default: 30000) */
@@ -27,6 +33,14 @@ export interface AMQPSessionOptions {
   tlsOptions?: AMQPTlsOptions
   /** Logger instance. Pass `null` to disable logging explicitly. */
   logger?: Logger | null
+  /** Parser registry for automatic message serialization/deserialization. */
+  parsers?: ParserRegistry<P>
+  /** Coder registry for automatic message encoding/decoding. */
+  coders?: CoderRegistry<C>
+  /** Default content-type applied to published messages when not set explicitly. */
+  defaultContentType?: KP
+  /** Default content-encoding applied to published messages when not set explicitly. */
+  defaultContentEncoding?: KC
   /**
    * AMQP virtual host. For WebSocket URLs the URL path is the relay endpoint,
    * not the vhost — use this option to specify the vhost explicitly.
@@ -38,9 +52,19 @@ export interface AMQPSessionOptions {
 /**
  * High-level session with automatic reconnection and consumer recovery.
  *
+ * The generic parameters thread parser/coder type information through all
+ * session-owned handles (queues, exchanges, RPC clients/servers).
+ *
+ * Users never write the generics explicitly — they're inferred from the `connect()` call.
+ *
  * Create via `AMQPSession.connect(url, options)`.
  */
-export class AMQPSession {
+export class AMQPSession<
+  P extends ParserMap = {},
+  C extends CoderMap = {},
+  KP extends keyof P & string = never,
+  KC extends keyof C & string = never,
+> {
   /** Fires after a successful (re)connection and consumer recovery */
   onconnect?: () => void
   /** Fires when max retries are exhausted */
@@ -58,14 +82,23 @@ export class AMQPSession {
     return this.client.logger
   }
 
+  /** @internal Parser registry for publish encoding and consume decoding. */
+  readonly parsers?: ParserRegistry<P>
+  /** @internal Coder registry for publish encoding and consume decoding. */
+  readonly coders?: CoderRegistry<C>
+  /** @internal Default content-type for published messages. */
+  readonly defaultContentType?: KP
+  /** @internal Default content-encoding for published messages. */
+  readonly defaultContentEncoding?: KC
+
   private readonly options: {
     reconnectInterval: number
     maxReconnectInterval: number
     backoffMultiplier: number
     maxRetries: number
   }
-  private readonly queues = new Map<string, AMQPQueue>()
-  private readonly rpcClients = new Set<AMQPRPCClient>()
+  private readonly queues = new Map<string, AMQPQueue<P, C, KP, KC>>()
+  private readonly rpcClients = new Set<AMQPRPCClient<P, C, KP, KC>>()
   private reconnectAttempts = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined
   private reconnectResolve: (() => void) | undefined
@@ -80,8 +113,12 @@ export class AMQPSession {
   private opsChannelPromise: Promise<AMQPChannel> | null = null
   private confirmChannelPromise: Promise<AMQPChannel> | null = null
 
-  private constructor(client: AMQPBaseClient, options?: AMQPSessionOptions) {
+  private constructor(client: AMQPBaseClient, options?: AMQPSessionOptions<P, C, KP, KC>) {
     this.client = client
+    if (options?.parsers) this.parsers = options.parsers
+    if (options?.coders) this.coders = options.coders
+    if (options?.defaultContentType) this.defaultContentType = options.defaultContentType
+    if (options?.defaultContentEncoding) this.defaultContentEncoding = options.defaultContentEncoding
     this.options = {
       reconnectInterval: options?.reconnectInterval ?? 1000,
       maxReconnectInterval: options?.maxReconnectInterval ?? 30000,
@@ -106,7 +143,22 @@ export class AMQPSession {
    * - `amqp://` / `amqps://` → TCP socket (`AMQPClient`)
    * - `ws://` / `wss://` → WebSocket (`AMQPWebSocketClient`)
    */
-  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession> {
+  static async connect<
+    P extends ParserMap,
+    C extends CoderMap,
+    KP extends keyof P & string = never,
+    KC extends keyof C & string = never,
+  >(
+    url: string,
+    options: AMQPSessionOptions<P, C, KP, KC> & { parsers: ParserRegistry<P> },
+  ): Promise<AMQPSession<P, C, KP, KC>>
+  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession>
+  static async connect<
+    P extends ParserMap = {},
+    C extends CoderMap = {},
+    KP extends keyof P & string = never,
+    KC extends keyof C & string = never,
+  >(url: string, options?: AMQPSessionOptions<P, C, KP, KC>): Promise<AMQPSession<P, C, KP, KC>> {
     const u = new URL(url)
     let client: AMQPBaseClient
     if (u.protocol === "ws:" || u.protocol === "wss:") {
@@ -179,12 +231,12 @@ export class AMQPSession {
    * @param [params] - queue declaration parameters
    * @param [args] - optional queue arguments (e.g. `x-message-ttl`)
    */
-  async queue(name: string, params?: QueueParams, args?: Record<string, unknown>): Promise<AMQPQueue> {
+  async queue(name: string, params?: QueueParams, args?: Record<string, unknown>): Promise<AMQPQueue<P, C, KP, KC>> {
     const ch = await this.getOpsChannel()
     const res = await ch.queueDeclare(name, params, args)
     const existing = this.queues.get(res.name)
     if (existing) return existing
-    const q = new AMQPQueue(this, res.name)
+    const q = new AMQPQueue<P, C, KP, KC>(this, res.name)
     this.queues.set(res.name, q)
     return q
   }
@@ -201,10 +253,10 @@ export class AMQPSession {
     type: ExchangeType,
     params?: ExchangeParams,
     args?: Record<string, unknown>,
-  ): Promise<AMQPExchange> {
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     const ch = await this.getOpsChannel()
     await ch.exchangeDeclare(name, type, params, args)
-    return new AMQPExchange(this, name)
+    return new AMQPExchange<P, C, KP, KC>(this, name)
   }
 
   /**
@@ -215,8 +267,8 @@ export class AMQPSession {
     name = "amq.direct",
     params?: ExchangeParams,
     args?: Record<string, unknown>,
-  ): Promise<AMQPExchange> {
-    if (name === "") return new AMQPExchange(this, "") // default exchange — no declare needed
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
+    if (name === "") return new AMQPExchange<P, C, KP, KC>(this, "") // default exchange — no declare needed
     return this.exchange(name, "direct", params, args)
   }
 
@@ -224,7 +276,11 @@ export class AMQPSession {
    * Declare a fanout exchange and return a session-bound {@link AMQPExchange} handle.
    * @param [name="amq.fanout"] - exchange name
    */
-  fanoutExchange(name = "amq.fanout", params?: ExchangeParams, args?: Record<string, unknown>): Promise<AMQPExchange> {
+  fanoutExchange(
+    name = "amq.fanout",
+    params?: ExchangeParams,
+    args?: Record<string, unknown>,
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     return this.exchange(name, "fanout", params, args)
   }
 
@@ -232,7 +288,11 @@ export class AMQPSession {
    * Declare a topic exchange and return a session-bound {@link AMQPExchange} handle.
    * @param [name="amq.topic"] - exchange name
    */
-  topicExchange(name = "amq.topic", params?: ExchangeParams, args?: Record<string, unknown>): Promise<AMQPExchange> {
+  topicExchange(
+    name = "amq.topic",
+    params?: ExchangeParams,
+    args?: Record<string, unknown>,
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     return this.exchange(name, "topic", params, args)
   }
 
@@ -244,7 +304,7 @@ export class AMQPSession {
     name = "amq.headers",
     params?: ExchangeParams,
     args?: Record<string, unknown>,
-  ): Promise<AMQPExchange> {
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     return this.exchange(name, "headers", params, args)
   }
 
@@ -261,8 +321,12 @@ export class AMQPSession {
    * @param options.timeout - Timeout in milliseconds
    * @returns The reply {@link AMQPMessage}
    */
-  async rpcCall(queue: string, body: Body, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage> {
-    const rpc = new AMQPRPCClient(this)
+  async rpcCall(
+    queue: string,
+    body: ResolveBody<P, KP>,
+    options?: AMQPProperties & { timeout?: number },
+  ): Promise<AMQPMessage<P>> {
+    const rpc = new AMQPRPCClient<P, C, KP, KC>(this)
     await rpc.start()
     try {
       return await rpc.call(queue, body, options)
@@ -278,15 +342,15 @@ export class AMQPSession {
    *
    * @returns A started {@link AMQPRPCClient} ready for {@link AMQPRPCClient.call} invocations.
    */
-  async rpcClient(): Promise<AMQPRPCClient> {
-    const rpc = new AMQPRPCClient(this)
+  async rpcClient(): Promise<AMQPRPCClient<P, C, KP, KC>> {
+    const rpc = new AMQPRPCClient<P, C, KP, KC>(this)
     await rpc.start()
     this.rpcClients.add(rpc)
     return rpc
   }
 
   /** @internal Remove an RPC client from session recovery tracking. */
-  untrackRPCClient(rpc: AMQPRPCClient): void {
+  untrackRPCClient(rpc: AMQPRPCClient<P, C, KP, KC>): void {
     this.rpcClients.delete(rpc)
   }
 
@@ -296,12 +360,12 @@ export class AMQPSession {
    * published back to the caller's `replyTo` address.
    *
    * @param queue - Queue name to consume from
-   * @param handler - Callback that receives the message body and full message, returns the response body
+   * @param handler - Callback that receives the decoded message, returns the response body
    * @param prefetch - Channel prefetch count (default: 1)
    * @returns A started {@link AMQPRPCServer}
    */
-  async rpcServer(queue: string, handler: RPCHandler, prefetch?: number): Promise<AMQPRPCServer> {
-    const server = new AMQPRPCServer(this)
+  async rpcServer(queue: string, handler: RPCHandler<P, KP>, prefetch?: number): Promise<AMQPRPCServer<P, C, KP, KC>> {
+    const server = new AMQPRPCServer<P, C, KP, KC>(this)
     await server.start(queue, handler, prefetch)
     return server
   }

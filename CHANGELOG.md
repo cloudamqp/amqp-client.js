@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `AMQPCodecRegistry` — opt-in automatic encoding/decoding of message bodies by content-type ([#192](https://github.com/cloudamqp/amqp-client.js/pull/192))
+  - Builtin codec constants for JSON, text, and raw bytes; register your own for other content-types
+  - Wired into `AMQPClient`, `AMQPSession`, `AMQPQueue`, `AMQPExchange`, `AMQPSubscription`, `AMQPRPCClient`, and `AMQPRPCServer`
+  - `CodecMode` generic (`"plain" | "codec"`) threads through session, queue, exchange, RPC, and message types so the body type is inferred at compile time
+  - `AMQPMessage<CodecMode>` exposes `msg.body` as `Uint8Array` in `"plain"` mode and the decoded value in `"codec"` mode
+  - Type-safe publish overloads use `PublishBody<C>` instead of `unknown`
+  - Decode errors surface as plain `Error` (not `AMQPError`); subscribe honors `requeueOnNack` for those errors
+  - Misconfigured publish fails fast at the call site
+- `AMQPQueue.consumeOne({ timeout })` — one-shot consume that resolves with a single message or rejects on timeout ([#212](https://github.com/cloudamqp/amqp-client.js/pull/212))
+  - Uses a dedicated channel with `prefetch: 1` so the broker holds the queue at one in-flight delivery
+  - Library acks the returned message before resolving; late-arriving deliveries are nacked with requeue
+  - Rejects when the consumer, channel, or connection closes before delivery
+- `AMQPSessionLike`, `AMQPQueueLike`, `AMQPExchangeLike`, `AMQPSubscriptionLike` — minimum surface interfaces for mocking in tests ([#209](https://github.com/cloudamqp/amqp-client.js/pull/209))
 - `AMQPRPCClient` — reusable RPC client using direct reply-to for request-response patterns ([#191](https://github.com/cloudamqp/amqp-client.js/pull/191))
   - `start()` to begin listening for responses on the direct reply-to pseudo-queue
   - `call(queue, body, options?)` to publish an RPC request and await its response
@@ -25,8 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AMQPSession` — high-level client with automatic reconnection and consumer recovery ([#185](https://github.com/cloudamqp/amqp-client.js/pull/185), [#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
   - `AMQPSession.connect(url, options?)` factory: picks TCP or WebSocket transport from the URL scheme (`amqp://` / `amqps://` → TCP; `ws://` / `wss://` → WebSocket)
   - Exponential backoff with configurable `reconnectInterval`, `maxReconnectInterval`, `backoffMultiplier`, and `maxRetries`
-  - `session.queue(name, params?, args?)` — declare and return an `AMQPQueue` handle
-  - `session.exchange(name, type, params?, args?)` — declare and return an `AMQPExchange` handle
+  - `session.queue(name, options?)` — declare and return an `AMQPQueue` handle; pass broker arguments via `options.args` ([#209](https://github.com/cloudamqp/amqp-client.js/pull/209))
+  - `session.exchange(name, type, options?)` — declare and return an `AMQPExchange` handle; pass broker arguments via `options.args` ([#209](https://github.com/cloudamqp/amqp-client.js/pull/209))
   - Shorthand exchange factories: `directExchange()`, `fanoutExchange()`, `topicExchange()`, `headersExchange()`
   - `session.onconnect` / `session.onfailed` lifecycle hooks
   - `session.closed` — `true` when the underlying connection is closed
@@ -42,11 +55,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `QueuePublishOptions` / `ExchangePublishOptions` — exported types for publish options; both extend `AMQPProperties` with a `confirm?` flag; `ExchangePublishOptions` adds `routingKey?`
 - `ondisconnect` hook on `AMQPBaseClient` (TCP and WebSocket) — fires when the connection drops
 
+### Breaking
+
+- `AMQPChannel.queue()` removed ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186)). Use `ch.queueDeclare()` with low-level channel methods, or `session.queue()` for the high-level API. See the migration guide below.
+- `AMQPQueue` is now a session-only class — no longer returned by channel methods, no longer accepts a channel in its constructor. ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+- `AMQPQueue` is no longer re-exported from `AMQPClient` or `AMQPWebSocketClient`. Import from the main package entry point instead. ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+- Minimum supported Node version is now 18
+
 ### Changed
 
-- **Breaking:** `AMQPChannel.queue()` removed ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186)). Use `ch.queueDeclare()` with low-level channel methods, or `session.queue()` for the high-level API. See the migration guide below.
-- **Breaking:** `AMQPQueue` is now a session-only class — no longer returned by channel methods, no longer accepts a channel in its constructor. ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
-- **Breaking:** `AMQPQueue` is no longer re-exported from `AMQPClient` or `AMQPWebSocketClient`. Import from the main package entry point instead. ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+- `session.queue(name, params?, args?)` is now `session.queue(name, options?)`; pass broker arguments via `options.args`. Same shape change for `session.exchange()` and the `direct/fanout/topic/headers` exchange shortcuts. ([#209](https://github.com/cloudamqp/amqp-client.js/pull/209))
+- `AMQPQueue.bind()` and `AMQPQueue.unbind()` now accept an `AMQPExchange` handle in addition to an exchange name
+- `AMQPQueue.publish()` and `AMQPExchange.publish()` default `deliveryMode` to `2` (persistent) so messages survive a broker restart by default
+- `AMQPSubscription.cancel()` is now best-effort and never throws — closing/closed channels and connections are treated as success ([#208](https://github.com/cloudamqp/amqp-client.js/pull/208))
+- Session ops (queue/exchange declare, bind/unbind, etc.) are serialized through a mutex so concurrent declarations on the shared ops channel can't interleave ([#207](https://github.com/cloudamqp/amqp-client.js/pull/207))
 
 ### Migration guide
 

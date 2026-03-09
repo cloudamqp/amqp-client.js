@@ -885,6 +885,7 @@ export class AMQPChannel {
    * @param message
    */
   onMessageReady(message: AMQPMessage): void {
+    message.body = message._rawBytes
     if (this.delivery) {
       delete this.delivery
       this.deliver(message)
