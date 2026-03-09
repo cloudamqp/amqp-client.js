@@ -172,6 +172,14 @@ describe("AMQPCodecRegistry", () => {
       )
     })
 
+    test("throws for unregistered contentEncoding on encode", async () => {
+      const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
+
+      await expect(
+        codecs.serializeAndEncode("hello", { contentType: "text/plain", contentEncoding: "br" }),
+      ).rejects.toThrow(/No coder registered/)
+    })
+
     test("throws for non-bytes body without contentType", async () => {
       const codecs = new AMQPCodecRegistry()
 

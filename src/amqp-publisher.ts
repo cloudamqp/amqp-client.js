@@ -8,7 +8,15 @@ async function encodeBody(
   body: unknown,
   properties: AMQPProperties,
 ): Promise<{ body: Body; properties: AMQPProperties }> {
-  if (!session.codecs) return { body: body as Body, properties }
+  if (!session.codecs) {
+    if (body !== null && typeof body !== "string" && !(body instanceof Uint8Array) && !(body instanceof ArrayBuffer)) {
+      throw new Error(
+        "Cannot publish non-string/Buffer body without a codec registry. " +
+          "Configure codecs on the session or pass a string/Uint8Array body.",
+      )
+    }
+    return { body: body as Body, properties }
+  }
   const defaults: { contentType?: string; contentEncoding?: string } = {}
   if (session.defaultContentType) defaults.contentType = session.defaultContentType
   if (session.defaultContentEncoding) defaults.contentEncoding = session.defaultContentEncoding
