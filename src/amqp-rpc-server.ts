@@ -1,5 +1,4 @@
 import type { AMQPMessage } from "./amqp-message.js"
-import type { Body } from "./amqp-publisher.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPSubscription } from "./amqp-subscription.js"
 
@@ -7,7 +6,7 @@ import type { AMQPSubscription } from "./amqp-subscription.js"
  * Callback invoked for each incoming RPC request.
  * Return the response body to send back to the caller.
  */
-export type RPCHandler = (msg: AMQPMessage) => Body | Promise<Body>
+export type RPCHandler = (msg: AMQPMessage) => unknown | Promise<unknown>
 
 /**
  * An RPC server that consumes messages from a queue and replies to each caller.
@@ -45,9 +44,23 @@ export class AMQPRPCServer {
         return
       }
       const result = await handler(msg)
-      await msg.channel.basicPublish("", replyTo, result, {
-        ...(correlationId !== undefined && { correlationId }),
-      })
+      let replyBody: unknown = result
+      const replyProps: Record<string, unknown> = {}
+      if (correlationId !== undefined) replyProps.correlationId = correlationId
+      if (this.session.codecs) {
+        const defaults: { contentType?: string; contentEncoding?: string } = {}
+        if (this.session.defaultContentType) defaults.contentType = this.session.defaultContentType
+        if (this.session.defaultContentEncoding) defaults.contentEncoding = this.session.defaultContentEncoding
+        const encoded = await this.session.codecs.serializeAndEncode(result, replyProps, defaults)
+        replyBody = encoded.body
+        Object.assign(replyProps, encoded.properties)
+      }
+      await msg.channel.basicPublish(
+        "",
+        replyTo,
+        replyBody as string | Uint8Array | ArrayBuffer | Buffer | null,
+        replyProps,
+      )
     })
     return this
   }

@@ -827,3 +827,41 @@ test("codec: no codecs configured leaves messages untouched", () =>
     // parse() should throw without a registry
     await expect(msg!.parse()).rejects.toThrow("No codec registry")
   }))
+
+test("codec: rpcClient and rpcServer round-trip with JSON encoding", () =>
+  withCodecSession(
+    async (session) => {
+      await session.rpcServer("rpc-codec-queue", async (msg) => {
+        const request = await msg.parse()
+        return { echo: request }
+      })
+
+      const rpc = await session.rpcClient()
+      const reply = await rpc.call("rpc-codec-queue", { greeting: "hello" })
+
+      expect(reply.properties.contentType).toBe("application/json")
+      const parsed = await reply.parse()
+      expect(parsed).toEqual({ echo: { greeting: "hello" } })
+
+      await rpc.close()
+      await session.queue("rpc-codec-queue").then((q) => q.delete())
+    },
+    { defaultContentType: "application/json" },
+  ))
+
+test("codec: rpcCall one-shot with JSON encoding", () =>
+  withCodecSession(
+    async (session) => {
+      await session.rpcServer("rpc-codec-oneshot", async (msg) => {
+        return { got: await msg.parse() }
+      })
+
+      const reply = await session.rpcCall("rpc-codec-oneshot", { ping: true })
+
+      const parsed = await reply.parse()
+      expect(parsed).toEqual({ got: { ping: true } })
+
+      await session.queue("rpc-codec-oneshot").then((q) => q.delete())
+    },
+    { defaultContentType: "application/json" },
+  ))
