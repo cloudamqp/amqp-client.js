@@ -1,4 +1,5 @@
 import type { AMQPMessage } from "./amqp-message.js"
+import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPSubscription } from "./amqp-subscription.js"
 
@@ -45,7 +46,7 @@ export class AMQPRPCServer {
       }
       const result = await handler(msg)
       let replyBody: unknown = result
-      const replyProps: Record<string, unknown> = {}
+      const replyProps: AMQPProperties = {}
       if (correlationId !== undefined) replyProps.correlationId = correlationId
       if (this.session.codecs) {
         const defaults: { contentType?: string; contentEncoding?: string } = {}
