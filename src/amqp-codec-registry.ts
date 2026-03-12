@@ -1,9 +1,9 @@
 import type { AMQPProperties } from "./amqp-properties.js"
 
 /** Handles serialization/deserialization based on content-type. */
-export interface AMQPParser {
-  serialize(body: unknown, properties: AMQPProperties): Uint8Array
-  parse(body: Uint8Array, properties: AMQPProperties): unknown
+export interface AMQPParser<TIn = unknown, TOut = unknown> {
+  serialize(body: TIn, properties: AMQPProperties): Uint8Array
+  parse(body: Uint8Array, properties: AMQPProperties): TOut
 }
 
 /** Handles compression/decompression based on content-encoding. */

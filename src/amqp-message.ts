@@ -75,12 +75,12 @@ export class AMQPMessage {
    * @param registry - Optional codec registry override
    * @returns The decoded/deserialized body
    */
-  async parse(registry?: AMQPCodecRegistry): Promise<unknown> {
+  async parse<T = unknown>(registry?: AMQPCodecRegistry): Promise<T> {
     const codecs = registry ?? this.codecRegistry
     if (!codecs)
       throw new Error("No codec registry available. Configure codecs on the session or pass a registry to parse().")
-    if (!this.body) return null
-    return codecs.decodeAndParse(this.body, this.properties)
+    if (!this.body) return null as T
+    return codecs.decodeAndParse(this.body, this.properties) as T
   }
 
   /** Acknowledge the message */

@@ -2,6 +2,7 @@ import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPSubscription } from "./amqp-subscription.js"
+import type { Body } from "./amqp-publisher.js"
 
 /**
  * Callback invoked for each incoming RPC request.
@@ -45,7 +46,6 @@ export class AMQPRPCServer {
         return
       }
       const result = await handler(msg)
-      let replyBody: unknown = result
       const replyProps: AMQPProperties = {}
       if (correlationId !== undefined) replyProps.correlationId = correlationId
       if (this.session.codecs) {
@@ -53,15 +53,12 @@ export class AMQPRPCServer {
         if (this.session.defaultContentType) defaults.contentType = this.session.defaultContentType
         if (this.session.defaultContentEncoding) defaults.contentEncoding = this.session.defaultContentEncoding
         const encoded = await this.session.codecs.serializeAndEncode(result, replyProps, defaults)
-        replyBody = encoded.body
-        Object.assign(replyProps, encoded.properties)
+        const props: AMQPProperties = { ...encoded.properties }
+        if (correlationId !== undefined) props.correlationId = correlationId
+        await msg.channel.basicPublish("", replyTo, encoded.body, props)
+      } else {
+        await msg.channel.basicPublish("", replyTo, result as Body, replyProps)
       }
-      await msg.channel.basicPublish(
-        "",
-        replyTo,
-        replyBody as string | Uint8Array | ArrayBuffer | Buffer | null,
-        replyProps,
-      )
     })
     return this
   }
