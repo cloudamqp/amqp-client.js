@@ -1,6 +1,7 @@
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { CodecMode } from "./amqp-message.js"
+import type { PublishBody } from "./amqp-publisher.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPSubscription } from "./amqp-subscription.js"
 
@@ -9,7 +10,7 @@ import type { AMQPSubscription } from "./amqp-subscription.js"
  * Receives a decoded {@link AMQPMessage} and returns the response body.
  */
 export type RPCHandler<C extends CodecMode = "plain"> =
-  (msg: AMQPMessage<C>) => unknown | Promise<unknown>
+  (msg: AMQPMessage<C>) => PublishBody<C> | Promise<PublishBody<C>>
 
 /**
  * An RPC server that consumes messages from a queue and replies to each caller.
@@ -48,7 +49,7 @@ export class AMQPRPCServer<C extends CodecMode = "plain"> {
           await msg.nack(false)
           return
         }
-        const result = await handler(msg)
+        const result: PublishBody<C> = await handler(msg)
         const replyProps: AMQPProperties = {}
         if (correlationId !== undefined) replyProps.correlationId = correlationId
         const encoded = await this.session.encodeBody(result, replyProps)

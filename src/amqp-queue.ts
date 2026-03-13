@@ -66,10 +66,11 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
   ): Promise<AMQPQueue<C>>
   async publish(body: unknown, options: QueuePublishOptions = {}): Promise<AMQPQueue<C>> {
     const { confirm = true, ...properties } = options
+    const b = body as PublishBody<C>
     if (confirm) {
-      await publishConfirmed(this.session, "", this.name, body, properties)
+      await publishConfirmed(this.session, "", this.name, b, properties)
     } else {
-      await publishNoConfirm(this.session, "", this.name, body, properties)
+      await publishNoConfirm(this.session, "", this.name, b, properties)
     }
     return this
   }

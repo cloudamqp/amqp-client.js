@@ -100,7 +100,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
     const ch = this.ch
     const correlationId = (++this.correlationId).toString(36)
 
-    const encoded = await this.session.encodeBody(body, properties)
+    const encoded = await this.session.encodeBody(body as PublishBody<C>, properties)
 
     return new Promise<AMQPMessage<C>>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined

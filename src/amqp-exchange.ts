@@ -47,10 +47,11 @@ export class AMQPExchange<C extends CodecMode = "plain"> {
   ): Promise<AMQPExchange<C>>
   async publish(body: unknown, options: ExchangePublishOptions = {}): Promise<AMQPExchange<C>> {
     const { confirm = true, routingKey = "", ...properties } = options
+    const b = body as PublishBody<C>
     if (confirm) {
-      await publishConfirmed(this.session, this.name, routingKey, body, properties)
+      await publishConfirmed(this.session, this.name, routingKey, b, properties)
     } else {
-      await publishNoConfirm(this.session, this.name, routingKey, body, properties)
+      await publishNoConfirm(this.session, this.name, routingKey, b, properties)
     }
     return this
   }
