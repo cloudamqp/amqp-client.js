@@ -6,7 +6,8 @@ import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription
 import type { ConsumerDefinition } from "./amqp-subscription.js"
 import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
-import type { PublishBody, Serializable, CodecMode } from "./amqp-publisher.js"
+import type { PublishBody, Serializable } from "./amqp-publisher.js"
+import type { CodecMode } from "./amqp-message.js"
 import { decodeMessage } from "./amqp-session-message.js"
 
 /**

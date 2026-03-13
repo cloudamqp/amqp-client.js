@@ -1,6 +1,8 @@
 import type { AMQPChannel } from "./amqp-channel.js"
-import type { CodecMode } from "./amqp-publisher.js"
 import type { AMQPProperties } from "./amqp-properties.js"
+
+/** Controls whether session methods accept rich types or only raw bytes. */
+export type CodecMode = "plain" | "codec"
 
 type MessageBody<C extends CodecMode> = C extends "codec" ? unknown : (Uint8Array | null)
 
