@@ -8,9 +8,9 @@ import type { AMQPMessage } from "./amqp-message.js"
  */
 export async function decodeMessage(
   msg: AMQPMessage,
-  codecs?: AMQPCodecRegistry,
+  codecs: AMQPCodecRegistry,
 ): Promise<AMQPMessage<"codec">> {
-  if (codecs && msg.rawBody) {
+  if (msg.rawBody) {
     const decoded = await codecs.decodeAndParse(msg.rawBody, msg.properties)
     msg.setDecodedBody(decoded)
   }
