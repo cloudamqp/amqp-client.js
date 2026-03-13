@@ -4,6 +4,7 @@ import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { ConsumeParams } from "./amqp-channel.js"
+import { SessionMessage, decodeMessage } from "./amqp-session-message.js"
 
 /** @internal */
 export interface ConsumerDefinition {
@@ -77,7 +78,7 @@ export class AMQPSubscription {
  * }
  * ```
  */
-export class AMQPGeneratorSubscription extends AMQPSubscription implements AsyncIterable<AMQPMessage> {
+export class AMQPGeneratorSubscription extends AMQPSubscription implements AsyncIterable<SessionMessage> {
   private stopped = false
   private consumerReady?: () => void
 
@@ -94,7 +95,7 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
     await super.cancel()
   }
 
-  async *[Symbol.asyncIterator](): AsyncGenerator<AMQPMessage, void, undefined> {
+  async *[Symbol.asyncIterator](): AsyncGenerator<SessionMessage, void, undefined> {
     const autoAck = !this.def.consumeParams.noAck
     let prev: AMQPMessage | undefined
     while (!this.stopped) {
@@ -106,9 +107,9 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
         for await (const msg of consumer.messages) {
           if (this.stopped) return
           if (autoAck) await prev?.ack()
-          if (this.def.codecs) msg.codecRegistry = this.def.codecs
+          const decoded = await decodeMessage(msg, this.def.codecs)
           prev = msg
-          yield msg
+          yield decoded
         }
       } catch {
         // Consumer's channel was closed — wait for reconnect to provide a new consumer

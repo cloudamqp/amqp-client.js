@@ -1,8 +1,8 @@
 import type { AMQPChannel } from "./amqp-channel.js"
-import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
-import type { Body, Serializable } from "./amqp-publisher.js"
+import type { PublishBody, Serializable } from "./amqp-publisher.js"
+import { SessionMessage, decodeMessage } from "./amqp-session-message.js"
 
 const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
 
@@ -18,14 +18,14 @@ const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
  * await rpc.close()
  * ```
  */
-export class AMQPRPCClient {
-  private readonly session: AMQPSession
+export class AMQPRPCClient<C extends boolean = false> {
+  private readonly session: AMQPSession<C>
   private ch: AMQPChannel | null = null
   private correlationId = 0
   private readonly pending = new Map<
     string,
     {
-      resolve: (msg: AMQPMessage) => void
+      resolve: (msg: SessionMessage) => void
       reject: (err: Error) => void
       timer: ReturnType<typeof setTimeout> | undefined
     }
@@ -33,7 +33,7 @@ export class AMQPRPCClient {
   private closed = false
 
   /** @internal Use {@link AMQPSession.rpcClient} instead. */
-  constructor(session: AMQPSession) {
+  constructor(session: AMQPSession<C>) {
     this.session = session
   }
 
@@ -43,21 +43,20 @@ export class AMQPRPCClient {
     if (this.ch && !this.ch.closed) return this
     const ch = await this.session.openChannel()
     try {
-      // Direct reply-to is scoped per-channel by RabbitMQ, so only replies
-      // for this client arrive here.  Messages with an unknown correlationId
-      // (e.g. late replies after a timeout) are intentionally dropped — with
-      // noAck: true they are acknowledged on delivery and cannot be requeued.
       const codecs = this.session.codecs
-      await ch.basicConsume(DIRECT_REPLY_TO, { noAck: true }, (msg) => {
-        // TODO: decode here?
-        if (codecs) msg.codecRegistry = codecs
+      await ch.basicConsume(DIRECT_REPLY_TO, { noAck: true }, async (msg) => {
         const id = msg.properties.correlationId
         if (id === undefined) return
         const entry = this.pending.get(id)
         if (!entry) return
         this.pending.delete(id)
         if (entry.timer) clearTimeout(entry.timer)
-        entry.resolve(msg)
+        try {
+          const decoded = await decodeMessage(msg, codecs)
+          entry.resolve(decoded)
+        } catch (err) {
+          entry.reject(err instanceof Error ? err : new Error(String(err)))
+        }
       })
       this.ch = ch
       return this
@@ -75,36 +74,31 @@ export class AMQPRPCClient {
    * @param options - Optional properties and timeout
    * @param options.timeout - Timeout in milliseconds. Rejects with an error if
    *                          no response is received within this time.
-   * @returns The reply {@link AMQPMessage}
+   * @returns The reply {@link SessionMessage}
    */
-  async call(queue: string, body: Body, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage>
+  async call(
+    queue: string,
+    body: PublishBody<C>,
+    options?: AMQPProperties & { timeout?: number },
+  ): Promise<SessionMessage>
   async call(
     queue: string,
     body: Serializable,
     options: AMQPProperties & { timeout?: number; contentType: string },
-  ): Promise<AMQPMessage>
+  ): Promise<SessionMessage>
   async call(
     queue: string,
     body: unknown,
     { timeout, ...properties }: AMQPProperties & { timeout?: number } = {},
-  ): Promise<AMQPMessage> {
+  ): Promise<SessionMessage> {
     if (this.closed) throw new Error("RPC client is closed")
     if (!this.ch || this.ch.closed) throw new Error("RPC client not started, call start() first")
     const ch = this.ch
     const correlationId = (++this.correlationId).toString(36)
 
-    let encodedBody: Body = body as Body
-    let encodedProps = { ...properties }
-    if (this.session.codecs) {
-      const defaults: { contentType?: string; contentEncoding?: string } = {}
-      if (this.session.defaultContentType) defaults.contentType = this.session.defaultContentType
-      if (this.session.defaultContentEncoding) defaults.contentEncoding = this.session.defaultContentEncoding
-      const result = await this.session.codecs.serializeAndEncode(body, encodedProps, defaults)
-      encodedBody = result.body
-      encodedProps = result.properties
-    }
+    const encoded = await this.session.encodeBody(body, properties)
 
-    return new Promise<AMQPMessage>((resolve, reject) => {
+    return new Promise<SessionMessage>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined
       if (timeout !== undefined && timeout > 0) {
         timer = setTimeout(() => {
@@ -115,8 +109,8 @@ export class AMQPRPCClient {
 
       this.pending.set(correlationId, { resolve, reject, timer })
 
-      ch.basicPublish("", queue, encodedBody, {
-        ...encodedProps,
+      ch.basicPublish("", queue, encoded.body, {
+        ...encoded.properties,
         replyTo: DIRECT_REPLY_TO,
         correlationId,
       }).catch((err) => {
