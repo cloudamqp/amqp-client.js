@@ -2,6 +2,7 @@ import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
+import type { Body } from "./amqp-publisher.js"
 
 const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
 
@@ -75,6 +76,12 @@ export class AMQPRPCClient {
    *                          no response is received within this time.
    * @returns The reply {@link AMQPMessage}
    */
+  async call(queue: string, body: Body, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage>
+  async call(
+    queue: string,
+    body: unknown,
+    options: AMQPProperties & { timeout?: number; contentType: string },
+  ): Promise<AMQPMessage>
   async call(
     queue: string,
     body: unknown,
@@ -85,7 +92,7 @@ export class AMQPRPCClient {
     const ch = this.ch
     const correlationId = (++this.correlationId).toString(36)
 
-    let encodedBody: unknown = body
+    let encodedBody: Body = body as Body
     let encodedProps = { ...properties }
     if (this.session.codecs) {
       const defaults: { contentType?: string; contentEncoding?: string } = {}
@@ -107,7 +114,7 @@ export class AMQPRPCClient {
 
       this.pending.set(correlationId, { resolve, reject, timer })
 
-      ch.basicPublish("", queue, encodedBody as string | Uint8Array | ArrayBuffer | Buffer | null, {
+      ch.basicPublish("", queue, encodedBody, {
         ...encodedProps,
         replyTo: DIRECT_REPLY_TO,
         correlationId,
