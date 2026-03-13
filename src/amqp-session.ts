@@ -10,7 +10,7 @@ import { AMQPExchange } from "./amqp-exchange.js"
 import { AMQPRPCClient } from "./amqp-rpc-client.js"
 import { AMQPRPCServer } from "./amqp-rpc-server.js"
 import type { RPCHandler } from "./amqp-rpc-server.js"
-import type { SessionMessage } from "./amqp-session-message.js"
+import type { AMQPMessage } from "./amqp-message.js"
 
 /**
  * Options for {@link AMQPSession.connect}.
@@ -325,23 +325,23 @@ export class AMQPSession<C extends CodecMode = "plain"> {
    * @param body - The request body
    * @param options - Optional AMQP properties and timeout
    * @param options.timeout - Timeout in milliseconds
-   * @returns The reply {@link SessionMessage}
+   * @returns The reply {@link AMQPMessage}
    */
   async rpcCall(
     queue: string,
     body: PublishBody<C>,
     options?: AMQPProperties & { timeout?: number },
-  ): Promise<SessionMessage>
+  ): Promise<AMQPMessage<C>>
   async rpcCall(
     queue: string,
     body: Serializable,
     options: AMQPProperties & { timeout?: number; contentType: string },
-  ): Promise<SessionMessage>
+  ): Promise<AMQPMessage<C>>
   async rpcCall(
     queue: string,
     body: unknown,
     options?: AMQPProperties & { timeout?: number },
-  ): Promise<SessionMessage> {
+  ): Promise<AMQPMessage<C>> {
     const rpc = new AMQPRPCClient<C>(this)
     await rpc.start()
     try {
@@ -380,7 +380,7 @@ export class AMQPSession<C extends CodecMode = "plain"> {
    * @param prefetch - Channel prefetch count (default: 1)
    * @returns A started {@link AMQPRPCServer}
    */
-  async rpcServer(queue: string, handler: RPCHandler, prefetch?: number): Promise<AMQPRPCServer<C>> {
+  async rpcServer(queue: string, handler: RPCHandler<C>, prefetch?: number): Promise<AMQPRPCServer<C>> {
     const server = new AMQPRPCServer<C>(this)
     await server.start(queue, handler, prefetch)
     return server

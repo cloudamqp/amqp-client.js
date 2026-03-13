@@ -1,8 +1,9 @@
 import type { AMQPChannel } from "./amqp-channel.js"
+import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { PublishBody, Serializable, CodecMode } from "./amqp-publisher.js"
-import { SessionMessage, decodeMessage } from "./amqp-session-message.js"
+import { decodeMessage } from "./amqp-session-message.js"
 
 const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
 
@@ -25,7 +26,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
   private readonly pending = new Map<
     string,
     {
-      resolve: (msg: SessionMessage) => void
+      resolve: (msg: AMQPMessage<C>) => void
       reject: (err: Error) => void
       timer: ReturnType<typeof setTimeout> | undefined
     }
@@ -53,7 +54,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
         if (entry.timer) clearTimeout(entry.timer)
         try {
           const decoded = await decodeMessage(msg, codecs)
-          entry.resolve(decoded)
+          entry.resolve(decoded as AMQPMessage<C>)
         } catch (err) {
           entry.reject(err instanceof Error ? err : new Error(String(err)))
         }
@@ -74,23 +75,23 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
    * @param options - Optional properties and timeout
    * @param options.timeout - Timeout in milliseconds. Rejects with an error if
    *                          no response is received within this time.
-   * @returns The reply {@link SessionMessage}
+   * @returns The reply {@link AMQPMessage}
    */
   async call(
     queue: string,
     body: PublishBody<C>,
     options?: AMQPProperties & { timeout?: number },
-  ): Promise<SessionMessage>
+  ): Promise<AMQPMessage<C>>
   async call(
     queue: string,
     body: Serializable,
     options: AMQPProperties & { timeout?: number; contentType: string },
-  ): Promise<SessionMessage>
+  ): Promise<AMQPMessage<C>>
   async call(
     queue: string,
     body: unknown,
     { timeout, ...properties }: AMQPProperties & { timeout?: number } = {},
-  ): Promise<SessionMessage> {
+  ): Promise<AMQPMessage<C>> {
     if (this.closed) throw new Error("RPC client is closed")
     if (!this.ch || this.ch.closed) throw new Error("RPC client not started, call start() first")
     const ch = this.ch
@@ -98,7 +99,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
 
     const encoded = await this.session.encodeBody(body, properties)
 
-    return new Promise<SessionMessage>((resolve, reject) => {
+    return new Promise<AMQPMessage<C>>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined
       if (timeout !== undefined && timeout > 0) {
         timer = setTimeout(() => {

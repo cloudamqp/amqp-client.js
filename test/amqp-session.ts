@@ -5,7 +5,6 @@ import { AMQPQueue } from "../src/amqp-queue.js"
 import { AMQPExchange } from "../src/amqp-exchange.js"
 import { AMQPMessage } from "../src/amqp-message.js"
 import { AMQPCodecRegistry } from "../src/amqp-codec-registry.js"
-import { SessionMessage } from "../src/amqp-session-message.js"
 import type { AMQPBaseClient } from "../src/amqp-base-client.js"
 import type { CodecMode } from "../src/amqp-publisher.js"
 
@@ -248,7 +247,7 @@ test("AMQPQueue (session-backed).publish() and get() round-trip", () =>
     await q.publish("round-trip")
 
     const msg = await q.get({ noAck: true })
-    expect(msg).toBeInstanceOf(SessionMessage)
+    expect(msg).toBeInstanceOf(AMQPMessage)
     expect(msg?.bodyString()).toBe("round-trip")
   }))
 
@@ -385,7 +384,7 @@ test("AMQPQueue.subscribe() nack", () =>
     const q = await session.queue("test-q-nack-" + Math.random(), { durable: false, autoDelete: true })
 
     await q.publish("nack me")
-    const msg = await new Promise<SessionMessage>((resolve) => {
+    const msg = await new Promise<AMQPMessage>((resolve) => {
       q.subscribe({ noAck: false }, (m) => {
         m.nack()
         resolve(m)
@@ -542,7 +541,7 @@ test("AMQPQueue.subscribe() async iterator auto-acks on advance", () =>
     await q.publish("msg1")
     await q.publish("msg2")
 
-    const msgs: SessionMessage[] = []
+    const msgs: AMQPMessage[] = []
     const sub = await q.subscribe()
     for await (const msg of sub) {
       msgs.push(msg)
@@ -550,8 +549,8 @@ test("AMQPQueue.subscribe() async iterator auto-acks on advance", () =>
     }
 
     // msg1 was auto-acked when the loop advanced to msg2; msg2 was not (loop broke)
-    expect(msgs[0]!.raw.isAcked).toBe(true)
-    expect(msgs[1]!.raw.isAcked).toBe(false)
+    expect(msgs[0]!.isAcked).toBe(true)
+    expect(msgs[1]!.isAcked).toBe(false)
 
     await sub.cancel()
   }))
@@ -563,15 +562,15 @@ test("AMQPQueue.subscribe() async iterator does not ack when noAck is true", () 
     await q.publish("msg1")
     await q.publish("msg2")
 
-    const msgs: SessionMessage[] = []
+    const msgs: AMQPMessage[] = []
     const sub = await q.subscribe({ noAck: true })
     for await (const msg of sub) {
       msgs.push(msg)
       if (msgs.length >= 2) break
     }
 
-    expect(msgs[0]!.raw.isAcked).toBe(false)
-    expect(msgs[1]!.raw.isAcked).toBe(false)
+    expect(msgs[0]!.isAcked).toBe(false)
+    expect(msgs[1]!.isAcked).toBe(false)
 
     await sub.cancel()
   }))
@@ -858,26 +857,25 @@ test("codec: rpcCall one-shot with JSON encoding", () =>
     { defaultContentType: "application/json" },
   ))
 
-test("subscribe callback receives SessionMessage", () =>
+test("subscribe callback receives AMQPMessage with rawBody", () =>
   withSession(async (session) => {
     const q = await session.queue("test-sm-type-" + Math.random(), { durable: false, autoDelete: true })
     await q.publish("check type")
 
-    const msg = await new Promise<SessionMessage>((resolve) => {
+    const msg = await new Promise<AMQPMessage>((resolve) => {
       q.subscribe({ noAck: true }, (m) => resolve(m))
     })
 
-    expect(msg).toBeInstanceOf(SessionMessage)
-    expect(msg.raw).toBeInstanceOf(AMQPMessage)
+    expect(msg).toBeInstanceOf(AMQPMessage)
+    expect(msg.rawBody).toBeInstanceOf(Uint8Array)
   }))
 
-test("get() returns SessionMessage", () =>
+test("get() returns AMQPMessage with rawBody", () =>
   withSession(async (session) => {
     const q = await session.queue("test-sm-get-" + Math.random(), { durable: false, autoDelete: true })
     await q.publish("check get")
 
     const msg = await q.get({ noAck: true })
-    expect(msg).toBeInstanceOf(SessionMessage)
-    expect(msg!.raw).toBeInstanceOf(AMQPMessage)
+    expect(msg).toBeInstanceOf(AMQPMessage)
     expect(msg!.rawBody).toBeInstanceOf(Uint8Array)
   }))
