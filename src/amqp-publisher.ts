@@ -2,6 +2,7 @@ import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 
 export type Body = string | Uint8Array | ArrayBuffer | Buffer | null
+export type Serializable = Body | number | boolean | Record<string, unknown> | unknown[]
 
 async function encodeBody(
   session: AMQPSession,

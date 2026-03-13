@@ -6,7 +6,7 @@ import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription
 import type { ConsumerDefinition } from "./amqp-subscription.js"
 import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
-import type { Body } from "./amqp-publisher.js"
+import type { Body, Serializable } from "./amqp-publisher.js"
 
 /**
  * Options for {@link AMQPQueue#subscribe}.
@@ -58,7 +58,7 @@ export class AMQPQueue {
    * @returns `this` for chaining
    */
   async publish(body: Body, options?: QueuePublishOptions): Promise<AMQPQueue>
-  async publish(body: unknown, options: QueuePublishOptions & { contentType: string }): Promise<AMQPQueue>
+  async publish(body: Serializable, options: QueuePublishOptions & { contentType: string }): Promise<AMQPQueue>
   async publish(body: unknown, options: QueuePublishOptions = {}): Promise<AMQPQueue> {
     const { confirm = true, ...properties } = options
     if (confirm) {
