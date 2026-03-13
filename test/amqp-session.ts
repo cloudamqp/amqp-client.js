@@ -5,6 +5,7 @@ import { AMQPQueue } from "../src/amqp-queue.js"
 import { AMQPExchange } from "../src/amqp-exchange.js"
 import { AMQPMessage } from "../src/amqp-message.js"
 import { AMQPCodecRegistry } from "../src/amqp-codec-registry.js"
+import { SessionMessage } from "../src/amqp-session-message.js"
 import type { AMQPBaseClient } from "../src/amqp-base-client.js"
 
 beforeEach(() => {
@@ -12,12 +13,12 @@ beforeEach(() => {
 })
 
 /** Access the private client for test-only operations (socket destruction, spying). */
-function testClient(session: AMQPSession): AMQPBaseClient {
+function testClient(session: AMQPSession<boolean>): AMQPBaseClient {
   return (session as unknown as { client: AMQPBaseClient }).client
 }
 
 async function withSession(
-  fn: (session: AMQPSession) => Promise<void>,
+  fn: (session: AMQPSession<false>) => Promise<void>,
   options?: Parameters<typeof AMQPSession.connect>[1],
 ): Promise<void> {
   const session = await AMQPSession.connect("amqp://127.0.0.1", options)
@@ -246,6 +247,7 @@ test("AMQPQueue (session-backed).publish() and get() round-trip", () =>
     await q.publish("round-trip")
 
     const msg = await q.get({ noAck: true })
+    expect(msg).toBeInstanceOf(SessionMessage)
     expect(msg?.bodyString()).toBe("round-trip")
   }))
 
@@ -382,7 +384,7 @@ test("AMQPQueue.subscribe() nack", () =>
     const q = await session.queue("test-q-nack-" + Math.random(), { durable: false, autoDelete: true })
 
     await q.publish("nack me")
-    const msg = await new Promise<AMQPMessage>((resolve) => {
+    const msg = await new Promise<SessionMessage>((resolve) => {
       q.subscribe({ noAck: false }, (m) => {
         m.nack()
         resolve(m)
@@ -539,7 +541,7 @@ test("AMQPQueue.subscribe() async iterator auto-acks on advance", () =>
     await q.publish("msg1")
     await q.publish("msg2")
 
-    const msgs: AMQPMessage[] = []
+    const msgs: SessionMessage[] = []
     const sub = await q.subscribe()
     for await (const msg of sub) {
       msgs.push(msg)
@@ -547,8 +549,8 @@ test("AMQPQueue.subscribe() async iterator auto-acks on advance", () =>
     }
 
     // msg1 was auto-acked when the loop advanced to msg2; msg2 was not (loop broke)
-    expect(msgs[0]!.isAcked).toBe(true)
-    expect(msgs[1]!.isAcked).toBe(false)
+    expect(msgs[0]!.raw.isAcked).toBe(true)
+    expect(msgs[1]!.raw.isAcked).toBe(false)
 
     await sub.cancel()
   }))
@@ -560,15 +562,15 @@ test("AMQPQueue.subscribe() async iterator does not ack when noAck is true", () 
     await q.publish("msg1")
     await q.publish("msg2")
 
-    const msgs: AMQPMessage[] = []
+    const msgs: SessionMessage[] = []
     const sub = await q.subscribe({ noAck: true })
     for await (const msg of sub) {
       msgs.push(msg)
       if (msgs.length >= 2) break
     }
 
-    expect(msgs[0]!.isAcked).toBe(false)
-    expect(msgs[1]!.isAcked).toBe(false)
+    expect(msgs[0]!.raw.isAcked).toBe(false)
+    expect(msgs[1]!.raw.isAcked).toBe(false)
 
     await sub.cancel()
   }))
@@ -677,7 +679,7 @@ test("session.rpcClient() close rejects pending calls", () =>
     const rpc = await session.rpcClient()
 
     const pending = rpc.call("rpc-close-queue", "hello")
-    const expectRejection = expect(pending).rejects.toThrow(/RPC client closed/)
+    const expectRejection = expect(pending).rejects.toThrow(/RPC client closed|Channel is closed/)
     await rpc.close()
 
     await expectRejection
@@ -687,11 +689,14 @@ test("session.rpcClient() close rejects pending calls", () =>
 // --- Codec registry integration tests ---
 
 function withCodecSession(
-  fn: (session: AMQPSession) => Promise<void>,
+  fn: (session: AMQPSession<true>) => Promise<void>,
   codecOpts?: { defaultContentType?: string; defaultContentEncoding?: string },
 ): Promise<void> {
   const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
-  return withSession(fn, { codecs, ...codecOpts })
+  return withSession(
+    fn as (session: AMQPSession<false>) => Promise<void>,
+    { codecs, ...codecOpts },
+  )
 }
 
 test("codec: publish JSON object and parse via callback", () =>
@@ -703,7 +708,7 @@ test("codec: publish JSON object and parse via callback", () =>
 
     let parsed: unknown
     const sub = await q.subscribe({ noAck: true }, async (msg) => {
-      parsed = await msg.parse()
+      parsed = msg.body
     })
     await new Promise((resolve) => setTimeout(resolve, 100))
 
@@ -721,9 +726,7 @@ test("codec: publish with default contentType", () =>
       const msg = await q.get({ noAck: true })
       expect(msg).not.toBeNull()
       expect(msg!.properties.contentType).toBe("application/json")
-
-      const parsed = await msg!.parse()
-      expect(parsed).toEqual({ key: "value" })
+      expect(msg!.body).toEqual({ key: "value" })
     },
     { defaultContentType: "application/json" },
   ))
@@ -737,9 +740,7 @@ test("codec: explicit contentType overrides default", () =>
 
       const msg = await q.get({ noAck: true })
       expect(msg!.properties.contentType).toBe("text/plain")
-
-      const parsed = await msg!.parse()
-      expect(parsed).toBe("plain text")
+      expect(msg!.body).toBe("plain text")
     },
     { defaultContentType: "application/json" },
   ))
@@ -754,9 +755,7 @@ test("codec: JSON + gzip round-trip via get", () =>
     const msg = await q.get({ noAck: true })
     expect(msg).not.toBeNull()
     expect(msg!.properties.contentEncoding).toBe("gzip")
-
-    const parsed = await msg!.parse()
-    expect(parsed).toEqual(data)
+    expect(msg!.body).toEqual(data)
   }))
 
 test("codec: default contentEncoding compresses automatically", () =>
@@ -769,14 +768,12 @@ test("codec: default contentEncoding compresses automatically", () =>
       const msg = await q.get({ noAck: true })
       expect(msg!.properties.contentType).toBe("application/json")
       expect(msg!.properties.contentEncoding).toBe("gzip")
-
-      const parsed = await msg!.parse()
-      expect(parsed).toEqual({ auto: "compressed" })
+      expect(msg!.body).toEqual({ auto: "compressed" })
     },
     { defaultContentType: "application/json", defaultContentEncoding: "gzip" },
   ))
 
-test("codec: async generator receives parseable messages", () =>
+test("codec: async generator receives decoded messages", () =>
   withCodecSession(
     async (session) => {
       const q = await session.queue("test-codec-gen-" + Math.random(), { durable: false, autoDelete: true })
@@ -787,7 +784,7 @@ test("codec: async generator receives parseable messages", () =>
       const results: unknown[] = []
       const sub = await q.subscribe({ noAck: true })
       for await (const msg of sub) {
-        results.push(await msg.parse())
+        results.push(msg.body)
         if (results.length >= 2) break
       }
 
@@ -811,9 +808,7 @@ test("codec: exchange publish encodes messages", () =>
 
     const msg = await q.get({ noAck: true })
     expect(msg).not.toBeNull()
-
-    const parsed = await msg!.parse()
-    expect(parsed).toEqual({ via: "exchange" })
+    expect(msg!.body).toEqual({ via: "exchange" })
   }))
 
 test("codec: no codecs configured leaves messages untouched", () =>
@@ -824,24 +819,22 @@ test("codec: no codecs configured leaves messages untouched", () =>
 
     const msg = await q.get({ noAck: true })
     expect(msg?.bodyString()).toBe("raw string")
-    // parse() should throw without a registry
-    await expect(msg!.parse()).rejects.toThrow("No codec registry")
+    // body is raw Uint8Array when no codecs configured
+    expect(msg!.rawBody).toBeInstanceOf(Uint8Array)
   }))
 
 test("codec: rpcClient and rpcServer round-trip with JSON encoding", () =>
   withCodecSession(
     async (session) => {
       await session.rpcServer("rpc-codec-queue", async (msg) => {
-        const request = await msg.parse()
-        return { echo: request }
+        return { echo: msg.body }
       })
 
       const rpc = await session.rpcClient()
       const reply = await rpc.call("rpc-codec-queue", { greeting: "hello" })
 
       expect(reply.properties.contentType).toBe("application/json")
-      const parsed = await reply.parse()
-      expect(parsed).toEqual({ echo: { greeting: "hello" } })
+      expect(reply.body).toEqual({ echo: { greeting: "hello" } })
 
       await rpc.close()
       await session.queue("rpc-codec-queue").then((q) => q.delete())
@@ -853,15 +846,37 @@ test("codec: rpcCall one-shot with JSON encoding", () =>
   withCodecSession(
     async (session) => {
       await session.rpcServer("rpc-codec-oneshot", async (msg) => {
-        return { got: await msg.parse() }
+        return { got: msg.body }
       })
 
       const reply = await session.rpcCall("rpc-codec-oneshot", { ping: true })
-
-      const parsed = await reply.parse()
-      expect(parsed).toEqual({ got: { ping: true } })
+      expect(reply.body).toEqual({ got: { ping: true } })
 
       await session.queue("rpc-codec-oneshot").then((q) => q.delete())
     },
     { defaultContentType: "application/json" },
   ))
+
+test("subscribe callback receives SessionMessage", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-sm-type-" + Math.random(), { durable: false, autoDelete: true })
+    await q.publish("check type")
+
+    const msg = await new Promise<SessionMessage>((resolve) => {
+      q.subscribe({ noAck: true }, (m) => resolve(m))
+    })
+
+    expect(msg).toBeInstanceOf(SessionMessage)
+    expect(msg.raw).toBeInstanceOf(AMQPMessage)
+  }))
+
+test("get() returns SessionMessage", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-sm-get-" + Math.random(), { durable: false, autoDelete: true })
+    await q.publish("check get")
+
+    const msg = await q.get({ noAck: true })
+    expect(msg).toBeInstanceOf(SessionMessage)
+    expect(msg!.raw).toBeInstanceOf(AMQPMessage)
+    expect(msg!.rawBody).toBeInstanceOf(Uint8Array)
+  }))

@@ -1,9 +1,8 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
-import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { Body, Serializable } from "./amqp-publisher.js"
+import type { Body, Serializable, PublishBody } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
@@ -11,6 +10,7 @@ import { AMQPExchange } from "./amqp-exchange.js"
 import { AMQPRPCClient } from "./amqp-rpc-client.js"
 import { AMQPRPCServer } from "./amqp-rpc-server.js"
 import type { RPCHandler } from "./amqp-rpc-server.js"
+import type { SessionMessage } from "./amqp-session-message.js"
 
 /**
  * Options for {@link AMQPSession.connect}.
@@ -45,9 +45,15 @@ export interface AMQPSessionOptions {
 /**
  * High-level session with automatic reconnection and consumer recovery.
  *
+ * The generic parameter `C` tracks whether a codec registry is configured.
+ * When `C` is `true`, publish methods accept `Serializable` bodies directly.
+ * When `C` is `false` (default), only raw `Body` types are accepted.
+ *
+ * Users never write `C` explicitly — it's inferred from the `connect()` call.
+ *
  * Create via `AMQPSession.connect(url, options)`.
  */
-export class AMQPSession {
+export class AMQPSession<C extends boolean = false> {
   /** Fires after a successful (re)connection and consumer recovery */
   onconnect?: () => void
   /** Fires when max retries are exhausted */
@@ -78,8 +84,8 @@ export class AMQPSession {
     backoffMultiplier: number
     maxRetries: number
   }
-  private readonly queues = new Map<string, AMQPQueue>()
-  private readonly rpcClients = new Set<AMQPRPCClient>()
+  private readonly queues = new Map<string, AMQPQueue<C>>()
+  private readonly rpcClients = new Set<AMQPRPCClient<C>>()
   private reconnectAttempts = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined
   private reconnectResolve: (() => void) | undefined
@@ -123,7 +129,12 @@ export class AMQPSession {
    * - `amqp://` / `amqps://` → TCP socket (`AMQPClient`)
    * - `ws://` / `wss://` → WebSocket (`AMQPWebSocketClient`)
    */
-  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession> {
+  static async connect(
+    url: string,
+    options: AMQPSessionOptions & { codecs: AMQPCodecRegistry },
+  ): Promise<AMQPSession<true>>
+  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession<false>>
+  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession<boolean>> {
     const u = new URL(url)
     let client: AMQPBaseClient
     if (u.protocol === "ws:" || u.protocol === "wss:") {
@@ -139,6 +150,36 @@ export class AMQPSession {
     }
     await client.connect()
     return new AMQPSession(client, options)
+  }
+
+  /**
+   * Encode a body for publishing using the configured codec registry.
+   * Applies `defaultContentType` / `defaultContentEncoding` as fallbacks.
+   * @internal
+   */
+  async encodeBody(
+    body: unknown,
+    properties: AMQPProperties,
+  ): Promise<{ body: Body; properties: AMQPProperties }> {
+    if (!this.codecs) {
+      if (
+        body !== null &&
+        typeof body !== "string" &&
+        !(body instanceof Uint8Array) &&
+        !(body instanceof ArrayBuffer)
+      ) {
+        throw new Error(
+          "Cannot publish non-string/Buffer body without a codec registry. " +
+            "Configure codecs on the session or pass a string/Uint8Array body.",
+        )
+      }
+      return { body: body as Body, properties }
+    }
+    const defaults: { contentType?: string; contentEncoding?: string } = {}
+    if (this.defaultContentType) defaults.contentType = this.defaultContentType
+    if (this.defaultContentEncoding) defaults.contentEncoding = this.defaultContentEncoding
+    const result = await this.codecs.serializeAndEncode(body, properties, defaults)
+    return { body: result.body, properties: result.properties }
   }
 
   /**
@@ -196,12 +237,12 @@ export class AMQPSession {
    * @param [params] - queue declaration parameters
    * @param [args] - optional queue arguments (e.g. `x-message-ttl`)
    */
-  async queue(name: string, params?: QueueParams, args?: Record<string, unknown>): Promise<AMQPQueue> {
+  async queue(name: string, params?: QueueParams, args?: Record<string, unknown>): Promise<AMQPQueue<C>> {
     const ch = await this.getOpsChannel()
     const res = await ch.queueDeclare(name, params, args)
     const existing = this.queues.get(res.name)
     if (existing) return existing
-    const q = new AMQPQueue(this, res.name)
+    const q = new AMQPQueue<C>(this, res.name)
     this.queues.set(res.name, q)
     return q
   }
@@ -218,10 +259,10 @@ export class AMQPSession {
     type: ExchangeType,
     params?: ExchangeParams,
     args?: Record<string, unknown>,
-  ): Promise<AMQPExchange> {
+  ): Promise<AMQPExchange<C>> {
     const ch = await this.getOpsChannel()
     await ch.exchangeDeclare(name, type, params, args)
-    return new AMQPExchange(this, name)
+    return new AMQPExchange<C>(this, name)
   }
 
   /**
@@ -232,8 +273,8 @@ export class AMQPSession {
     name = "amq.direct",
     params?: ExchangeParams,
     args?: Record<string, unknown>,
-  ): Promise<AMQPExchange> {
-    if (name === "") return new AMQPExchange(this, "") // default exchange — no declare needed
+  ): Promise<AMQPExchange<C>> {
+    if (name === "") return new AMQPExchange<C>(this, "") // default exchange — no declare needed
     return this.exchange(name, "direct", params, args)
   }
 
@@ -241,7 +282,11 @@ export class AMQPSession {
    * Declare a fanout exchange and return a session-bound {@link AMQPExchange} handle.
    * @param [name="amq.fanout"] - exchange name
    */
-  fanoutExchange(name = "amq.fanout", params?: ExchangeParams, args?: Record<string, unknown>): Promise<AMQPExchange> {
+  fanoutExchange(
+    name = "amq.fanout",
+    params?: ExchangeParams,
+    args?: Record<string, unknown>,
+  ): Promise<AMQPExchange<C>> {
     return this.exchange(name, "fanout", params, args)
   }
 
@@ -249,7 +294,11 @@ export class AMQPSession {
    * Declare a topic exchange and return a session-bound {@link AMQPExchange} handle.
    * @param [name="amq.topic"] - exchange name
    */
-  topicExchange(name = "amq.topic", params?: ExchangeParams, args?: Record<string, unknown>): Promise<AMQPExchange> {
+  topicExchange(
+    name = "amq.topic",
+    params?: ExchangeParams,
+    args?: Record<string, unknown>,
+  ): Promise<AMQPExchange<C>> {
     return this.exchange(name, "topic", params, args)
   }
 
@@ -261,7 +310,7 @@ export class AMQPSession {
     name = "amq.headers",
     params?: ExchangeParams,
     args?: Record<string, unknown>,
-  ): Promise<AMQPExchange> {
+  ): Promise<AMQPExchange<C>> {
     return this.exchange(name, "headers", params, args)
   }
 
@@ -276,19 +325,27 @@ export class AMQPSession {
    * @param body - The request body
    * @param options - Optional AMQP properties and timeout
    * @param options.timeout - Timeout in milliseconds
-   * @returns The reply {@link AMQPMessage}
+   * @returns The reply {@link SessionMessage}
    */
-  async rpcCall(queue: string, body: Body, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage>
+  async rpcCall(
+    queue: string,
+    body: PublishBody<C>,
+    options?: AMQPProperties & { timeout?: number },
+  ): Promise<SessionMessage>
   async rpcCall(
     queue: string,
     body: Serializable,
     options: AMQPProperties & { timeout?: number; contentType: string },
-  ): Promise<AMQPMessage>
-  async rpcCall(queue: string, body: unknown, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage> {
-    const rpc = new AMQPRPCClient(this)
+  ): Promise<SessionMessage>
+  async rpcCall(
+    queue: string,
+    body: unknown,
+    options?: AMQPProperties & { timeout?: number },
+  ): Promise<SessionMessage> {
+    const rpc = new AMQPRPCClient<C>(this)
     await rpc.start()
     try {
-      return await rpc.call(queue, body as Body, options)
+      return await rpc.call(queue, body as PublishBody<C>, options)
     } finally {
       await rpc.close()
     }
@@ -301,15 +358,15 @@ export class AMQPSession {
    *
    * @returns A started {@link AMQPRPCClient} ready for {@link AMQPRPCClient.call} invocations.
    */
-  async rpcClient(): Promise<AMQPRPCClient> {
-    const rpc = new AMQPRPCClient(this)
+  async rpcClient(): Promise<AMQPRPCClient<C>> {
+    const rpc = new AMQPRPCClient<C>(this)
     await rpc.start()
     this.rpcClients.add(rpc)
     return rpc
   }
 
   /** @internal Remove an RPC client from session recovery tracking. */
-  untrackRPCClient(rpc: AMQPRPCClient): void {
+  untrackRPCClient(rpc: AMQPRPCClient<C>): void {
     this.rpcClients.delete(rpc)
   }
 
@@ -319,12 +376,12 @@ export class AMQPSession {
    * published back to the caller's `replyTo` address.
    *
    * @param queue - Queue name to consume from
-   * @param handler - Callback that receives the message body and full message, returns the response body
+   * @param handler - Callback that receives the decoded message, returns the response body
    * @param prefetch - Channel prefetch count (default: 1)
    * @returns A started {@link AMQPRPCServer}
    */
-  async rpcServer(queue: string, handler: RPCHandler, prefetch?: number): Promise<AMQPRPCServer> {
-    const server = new AMQPRPCServer(this)
+  async rpcServer(queue: string, handler: RPCHandler, prefetch?: number): Promise<AMQPRPCServer<C>> {
+    const server = new AMQPRPCServer<C>(this)
     await server.start(queue, handler, prefetch)
     return server
   }

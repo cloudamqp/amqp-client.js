@@ -1,8 +1,5 @@
 import { expect, test, describe, beforeEach } from "vitest"
 import { AMQPCodecRegistry } from "../src/amqp-codec-registry.js"
-import { AMQPMessage } from "../src/amqp-message.js"
-import type { AMQPChannel } from "../src/amqp-channel.js"
-import type { AMQPProperties } from "../src/amqp-properties.js"
 import type { AMQPParser, AMQPCoder } from "../src/amqp-codec-registry.js"
 
 beforeEach(() => {
@@ -188,7 +185,7 @@ describe("AMQPCodecRegistry", () => {
 
   describe("custom codecs", () => {
     test("register and use a custom parser", async () => {
-      const csvParser: AMQPParser<string[][], string[][]> = {
+      const csvParser: AMQPParser<string[][]> = {
         serialize(body: string[][]): Uint8Array {
           return new TextEncoder().encode(body.map((r) => r.join(",")).join("\n"))
         },
@@ -252,63 +249,5 @@ describe("AMQPCodecRegistry", () => {
       const parsed = await codecs.decodeAndParse(body, properties)
       expect(parsed).toEqual(obj)
     })
-  })
-})
-
-describe("AMQPMessage.parse()", () => {
-  function makeMessage(body: Uint8Array, props: AMQPProperties): AMQPMessage {
-    const msg = new AMQPMessage({} as AMQPChannel)
-    msg.body = body
-    msg.properties = props
-    return msg
-  }
-
-  test("parses JSON body when registry is attached", async () => {
-    const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
-    const json = new TextEncoder().encode(JSON.stringify({ ok: true }))
-    const msg = makeMessage(json, { contentType: "application/json" })
-    msg.codecRegistry = codecs
-
-    const result = await msg.parse()
-    expect(result).toEqual({ ok: true })
-  })
-
-  test("accepts registry as argument", async () => {
-    const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
-    const json = new TextEncoder().encode('"hello"')
-    const msg = makeMessage(json, { contentType: "application/json" })
-
-    const result = await msg.parse(codecs)
-    expect(result).toBe("hello")
-  })
-
-  test("throws when no registry is available", async () => {
-    const msg = makeMessage(new Uint8Array(0), {})
-    await expect(msg.parse()).rejects.toThrow("No codec registry")
-  })
-
-  test("returns null for null body", async () => {
-    const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
-    const msg = new AMQPMessage({} as AMQPChannel)
-    msg.codecRegistry = codecs
-
-    const result = await msg.parse()
-    expect(result).toBeNull()
-  })
-
-  test("decodes gzip + JSON", async () => {
-    const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
-    const obj = { compressed: true }
-
-    const { body, properties } = await codecs.serializeAndEncode(obj, {
-      contentType: "application/json",
-      contentEncoding: "gzip",
-    })
-
-    const msg = makeMessage(body, properties)
-    msg.codecRegistry = codecs
-
-    const result = await msg.parse()
-    expect(result).toEqual(obj)
   })
 })

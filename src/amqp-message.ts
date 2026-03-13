@@ -1,5 +1,4 @@
 import type { AMQPChannel } from "./amqp-channel.js"
-import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 
 /**
@@ -31,8 +30,6 @@ export class AMQPMessage {
   replyCode?: number
   /** Reason the message was returned. */
   replyText?: string
-  /** @internal Set by the session layer for high-level codec support. */
-  codecRegistry?: AMQPCodecRegistry
   private acked = false
 
   /** True if the message has already been acked, nacked, or rejected. */
@@ -61,26 +58,6 @@ export class AMQPMessage {
 
   bodyString(): string | null {
     return this.bodyToString()
-  }
-
-  /**
-   * Decode and deserialize the message body using the codec registry.
-   *
-   * Reverses the publish-side pipeline: decompresses based on
-   * `contentEncoding`, then deserializes based on `contentType`.
-   *
-   * Requires a codec registry (set automatically when consuming via
-   * a session with `codecs` configured, or pass one explicitly).
-   *
-   * @param registry - Optional codec registry override
-   * @returns The decoded/deserialized body
-   */
-  async parse(registry?: AMQPCodecRegistry): Promise<unknown> {
-    const codecs = registry ?? this.codecRegistry
-    if (!codecs)
-      throw new Error("No codec registry available. Configure codecs on the session or pass a registry to parse().")
-    if (!this.body) return null
-    return codecs.decodeAndParse(this.body, this.properties)
   }
 
   /** Acknowledge the message */
