@@ -1,6 +1,6 @@
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { CodecMode } from "./amqp-publisher.js"
+import type { CodecMode } from "./amqp-message.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPSubscription } from "./amqp-subscription.js"
 

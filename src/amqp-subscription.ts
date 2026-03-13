@@ -3,7 +3,7 @@ import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
-import type { CodecMode } from "./amqp-publisher.js"
+import type { CodecMode } from "./amqp-message.js"
 import type { ConsumeParams } from "./amqp-channel.js"
 import { decodeMessage } from "./amqp-session-message.js"
 
