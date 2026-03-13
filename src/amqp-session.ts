@@ -2,6 +2,7 @@ import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
+import { isBody } from "./amqp-publisher.js"
 import type { Body, Serializable, PublishBody, CodecMode } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
@@ -162,18 +163,13 @@ export class AMQPSession<C extends CodecMode = "plain"> {
     properties: AMQPProperties,
   ): Promise<{ body: Body; properties: AMQPProperties }> {
     if (!this.codecs) {
-      if (
-        body !== null &&
-        typeof body !== "string" &&
-        !(body instanceof Uint8Array) &&
-        !(body instanceof ArrayBuffer)
-      ) {
+      if (!isBody(body)) {
         throw new Error(
           "Cannot publish non-string/Buffer body without a codec registry. " +
             "Configure codecs on the session or pass a string/Uint8Array body.",
         )
       }
-      return { body: body as Body, properties }
+      return { body, properties }
     }
     const defaults: { contentType?: string; contentEncoding?: string } = {}
     if (this.defaultContentType) defaults.contentType = this.defaultContentType
