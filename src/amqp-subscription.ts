@@ -111,7 +111,9 @@ export class AMQPGeneratorSubscription<C extends CodecMode = "plain">
         for await (const msg of consumer.messages) {
           if (this.stopped) return
           if (autoAck) await prev?.ack()
-          const decoded = await decodeMessage(msg, this.def.codecs)
+          const decoded = this.def.codecs
+            ? await decodeMessage(msg, this.def.codecs)
+            : msg
           prev = msg
           yield decoded as AMQPMessage<C>
         }

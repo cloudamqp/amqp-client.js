@@ -54,7 +54,9 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
         this.pending.delete(id)
         if (entry.timer) clearTimeout(entry.timer)
         try {
-          const decoded = await decodeMessage(msg, codecs)
+          const decoded = codecs
+            ? await decodeMessage(msg, codecs)
+            : msg
           entry.resolve(decoded as AMQPMessage<C>)
         } catch (err) {
           entry.reject(err instanceof Error ? err : new Error(String(err)))

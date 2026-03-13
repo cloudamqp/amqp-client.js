@@ -111,10 +111,12 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
     let internalCallback: ((msg: AMQPMessage) => void | Promise<void>) | undefined
     if (callback !== undefined) {
       const userCallback = callback
-      internalCallback = async (msg: AMQPMessage) => {
-        const decoded = await decodeMessage(msg, codecs) as AMQPMessage<C>
-        return userCallback(decoded)
-      }
+      internalCallback = codecs
+        ? async (msg: AMQPMessage) => {
+            const decoded = await decodeMessage(msg, codecs) as AMQPMessage<C>
+            return userCallback(decoded)
+          }
+        : userCallback as (msg: AMQPMessage) => void | Promise<void>
     }
 
     if (autoAck && internalCallback !== undefined) {
@@ -154,7 +156,8 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
     const ch = await this.session.getOpsChannel()
     const msg = await ch.basicGet(this.name, params)
     if (!msg) return null
-    return decodeMessage(msg, this.session.codecs) as Promise<AMQPMessage<C>>
+    if (this.session.codecs) return decodeMessage(msg, this.session.codecs) as Promise<AMQPMessage<C>>
+    return msg as AMQPMessage<C>
   }
 
   /**
