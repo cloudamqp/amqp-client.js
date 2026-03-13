@@ -1,6 +1,7 @@
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
+import type { Body, Serializable } from "./amqp-publisher.js"
 
 /** Options for {@link AMQPExchange#publish}. */
 export type ExchangePublishOptions = AMQPProperties & {
@@ -38,6 +39,8 @@ export class AMQPExchange {
    * @param [options.confirm=true] - wait for broker confirmation
    * @returns `this` for chaining
    */
+  async publish(body: Body, options?: ExchangePublishOptions): Promise<AMQPExchange>
+  async publish(body: Serializable, options: ExchangePublishOptions & { contentType: string }): Promise<AMQPExchange>
   async publish(body: unknown, options: ExchangePublishOptions = {}): Promise<AMQPExchange> {
     const { confirm = true, routingKey = "", ...properties } = options
     if (confirm) {

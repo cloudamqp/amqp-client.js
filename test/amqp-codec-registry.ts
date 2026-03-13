@@ -189,10 +189,9 @@ describe("AMQPCodecRegistry", () => {
 
   describe("custom codecs", () => {
     test("register and use a custom parser", async () => {
-      const csvParser: AMQPParser = {
-        serialize(body: unknown): Uint8Array {
-          const rows = body as string[][]
-          return new TextEncoder().encode(rows.map((r) => r.join(",")).join("\n"))
+      const csvParser: AMQPParser<string[][], string[][]> = {
+        serialize(body: string[][]): Uint8Array {
+          return new TextEncoder().encode(body.map((r) => r.join(",")).join("\n"))
         },
         parse(body: Uint8Array): string[][] {
           const text = new TextDecoder().decode(body)

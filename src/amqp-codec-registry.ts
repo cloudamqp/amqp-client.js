@@ -1,9 +1,9 @@
 import type { AMQPProperties } from "./amqp-properties.js"
 
 /** Handles serialization/deserialization based on content-type. */
-export interface AMQPParser {
-  serialize(body: unknown, properties: AMQPProperties): Uint8Array
-  parse(body: Uint8Array, properties: AMQPProperties): unknown
+export interface AMQPParser<T = unknown> {
+  serialize(body: T, properties: AMQPProperties): Uint8Array
+  parse(body: Uint8Array, properties: AMQPProperties): T
 }
 
 /** Handles compression/decompression based on content-encoding. */
@@ -30,10 +30,9 @@ function toBytes(data: string | Uint8Array | ArrayBuffer | Buffer | null): Uint8
   return new Uint8Array(data)
 }
 
-const PlainParser: AMQPParser = {
-  serialize(body: unknown): Uint8Array {
-    const str = typeof body === "string" ? body : String(body)
-    return new TextEncoder().encode(str)
+const PlainParser: AMQPParser<string> = {
+  serialize(body: string): Uint8Array {
+    return new TextEncoder().encode(String(body))
   },
   parse(body: Uint8Array): string {
     return new TextDecoder().decode(body)
@@ -97,7 +96,7 @@ export class AMQPCodecRegistry {
   private readonly parsers = new Map<string, AMQPParser>()
   private readonly coders = new Map<string, AMQPCoder>()
 
-  registerParser(contentType: string, parser: AMQPParser): this {
+  registerParser<T>(contentType: string, parser: AMQPParser<T>): this {
     this.parsers.set(contentType, parser)
     return this
   }
