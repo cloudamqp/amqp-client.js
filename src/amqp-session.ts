@@ -3,7 +3,7 @@ import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./a
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { Body } from "./amqp-publisher.js"
+import type { Body, Serializable } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
@@ -281,7 +281,7 @@ export class AMQPSession {
   async rpcCall(queue: string, body: Body, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage>
   async rpcCall(
     queue: string,
-    body: unknown,
+    body: Serializable,
     options: AMQPProperties & { timeout?: number; contentType: string },
   ): Promise<AMQPMessage>
   async rpcCall(queue: string, body: unknown, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage> {

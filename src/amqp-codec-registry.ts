@@ -15,7 +15,6 @@ export interface AMQPCoder {
 function isBodyType(data: unknown): data is string | Uint8Array | ArrayBuffer | Buffer | null {
   return (
     data === null ||
-    data === undefined ||
     typeof data === "string" ||
     data instanceof Uint8Array ||
     data instanceof ArrayBuffer
@@ -23,7 +22,7 @@ function isBodyType(data: unknown): data is string | Uint8Array | ArrayBuffer | 
 }
 
 function toBytes(data: string | Uint8Array | ArrayBuffer | Buffer | null): Uint8Array {
-  if (data === null || data === undefined) return new Uint8Array(0)
+  if (data === null) return new Uint8Array(0)
   if (data instanceof Uint8Array) return data
   if (data instanceof ArrayBuffer) return new Uint8Array(data)
   if (typeof data === "string") return new TextEncoder().encode(data)
@@ -201,9 +200,13 @@ export class AMQPCodecRegistry {
 
     if (properties.contentEncoding) {
       const coder = this.coders.get(properties.contentEncoding)
-      if (coder) {
-        bytes = await coder.decode(bytes, properties)
+      if (!coder) {
+        throw new Error(
+          `No coder registered for content-encoding "${properties.contentEncoding}". ` +
+            `Register a coder via registerCoder() or use enableBuiltinCoders().`,
+        )
       }
+      bytes = await coder.decode(bytes, properties)
     }
 
     if (properties.contentType) {
