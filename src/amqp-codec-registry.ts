@@ -1,4 +1,5 @@
 import type { AMQPProperties } from "./amqp-properties.js"
+import { isBody } from "./amqp-publisher.js"
 
 /** Handles serialization/deserialization based on content-type. */
 export interface AMQPParser<T = unknown> {
@@ -10,15 +11,6 @@ export interface AMQPParser<T = unknown> {
 export interface AMQPCoder {
   encode(body: Uint8Array, properties: AMQPProperties): Promise<Uint8Array>
   decode(body: Uint8Array, properties: AMQPProperties): Promise<Uint8Array>
-}
-
-function isBodyType(data: unknown): data is string | Uint8Array | ArrayBuffer | Buffer | null {
-  return (
-    data === null ||
-    typeof data === "string" ||
-    data instanceof Uint8Array ||
-    data instanceof ArrayBuffer
-  )
 }
 
 function toBytes(data: string | Uint8Array | ArrayBuffer | Buffer | null): Uint8Array {
@@ -160,7 +152,7 @@ export class AMQPCodecRegistry {
       const parser = this.parsers.get(props.contentType)
       if (parser) {
         bytes = parser.serialize(body, props)
-      } else if (isBodyType(body)) {
+      } else if (isBody(body)) {
         bytes = toBytes(body)
       } else {
         throw new Error(
@@ -168,7 +160,7 @@ export class AMQPCodecRegistry {
             `Register a parser via registerParser() or use enableBuiltinParsers().`,
         )
       }
-    } else if (isBodyType(body)) {
+    } else if (isBody(body)) {
       bytes = toBytes(body)
     } else {
       throw new Error(

@@ -2,6 +2,15 @@ import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 
 export type Body = string | Uint8Array | ArrayBuffer | Buffer | null
+
+export function isBody(data: unknown): data is Body {
+  return (
+    data === null ||
+    typeof data === "string" ||
+    data instanceof Uint8Array ||
+    data instanceof ArrayBuffer
+  )
+}
 export type Serializable = Body | number | boolean | Record<string, unknown> | unknown[]
 
 /** Controls whether publish methods accept rich types or only raw bytes. */
