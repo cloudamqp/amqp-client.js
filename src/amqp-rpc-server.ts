@@ -1,4 +1,5 @@
 import type { AMQPProperties } from "./amqp-properties.js"
+import type { CodecMode } from "./amqp-publisher.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPSubscription } from "./amqp-subscription.js"
 import type { SessionMessage } from "./amqp-session-message.js"
@@ -25,7 +26,7 @@ export type RPCHandler = (msg: SessionMessage) => unknown | Promise<unknown>
  * await session.stop()
  * ```
  */
-export class AMQPRPCServer<C extends boolean = false> {
+export class AMQPRPCServer<C extends CodecMode = "plain"> {
   private readonly session: AMQPSession<C>
   private subscription: AMQPSubscription | null = null
 

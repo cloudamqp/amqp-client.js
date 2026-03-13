@@ -1,7 +1,7 @@
 import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
-import type { PublishBody, Serializable } from "./amqp-publisher.js"
+import type { PublishBody, Serializable, CodecMode } from "./amqp-publisher.js"
 import { SessionMessage, decodeMessage } from "./amqp-session-message.js"
 
 const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
@@ -18,7 +18,7 @@ const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
  * await rpc.close()
  * ```
  */
-export class AMQPRPCClient<C extends boolean = false> {
+export class AMQPRPCClient<C extends CodecMode = "plain"> {
   private readonly session: AMQPSession<C>
   private ch: AMQPChannel | null = null
   private correlationId = 0

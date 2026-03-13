@@ -2,7 +2,7 @@ import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { Body, Serializable, PublishBody } from "./amqp-publisher.js"
+import type { Body, Serializable, PublishBody, CodecMode } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
@@ -46,14 +46,14 @@ export interface AMQPSessionOptions {
  * High-level session with automatic reconnection and consumer recovery.
  *
  * The generic parameter `C` tracks whether a codec registry is configured.
- * When `C` is `true`, publish methods accept `Serializable` bodies directly.
- * When `C` is `false` (default), only raw `Body` types are accepted.
+ * When `C` is `"codec"`, publish methods accept `Serializable` bodies directly.
+ * When `C` is `"plain"` (default), only raw `Body` types are accepted.
  *
  * Users never write `C` explicitly — it's inferred from the `connect()` call.
  *
  * Create via `AMQPSession.connect(url, options)`.
  */
-export class AMQPSession<C extends boolean = false> {
+export class AMQPSession<C extends CodecMode = "plain"> {
   /** Fires after a successful (re)connection and consumer recovery */
   onconnect?: () => void
   /** Fires when max retries are exhausted */
@@ -132,9 +132,9 @@ export class AMQPSession<C extends boolean = false> {
   static async connect(
     url: string,
     options: AMQPSessionOptions & { codecs: AMQPCodecRegistry },
-  ): Promise<AMQPSession<true>>
-  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession<false>>
-  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession<boolean>> {
+  ): Promise<AMQPSession<"codec">>
+  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession<"plain">>
+  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession<CodecMode>> {
     const u = new URL(url)
     let client: AMQPBaseClient
     if (u.protocol === "ws:" || u.protocol === "wss:") {

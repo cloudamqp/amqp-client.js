@@ -1,7 +1,7 @@
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
-import type { PublishBody, Serializable } from "./amqp-publisher.js"
+import type { PublishBody, Serializable, CodecMode } from "./amqp-publisher.js"
 
 /** Options for {@link AMQPExchange#publish}. */
 export type ExchangePublishOptions = AMQPProperties & {
@@ -18,7 +18,7 @@ export type ExchangePublishOptions = AMQPProperties & {
  * All operations are reconnect-safe: they acquire a session channel on each
  * call. `publish` waits for a broker confirm; pass `{ confirm: false }` to skip the wait.
  */
-export class AMQPExchange<C extends boolean = false> {
+export class AMQPExchange<C extends CodecMode = "plain"> {
   readonly name: string
   private readonly session: AMQPSession<C>
 

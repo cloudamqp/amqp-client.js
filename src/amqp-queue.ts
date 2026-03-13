@@ -6,7 +6,7 @@ import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription
 import type { ConsumerDefinition } from "./amqp-subscription.js"
 import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
-import type { PublishBody, Serializable } from "./amqp-publisher.js"
+import type { PublishBody, Serializable, CodecMode } from "./amqp-publisher.js"
 import { SessionMessage, decodeMessage } from "./amqp-session-message.js"
 
 /**
@@ -37,7 +37,7 @@ export type QueuePublishOptions = AMQPProperties & {
  * automatic consumer recovery. `publish` waits for a broker confirm; use
  * Pass `{ confirm: false }` to skip the wait.
  */
-export class AMQPQueue<C extends boolean = false> {
+export class AMQPQueue<C extends CodecMode = "plain"> {
   readonly name: string
   private readonly session: AMQPSession<C>
   private readonly subscriptions = new Set<AMQPSubscription>()

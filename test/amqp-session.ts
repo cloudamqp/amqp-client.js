@@ -7,18 +7,19 @@ import { AMQPMessage } from "../src/amqp-message.js"
 import { AMQPCodecRegistry } from "../src/amqp-codec-registry.js"
 import { SessionMessage } from "../src/amqp-session-message.js"
 import type { AMQPBaseClient } from "../src/amqp-base-client.js"
+import type { CodecMode } from "../src/amqp-publisher.js"
 
 beforeEach(() => {
   expect.hasAssertions()
 })
 
 /** Access the private client for test-only operations (socket destruction, spying). */
-function testClient(session: AMQPSession<boolean>): AMQPBaseClient {
+function testClient(session: AMQPSession<CodecMode>): AMQPBaseClient {
   return (session as unknown as { client: AMQPBaseClient }).client
 }
 
 async function withSession(
-  fn: (session: AMQPSession<false>) => Promise<void>,
+  fn: (session: AMQPSession<"plain">) => Promise<void>,
   options?: Parameters<typeof AMQPSession.connect>[1],
 ): Promise<void> {
   const session = await AMQPSession.connect("amqp://127.0.0.1", options)
@@ -689,12 +690,12 @@ test("session.rpcClient() close rejects pending calls", () =>
 // --- Codec registry integration tests ---
 
 function withCodecSession(
-  fn: (session: AMQPSession<true>) => Promise<void>,
+  fn: (session: AMQPSession<"codec">) => Promise<void>,
   codecOpts?: { defaultContentType?: string; defaultContentEncoding?: string },
 ): Promise<void> {
   const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
   return withSession(
-    fn as (session: AMQPSession<false>) => Promise<void>,
+    fn as (session: AMQPSession<"plain">) => Promise<void>,
     { codecs, ...codecOpts },
   )
 }
