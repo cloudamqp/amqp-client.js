@@ -17,11 +17,11 @@ export type Serializable = Body | number | boolean | Record<string, unknown> | u
 export type PublishBody<C extends CodecMode> = C extends "codec" ? Serializable : Body
 
 /** Publish with broker confirmation. */
-export async function publishConfirmed(
-  session: AMQPSession<CodecMode>,
+export async function publishConfirmed<C extends CodecMode>(
+  session: AMQPSession<C>,
   exchange: string,
   routingKey: string,
-  body: unknown,
+  body: PublishBody<C>,
   properties?: AMQPProperties,
 ): Promise<void> {
   const encoded = await session.encodeBody(body, properties ?? {})
@@ -30,11 +30,11 @@ export async function publishConfirmed(
 }
 
 /** Publish without waiting for broker confirmation. */
-export async function publishNoConfirm(
-  session: AMQPSession<CodecMode>,
+export async function publishNoConfirm<C extends CodecMode>(
+  session: AMQPSession<C>,
   exchange: string,
   routingKey: string,
-  body: unknown,
+  body: PublishBody<C>,
   properties?: AMQPProperties,
 ): Promise<void> {
   const encoded = await session.encodeBody(body, properties ?? {})

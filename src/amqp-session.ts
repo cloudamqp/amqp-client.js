@@ -159,7 +159,7 @@ export class AMQPSession<C extends CodecMode = "plain"> {
    * @internal
    */
   async encodeBody(
-    body: unknown,
+    body: PublishBody<C>,
     properties: AMQPProperties,
   ): Promise<{ body: Body; properties: AMQPProperties }> {
     if (!this.codecs) {
