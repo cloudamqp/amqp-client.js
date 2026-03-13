@@ -1,14 +1,15 @@
+import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { CodecMode } from "./amqp-publisher.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPSubscription } from "./amqp-subscription.js"
-import type { SessionMessage } from "./amqp-session-message.js"
 
 /**
  * Callback invoked for each incoming RPC request.
- * Receives a decoded {@link SessionMessage} and returns the response body.
+ * Receives a decoded {@link AMQPMessage} and returns the response body.
  */
-export type RPCHandler = (msg: SessionMessage) => unknown | Promise<unknown>
+export type RPCHandler<C extends CodecMode = "plain"> =
+  (msg: AMQPMessage<C>) => unknown | Promise<unknown>
 
 /**
  * An RPC server that consumes messages from a queue and replies to each caller.
@@ -36,7 +37,7 @@ export class AMQPRPCServer<C extends CodecMode = "plain"> {
   }
 
   /** @internal Called by {@link AMQPSession.rpcServer}. */
-  async start(queue: string, handler: RPCHandler, prefetch = 1): Promise<this> {
+  async start(queue: string, handler: RPCHandler<C>, prefetch = 1): Promise<this> {
     if (this.subscription) throw new Error("RPC server already started")
     const q = await this.session.queue(queue)
     this.subscription = await q.subscribe(
