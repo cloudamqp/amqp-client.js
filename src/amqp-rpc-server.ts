@@ -4,6 +4,16 @@ import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPSubscription } from "./amqp-subscription.js"
 import type { Body } from "./amqp-publisher.js"
 
+function validateBody(body: unknown): Body {
+  if (body === null || typeof body === "string" || body instanceof Uint8Array || body instanceof ArrayBuffer) {
+    return body as Body
+  }
+  throw new Error(
+    "RPC handler returned a non-string/Buffer value but no codec registry is configured. " +
+      "Configure codecs on the session or return a string/Uint8Array from the handler.",
+  )
+}
+
 /**
  * Callback invoked for each incoming RPC request.
  * Return the response body to send back to the caller.
@@ -57,7 +67,7 @@ export class AMQPRPCServer {
         if (correlationId !== undefined) props.correlationId = correlationId
         await msg.channel.basicPublish("", replyTo, encoded.body, props)
       } else {
-        await msg.channel.basicPublish("", replyTo, result as Body, replyProps)
+        await msg.channel.basicPublish("", replyTo, validateBody(result), replyProps)
       }
     })
     return this

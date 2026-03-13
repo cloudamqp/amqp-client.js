@@ -145,14 +145,13 @@ describe("AMQPCodecRegistry", () => {
       expect(body).toEqual(raw)
     })
 
-    test("unknown contentEncoding passes body through", async () => {
+    test("unknown contentEncoding throws on decode", async () => {
       const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
       const data = new TextEncoder().encode("not compressed")
 
-      const result = await codecs.decodeAndParse(data, {
+      await expect(codecs.decodeAndParse(data, {
         contentEncoding: "br",
-      })
-      expect(result).toEqual(data)
+      })).rejects.toThrow(/No coder registered/)
     })
 
     test("no contentType or contentEncoding returns raw bytes", async () => {

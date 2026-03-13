@@ -2,7 +2,7 @@ import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
-import type { Body } from "./amqp-publisher.js"
+import type { Body, Serializable } from "./amqp-publisher.js"
 
 const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
 
@@ -49,6 +49,7 @@ export class AMQPRPCClient {
       // noAck: true they are acknowledged on delivery and cannot be requeued.
       const codecs = this.session.codecs
       await ch.basicConsume(DIRECT_REPLY_TO, { noAck: true }, (msg) => {
+        // TODO: decode here?
         if (codecs) msg.codecRegistry = codecs
         const id = msg.properties.correlationId
         if (id === undefined) return
@@ -79,7 +80,7 @@ export class AMQPRPCClient {
   async call(queue: string, body: Body, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage>
   async call(
     queue: string,
-    body: unknown,
+    body: Serializable,
     options: AMQPProperties & { timeout?: number; contentType: string },
   ): Promise<AMQPMessage>
   async call(
