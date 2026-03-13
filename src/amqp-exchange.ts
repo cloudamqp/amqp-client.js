@@ -44,7 +44,7 @@ export class AMQPExchange<C extends CodecMode = "plain"> {
     body: Serializable,
     options: ExchangePublishOptions & { contentType: string },
   ): Promise<AMQPExchange<C>>
-  async publish(body: unknown, options: ExchangePublishOptions = {}): Promise<AMQPExchange<C>> {
+  async publish(body: PublishBody<C> | Serializable, options: ExchangePublishOptions = {}): Promise<AMQPExchange<C>> {
     const { confirm = true, routingKey = "", ...properties } = options
     const b = body as PublishBody<C>
     if (confirm) {
