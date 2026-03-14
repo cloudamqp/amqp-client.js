@@ -6,7 +6,7 @@ import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription
 import type { ConsumerDefinition } from "./amqp-subscription.js"
 import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
-import type { PublishBody, Serializable } from "./amqp-publisher.js"
+import type { PublishBody } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
 import { decodeMessage } from "./amqp-session-message.js"
 
@@ -60,17 +60,12 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
    * @returns `this` for chaining
    */
   async publish(body: PublishBody<C>, options?: QueuePublishOptions): Promise<AMQPQueue<C>>
-  async publish(
-    body: Serializable,
-    options: QueuePublishOptions & { contentType: string },
-  ): Promise<AMQPQueue<C>>
-  async publish(body: PublishBody<C> | Serializable, options: QueuePublishOptions = {}): Promise<AMQPQueue<C>> {
+  async publish(body: PublishBody<C>, options: QueuePublishOptions = {}): Promise<AMQPQueue<C>> {
     const { confirm = true, ...properties } = options
-    const b = body as PublishBody<C>
     if (confirm) {
-      await publishConfirmed(this.session, "", this.name, b, properties)
+      await publishConfirmed(this.session, "", this.name, body, properties)
     } else {
-      await publishNoConfirm(this.session, "", this.name, b, properties)
+      await publishNoConfirm(this.session, "", this.name, body, properties)
     }
     return this
   }
