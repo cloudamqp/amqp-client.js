@@ -2,7 +2,7 @@ import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
-import type { PublishBody, Serializable } from "./amqp-publisher.js"
+import type { PublishBody } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
 import { decodeMessage } from "./amqp-session-message.js"
 
@@ -87,12 +87,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
   ): Promise<AMQPMessage<C>>
   async call(
     queue: string,
-    body: Serializable,
-    options: AMQPProperties & { timeout?: number; contentType: string },
-  ): Promise<AMQPMessage<C>>
-  async call(
-    queue: string,
-    body: PublishBody<C> | Serializable,
+    body: PublishBody<C>,
     { timeout, ...properties }: AMQPProperties & { timeout?: number } = {},
   ): Promise<AMQPMessage<C>> {
     if (this.closed) throw new Error("RPC client is closed")
@@ -100,7 +95,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
     const ch = this.ch
     const correlationId = (++this.correlationId).toString(36)
 
-    const encoded = await this.session.encodeBody(body as PublishBody<C>, properties)
+    const encoded = await this.session.encodeBody(body, properties)
 
     return new Promise<AMQPMessage<C>>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined

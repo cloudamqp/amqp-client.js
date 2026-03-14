@@ -6,7 +6,7 @@ import { AMQPExchange } from "../src/amqp-exchange.js"
 import { AMQPMessage } from "../src/amqp-message.js"
 import { AMQPCodecRegistry } from "../src/amqp-codec-registry.js"
 import type { AMQPBaseClient } from "../src/amqp-base-client.js"
-import type { CodecMode } from "../src/amqp-publisher.js"
+import type { CodecMode } from "../src/amqp-message.js"
 
 beforeEach(() => {
   expect.hasAssertions()
@@ -688,15 +688,17 @@ test("session.rpcClient() close rejects pending calls", () =>
 
 // --- Codec registry integration tests ---
 
-function withCodecSession(
+async function withCodecSession(
   fn: (session: AMQPSession<"codec">) => Promise<void>,
   codecOpts?: { defaultContentType?: string; defaultContentEncoding?: string },
 ): Promise<void> {
   const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
-  return withSession(
-    fn as (session: AMQPSession<"plain">) => Promise<void>,
-    { codecs, ...codecOpts },
-  )
+  const session = await AMQPSession.connect("amqp://127.0.0.1", { codecs, ...codecOpts })
+  try {
+    await fn(session)
+  } finally {
+    await session.stop()
+  }
 }
 
 test("codec: publish JSON object and parse via callback", () =>
@@ -706,14 +708,15 @@ test("codec: publish JSON object and parse via callback", () =>
 
     await q.publish(obj, { contentType: "application/json" })
 
-    let parsed: unknown
-    const sub = await q.subscribe({ noAck: true }, async (msg) => {
-      parsed = msg.body
+    const parsed = await new Promise<unknown>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("Timed out waiting for message")), 5_000)
+      q.subscribe({ noAck: true }, async (msg) => {
+        clearTimeout(timer)
+        resolve(msg.body)
+      })
     })
-    await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(parsed).toEqual(obj)
-    await sub.cancel()
   }))
 
 test("codec: publish with default contentType", () =>
