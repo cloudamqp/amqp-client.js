@@ -412,8 +412,7 @@ export abstract class AMQPBaseClient {
                   const msg = `channel ${channelId} closed: ${text} (${code})`
                   const err = new AMQPError(msg, this)
                   channel.setClosed(err)
-                  delete this.channels[channelId] // eslint-disable-line @typescript-eslint/no-dynamic-delete -- sparse array slot removal
-
+                  delete this.channels[channelId]
                   const closeOk = new AMQPFrame.Writer({
                     bufferSize: 12,
                     type: AMQPFrame.Type.METHOD,
@@ -430,7 +429,7 @@ export abstract class AMQPBaseClient {
                 }
                 case AMQPFrame.ChannelMethod.CLOSE_OK: {
                   channel.setClosed()
-                  delete this.channels[channelId] // eslint-disable-line @typescript-eslint/no-dynamic-delete -- sparse array slot removal
+                  delete this.channels[channelId]
                   channel.resolveRPC()
                   break
                 }
