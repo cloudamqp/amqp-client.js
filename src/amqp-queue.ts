@@ -60,10 +60,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
    * @returns `this` for chaining
    */
   async publish(body: PublishBody<C>, options?: QueuePublishOptions): Promise<AMQPQueue<C>>
-  async publish(
-    body: Serializable,
-    options: QueuePublishOptions & { contentType: string },
-  ): Promise<AMQPQueue<C>>
+  async publish(body: Serializable, options: QueuePublishOptions & { contentType: string }): Promise<AMQPQueue<C>>
   async publish(body: PublishBody<C> | Serializable, options: QueuePublishOptions = {}): Promise<AMQPQueue<C>> {
     const { confirm = true, ...properties } = options
     const b = body as PublishBody<C>
@@ -76,9 +73,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
   }
 
   /** Subscribe with a callback. Messages are acked after the callback returns, nacked on error. */
-  subscribe(
-    callback: (msg: AMQPMessage) => void | Promise<void>,
-  ): Promise<AMQPSubscription>
+  subscribe(callback: (msg: AMQPMessage) => void | Promise<void>): Promise<AMQPSubscription>
   /** Subscribe with a callback and custom params. */
   subscribe(
     params: QueueSubscribeParams,
@@ -139,9 +134,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
       ...(codecs && { codecs }),
     }
     const consumer = await this.openConsumer(def)
-    const sub = internalCallback
-      ? new AMQPSubscription(consumer, def)
-      : new AMQPGeneratorSubscription(consumer, def)
+    const sub = internalCallback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription(consumer, def)
     this.subscriptions.add(sub)
     sub.onCancel = () => {
       this.subscriptions.delete(sub)

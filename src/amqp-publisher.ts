@@ -5,12 +5,7 @@ import type { CodecMode } from "./amqp-message.js"
 export type Body = string | Uint8Array | ArrayBuffer | Buffer | null
 
 export function isBody(data: unknown): data is Body {
-  return (
-    data === null ||
-    typeof data === "string" ||
-    data instanceof Uint8Array ||
-    data instanceof ArrayBuffer
-  )
+  return data === null || typeof data === "string" || data instanceof Uint8Array || data instanceof ArrayBuffer
 }
 export type Serializable = Body | number | boolean | Record<string, unknown> | unknown[]
 

@@ -78,10 +78,7 @@ export class AMQPSubscription {
  * }
  * ```
  */
-export class AMQPGeneratorSubscription
-  extends AMQPSubscription
-  implements AsyncIterable<AMQPMessage>
-{
+export class AMQPGeneratorSubscription extends AMQPSubscription implements AsyncIterable<AMQPMessage> {
   private stopped = false
   private consumerReady?: () => void
 

@@ -284,11 +284,7 @@ export class AMQPSession<C extends CodecMode = "plain"> {
    * Declare a topic exchange and return a session-bound {@link AMQPExchange} handle.
    * @param [name="amq.topic"] - exchange name
    */
-  topicExchange(
-    name = "amq.topic",
-    params?: ExchangeParams,
-    args?: Record<string, unknown>,
-  ): Promise<AMQPExchange<C>> {
+  topicExchange(name = "amq.topic", params?: ExchangeParams, args?: Record<string, unknown>): Promise<AMQPExchange<C>> {
     return this.exchange(name, "topic", params, args)
   }
 

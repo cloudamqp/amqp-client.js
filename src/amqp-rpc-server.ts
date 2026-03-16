@@ -40,21 +40,18 @@ export class AMQPRPCServer<C extends CodecMode = "plain"> {
   async start(queue: string, handler: RPCHandler, prefetch = 1): Promise<this> {
     if (this.subscription) throw new Error("RPC server already started")
     const q = await this.session.queue(queue)
-    this.subscription = await q.subscribe(
-      { prefetch, noAck: false, requeueOnNack: false },
-      async (msg) => {
-        const { replyTo, correlationId } = msg.properties
-        if (!replyTo) {
-          await msg.nack(false)
-          return
-        }
-        const result = await handler(msg)
-        const replyProps: AMQPProperties = {}
-        if (correlationId !== undefined) replyProps.correlationId = correlationId
-        const encoded = await this.session.encodeBody(result as PublishBody<C>, replyProps)
-        await msg.channel.basicPublish("", replyTo, encoded.body, encoded.properties)
-      },
-    )
+    this.subscription = await q.subscribe({ prefetch, noAck: false, requeueOnNack: false }, async (msg) => {
+      const { replyTo, correlationId } = msg.properties
+      if (!replyTo) {
+        await msg.nack(false)
+        return
+      }
+      const result = await handler(msg)
+      const replyProps: AMQPProperties = {}
+      if (correlationId !== undefined) replyProps.correlationId = correlationId
+      const encoded = await this.session.encodeBody(result as PublishBody<C>, replyProps)
+      await msg.channel.basicPublish("", replyTo, encoded.body, encoded.properties)
+    })
     return this
   }
 

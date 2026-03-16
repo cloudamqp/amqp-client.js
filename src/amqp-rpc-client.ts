@@ -78,11 +78,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
    *                          no response is received within this time.
    * @returns The reply {@link AMQPMessage}
    */
-  async call(
-    queue: string,
-    body: PublishBody<C>,
-    options?: AMQPProperties & { timeout?: number },
-  ): Promise<AMQPMessage>
+  async call(queue: string, body: PublishBody<C>, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage>
   async call(
     queue: string,
     body: Serializable,
