@@ -100,25 +100,21 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
 
     const codecs = this.session.codecs
 
-    let wrappedCallback = callback
-    if (wrappedCallback && codecs) {
-      const next = wrappedCallback
-      wrappedCallback = async (msg: AMQPMessage) => {
-        await decodeMessage(msg, codecs)
-        return next(msg)
-      }
-    }
-    if (wrappedCallback && autoAck) {
-      const next = wrappedCallback
-      wrappedCallback = async (msg: AMQPMessage) => {
-        try {
-          await next(msg)
-          await msg.ack()
-        } catch {
-          await msg.nack(requeueOnNack)
+    const wrappedCallback = callback
+      ? async (msg: AMQPMessage) => {
+          if (codecs) await decodeMessage(msg, codecs)
+          if (!autoAck) {
+            await callback(msg)
+          } else {
+            try {
+              await callback(msg)
+              await msg.ack()
+            } catch {
+              await msg.nack(requeueOnNack)
+            }
+          }
         }
-      }
-    }
+      : undefined
     const def: ConsumerDefinition = {
       queueName: this.name,
       consumeParams,
