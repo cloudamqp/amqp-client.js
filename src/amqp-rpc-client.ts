@@ -44,6 +44,10 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
     if (this.ch && !this.ch.closed) return this
     const ch = await this.session.openChannel()
     try {
+      // Direct reply-to is scoped per-channel by RabbitMQ, so only replies
+      // for this client arrive here.  Messages with an unknown correlationId
+      // (e.g. late replies after a timeout) are intentionally dropped — with
+      // noAck: true they are acknowledged on delivery and cannot be requeued.
       const codecs = this.session.codecs
       await ch.basicConsume(DIRECT_REPLY_TO, { noAck: true }, async (msg) => {
         const id = msg.properties.correlationId
