@@ -61,7 +61,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
    */
   async publish(body: PublishBody<C>, options?: QueuePublishOptions): Promise<AMQPQueue<C>>
   async publish(body: Serializable, options: QueuePublishOptions & { contentType: string }): Promise<AMQPQueue<C>>
-  async publish(body: PublishBody<C> | Serializable, options: QueuePublishOptions = {}): Promise<AMQPQueue<C>> {
+  async publish(body: Serializable, options: QueuePublishOptions = {}): Promise<AMQPQueue<C>> {
     const { confirm = true, ...properties } = options
     const b = body as PublishBody<C>
     if (confirm) {

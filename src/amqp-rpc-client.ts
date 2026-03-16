@@ -86,7 +86,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
   ): Promise<AMQPMessage>
   async call(
     queue: string,
-    body: PublishBody<C> | Serializable,
+    body: Serializable,
     { timeout, ...properties }: AMQPProperties & { timeout?: number } = {},
   ): Promise<AMQPMessage> {
     if (this.closed) throw new Error("RPC client is closed")

@@ -325,7 +325,7 @@ export class AMQPSession<C extends CodecMode = "plain"> {
   ): Promise<AMQPMessage>
   async rpcCall(
     queue: string,
-    body: PublishBody<C> | Serializable,
+    body: Serializable,
     options?: AMQPProperties & { timeout?: number },
   ): Promise<AMQPMessage> {
     const rpc = new AMQPRPCClient<C>(this)
