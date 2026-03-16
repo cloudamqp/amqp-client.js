@@ -100,23 +100,19 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
 
     const codecs = this.session.codecs
 
-    // Wrap user callback to decode message body before delivery
-    let internalCallback: ((msg: AMQPMessage) => void | Promise<void>) | undefined
-    if (callback !== undefined) {
-      const userCallback = callback
-      internalCallback = codecs
-        ? async (msg: AMQPMessage) => {
-            await decodeMessage(msg, codecs)
-            return userCallback(msg)
-          }
-        : userCallback
+    let wrappedCallback = callback
+    if (wrappedCallback && codecs) {
+      const next = wrappedCallback
+      wrappedCallback = async (msg: AMQPMessage) => {
+        await decodeMessage(msg, codecs)
+        return next(msg)
+      }
     }
-
-    if (autoAck && internalCallback !== undefined) {
-      const wrappedCallback = internalCallback
-      internalCallback = async (msg: AMQPMessage) => {
+    if (wrappedCallback && autoAck) {
+      const next = wrappedCallback
+      wrappedCallback = async (msg: AMQPMessage) => {
         try {
-          await wrappedCallback(msg)
+          await next(msg)
           await msg.ack()
         } catch {
           await msg.nack(requeueOnNack)
@@ -126,12 +122,12 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
     const def: ConsumerDefinition = {
       queueName: this.name,
       consumeParams,
-      ...(internalCallback !== undefined && { callback: internalCallback }),
+      ...(wrappedCallback !== undefined && { callback: wrappedCallback }),
       ...(prefetch !== undefined && { prefetch }),
       ...(codecs && { codecs }),
     }
     const consumer = await this.openConsumer(def)
-    const sub = internalCallback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription(consumer, def)
+    const sub = wrappedCallback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription(consumer, def)
     this.subscriptions.add(sub)
     sub.onCancel = () => {
       this.subscriptions.delete(sub)
