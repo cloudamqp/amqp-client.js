@@ -27,7 +27,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
   private readonly pending = new Map<
     string,
     {
-      resolve: (msg: AMQPMessage<C>) => void
+      resolve: (msg: AMQPMessage) => void
       reject: (err: Error) => void
       timer: ReturnType<typeof setTimeout> | undefined
     }
@@ -54,10 +54,8 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
         this.pending.delete(id)
         if (entry.timer) clearTimeout(entry.timer)
         try {
-          const decoded = codecs
-            ? await decodeMessage(msg, codecs)
-            : msg
-          entry.resolve(decoded as AMQPMessage<C>)
+          if (codecs) await decodeMessage(msg, codecs)
+          entry.resolve(msg)
         } catch (err) {
           entry.reject(err instanceof Error ? err : new Error(String(err)))
         }
@@ -84,17 +82,17 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
     queue: string,
     body: PublishBody<C>,
     options?: AMQPProperties & { timeout?: number },
-  ): Promise<AMQPMessage<C>>
+  ): Promise<AMQPMessage>
   async call(
     queue: string,
     body: Serializable,
     options: AMQPProperties & { timeout?: number; contentType: string },
-  ): Promise<AMQPMessage<C>>
+  ): Promise<AMQPMessage>
   async call(
     queue: string,
     body: PublishBody<C> | Serializable,
     { timeout, ...properties }: AMQPProperties & { timeout?: number } = {},
-  ): Promise<AMQPMessage<C>> {
+  ): Promise<AMQPMessage> {
     if (this.closed) throw new Error("RPC client is closed")
     if (!this.ch || this.ch.closed) throw new Error("RPC client not started, call start() first")
     const ch = this.ch
@@ -102,7 +100,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
 
     const encoded = await this.session.encodeBody(body as PublishBody<C>, properties)
 
-    return new Promise<AMQPMessage<C>>((resolve, reject) => {
+    return new Promise<AMQPMessage>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined
       if (timeout !== undefined && timeout > 0) {
         timer = setTimeout(() => {

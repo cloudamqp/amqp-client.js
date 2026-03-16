@@ -321,17 +321,17 @@ export class AMQPSession<C extends CodecMode = "plain"> {
     queue: string,
     body: PublishBody<C>,
     options?: AMQPProperties & { timeout?: number },
-  ): Promise<AMQPMessage<C>>
+  ): Promise<AMQPMessage>
   async rpcCall(
     queue: string,
     body: Serializable,
     options: AMQPProperties & { timeout?: number; contentType: string },
-  ): Promise<AMQPMessage<C>>
+  ): Promise<AMQPMessage>
   async rpcCall(
     queue: string,
     body: PublishBody<C> | Serializable,
     options?: AMQPProperties & { timeout?: number },
-  ): Promise<AMQPMessage<C>> {
+  ): Promise<AMQPMessage> {
     const rpc = new AMQPRPCClient<C>(this)
     await rpc.start()
     try {
@@ -370,7 +370,7 @@ export class AMQPSession<C extends CodecMode = "plain"> {
    * @param prefetch - Channel prefetch count (default: 1)
    * @returns A started {@link AMQPRPCServer}
    */
-  async rpcServer(queue: string, handler: RPCHandler<C>, prefetch?: number): Promise<AMQPRPCServer<C>> {
+  async rpcServer(queue: string, handler: RPCHandler, prefetch?: number): Promise<AMQPRPCServer<C>> {
     const server = new AMQPRPCServer<C>(this)
     await server.start(queue, handler, prefetch)
     return server

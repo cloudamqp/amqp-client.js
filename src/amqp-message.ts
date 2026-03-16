@@ -4,18 +4,14 @@ import type { AMQPProperties } from "./amqp-properties.js"
 /** Controls whether session methods accept rich types or only raw bytes. */
 export type CodecMode = "plain" | "codec"
 
-type MessageBody<C extends CodecMode> = C extends "codec" ? unknown : (Uint8Array | null)
-
 /**
  * AMQP message.
  *
- * The generic parameter `C` controls the type of `body`:
- * - `"plain"` (default): `body` is the raw `Uint8Array | null` from the wire.
- * - `"codec"`: `body` is the decoded value (deserialized + decompressed).
- *
- * `rawBody` always returns the original wire bytes regardless of mode.
+ * `rawBody` always contains the original wire bytes.
+ * `body` returns the decoded value when codecs are configured on the session,
+ * or the raw `Uint8Array` otherwise.
  */
-export class AMQPMessage<C extends CodecMode = "plain"> {
+export class AMQPMessage {
   /** Channel this message was delivered on. */
   channel: AMQPChannel
   /** Exchange the message was published to. */
@@ -49,12 +45,12 @@ export class AMQPMessage<C extends CodecMode = "plain"> {
   /**
    * The message body.
    *
-   * For low-level consumers (`AMQPMessage<"plain">`), this is the raw `Uint8Array`.
-   * For session consumers (`AMQPMessage<"codec">`), this is the decoded value.
+   * Returns the decoded value if codecs processed the message,
+   * or the raw `Uint8Array | null` wire bytes otherwise.
    */
-  get body(): MessageBody<C> {
-    if (this._decoded) return this._body as MessageBody<C>
-    return this.rawBody as MessageBody<C>
+  get body(): unknown {
+    if (this._decoded) return this._body
+    return this.rawBody
   }
 
   /** True if the message has already been acked, nacked, or rejected. */
