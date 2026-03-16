@@ -1,9 +1,6 @@
 import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 
-/** Controls whether session methods accept rich types or only raw bytes. */
-export type CodecMode = "plain" | "codec"
-
 /**
  * AMQP message.
  *

@@ -1,8 +1,7 @@
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
-import type { Body } from "./amqp-publisher.js"
-import type { CodecMode } from "./amqp-message.js"
+import type { Body, CodecMode } from "./amqp-publisher.js"
 
 /** Options for {@link AMQPExchange#publish}. */
 export type ExchangePublishOptions = AMQPProperties & {

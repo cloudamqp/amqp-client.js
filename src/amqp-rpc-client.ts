@@ -2,8 +2,7 @@ import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
-import type { Body } from "./amqp-publisher.js"
-import type { CodecMode } from "./amqp-message.js"
+import type { Body, CodecMode } from "./amqp-publisher.js"
 
 const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
 

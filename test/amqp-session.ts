@@ -6,7 +6,7 @@ import { AMQPExchange } from "../src/amqp-exchange.js"
 import { AMQPMessage } from "../src/amqp-message.js"
 import { AMQPCodecRegistry } from "../src/amqp-codec-registry.js"
 import type { AMQPBaseClient } from "../src/amqp-base-client.js"
-import type { CodecMode } from "../src/amqp-message.js"
+import type { CodecMode } from "../src/amqp-publisher.js"
 
 beforeEach(() => {
   expect.hasAssertions()
