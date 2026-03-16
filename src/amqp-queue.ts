@@ -100,7 +100,9 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
     if (autoAck) consumeParams.noAck = false
 
     const codecs = this.session.codecs
-    const wrappedCallback = callback ? wrapCallback(callback, { codecs, autoAck, requeueOnNack }) : undefined
+    const wrappedCallback = callback
+      ? wrapCallbackWithAutoDecodeAndAck(callback, { codecs, autoAck, requeueOnNack })
+      : undefined
     const def: ConsumerDefinition = {
       queueName: this.name,
       consumeParams,
@@ -206,7 +208,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
 
 type MessageCallback = (msg: AMQPMessage) => void | Promise<void>
 
-function wrapCallback(
+function wrapCallbackWithAutoDecodeAndAck(
   callback: MessageCallback,
   opts: { codecs: AMQPCodecRegistry | undefined; autoAck: boolean; requeueOnNack: boolean },
 ): MessageCallback {
