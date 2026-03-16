@@ -2,7 +2,7 @@ import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { Body, Serializable, PublishBody } from "./amqp-publisher.js"
+import type { Body, PublishBody } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
@@ -317,21 +317,11 @@ export class AMQPSession<C extends CodecMode = "plain"> {
     queue: string,
     body: PublishBody<C>,
     options?: AMQPProperties & { timeout?: number },
-  ): Promise<AMQPMessage>
-  async rpcCall(
-    queue: string,
-    body: Serializable,
-    options: AMQPProperties & { timeout?: number; contentType: string },
-  ): Promise<AMQPMessage>
-  async rpcCall(
-    queue: string,
-    body: Serializable,
-    options?: AMQPProperties & { timeout?: number },
   ): Promise<AMQPMessage> {
     const rpc = new AMQPRPCClient<C>(this)
     await rpc.start()
     try {
-      return await rpc.call(queue, body as PublishBody<C>, options)
+      return await rpc.call(queue, body, options)
     } finally {
       await rpc.close()
     }
