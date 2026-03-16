@@ -12,10 +12,15 @@ import * as tls from "tls"
  * AMQP 0-9-1 client over TCP socket.
  */
 export class AMQPClient extends AMQPBaseClient {
+  /** Underlying TCP socket, set after connect. */
   socket?: net.Socket | undefined
+  /** Whether TLS is enabled. */
   readonly tls: boolean
+  /** Server hostname. */
   readonly host: string
+  /** Server port. */
   readonly port: number
+  /** TLS options passed to `tls.connect`. */
   readonly tlsOptions: AMQPTlsOptions | undefined
   private readonly insecure: boolean
   private framePos: number

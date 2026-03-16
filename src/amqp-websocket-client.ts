@@ -6,7 +6,7 @@ import { AMQPConsumer } from "./amqp-consumer.js"
 import { AMQPMessage } from "./amqp-message.js"
 import type { Logger } from "./types.js"
 
-interface AMQPWebSocketInit {
+export interface AMQPWebSocketInit {
   url: string
   vhost?: string
   username?: string
@@ -21,6 +21,7 @@ interface AMQPWebSocketInit {
  * WebSocket client for AMQP 0-9-1 servers.
  */
 export class AMQPWebSocketClient extends AMQPBaseClient {
+  /** WebSocket URL to connect to. */
   readonly url: string
   private socket?: WebSocket | undefined
   private framePos = 0

@@ -10,17 +10,26 @@ import type { AMQPProperties } from "./amqp-properties.js"
  * Represents an AMQP Channel. Almost all actions in AMQP are performed on a Channel.
  */
 export class AMQPChannel {
+  /** The connection this channel belongs to. */
   readonly connection: AMQPBaseClient
+  /** Channel number. */
   readonly id: number
+  /** Active consumers on this channel, keyed by consumer tag. */
   readonly consumers = new Map<string, AMQPConsumer | AMQPGeneratorConsumer>()
   private rpcQueue: Promise<unknown> = Promise.resolve(true)
   private readonly rpcCallbacks: [(value?: unknown) => void, (err?: Error) => void][] = []
   private readonly unconfirmedPublishes: [number, (confirmId: number) => void, (err?: Error) => void][] = []
+  /** Whether the channel has been closed. */
   closed = false
+  /** @internal Monotonic confirm sequence number. */
   confirmId = 0
+  /** @internal In-progress delivery being assembled from frames. */
   delivery?: AMQPMessage
+  /** @internal In-progress basicGet response being assembled. */
   getMessage?: AMQPMessage
+  /** @internal In-progress returned message being assembled. */
   returned?: AMQPMessage
+  /** Callback for channel-level errors. */
   onerror: (reason: string) => void
   /**
    * @param connection - The connection this channel belongs to
@@ -117,14 +126,10 @@ export class AMQPChannel {
   }
 
   /**
-   * Consume from a queue. Messages will be delivered asynchronously.
-   * @param queue - name of the queue to poll
-   * @param param
-   * @param [param.tag=""] - tag of the consumer, will be server generated if left empty
-   * @param [param.noAck=true] - if messages are removed from the server upon delivery, or have to be acknowledged
-   * @param [param.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
-   * @param [param.args={}] - custom arguments
-   * @param {function(AMQPMessage) : void | Promise<void>} callback - will be called for each message delivered to this consumer
+   * Consume from a queue. Messages are delivered asynchronously to the callback.
+   * @param queue - name of the queue
+   * @param params - consumer options
+   * @param callback - called for each delivered message
    */
   basicConsume(
     queue: string,
@@ -132,14 +137,9 @@ export class AMQPChannel {
     callback: (msg: AMQPMessage) => void | Promise<void>,
   ): Promise<AMQPConsumer>
   /**
-   * Consume from a queue. Messages will be delivered asynchronously through an AsyncGenerator at `consumer.messages`.
-   * @param queue - name of the queue to poll
-   * @param param
-   * @param [param.tag=""] - tag of the consumer, will be server generated if left empty
-   * @param [param.noAck=true] - if messages are removed from the server upon delivery, or have to be acknowledged
-   * @param [param.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
-   * @param [param.args={}] - custom arguments
-   * @return {AMQPGeneratorConsumer} - Consumer with an AsyncGenerator for messages at `consumer.messages`
+   * Consume from a queue via an async generator at `consumer.messages`.
+   * @param queue - name of the queue
+   * @param params - consumer options
    */
   basicConsume(queue: string, params: ConsumeParams): Promise<AMQPGeneratorConsumer>
   basicConsume(
@@ -987,26 +987,17 @@ export type QueueParams = {
   exclusive?: boolean
 }
 
-/* * @param [param.tag=""] - tag of the consumer, will be server generated if left empty
- * @param [param.noAck=true] - if messages are removed from the server upon delivery, or have to be acknowledged
- * @param [param.exclusive=false] - if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
- * @param [param.args={}] - custom arguments */
-
 export type ConsumeParams = {
-  /**
-   * tag of the consumer, will be server generated if left empty
-   */
+  /** Consumer tag. Server-generated if empty.
+   * @defaultValue `""` */
   tag?: string
-  /**
-   * if messages are removed from the server upon delivery, or have to be acknowledged
-   */
+  /** If true, messages are auto-acknowledged on delivery.
+   * @defaultValue `true` */
   noAck?: boolean
-  /**
-   * if this can be the only consumer of the queue, will return an Error if there are other consumers to the queue already
-   */
+  /** Fail if other consumers already exist on the queue.
+   * @defaultValue `false` */
   exclusive?: boolean
-  /**
-   * custom arguments
-   */
+  /** Custom arguments.
+   * @defaultValue `{}` */
   args?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 }

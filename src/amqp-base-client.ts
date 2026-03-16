@@ -13,25 +13,38 @@ export const MIN_FRAME_SIZE = 8192
  * Implements everything except how to connect, send data and close the socket
  */
 export abstract class AMQPBaseClient {
+  /** Virtual host to connect to. */
   vhost: string
+  /** Username for authentication. */
   username: string
+  /** Password for authentication. */
   password: string
+  /** Connection name, visible in the RabbitMQ management UI. */
   name?: string
+  /** Platform identifier sent in client properties. */
   platform?: string
+  /** Open channels, indexed by channel id. */
   channels: AMQPChannel[]
   protected connectPromise?: [(conn: AMQPBaseClient) => void, (err: Error) => void]
   protected closePromise?: [(value?: void) => void, (err: Error) => void]
   protected onUpdateSecretOk?: (value?: void) => void
+  /** Whether the connection is closed. */
   closed = true
+  /** Set when the server has blocked publishing (connection.blocked reason). */
   blocked?: string
+  /** Maximum number of channels negotiated with the server. */
   channelMax = 0
+  /** Maximum frame size in bytes negotiated with the server. */
   frameMax: number
+  /** Heartbeat interval in seconds. */
   heartbeat: number
+  /** Callback for connection-level errors. */
   onerror: (error: AMQPError) => void
+  /** Logger instance, or undefined to disable logging. */
   logger: Logger | undefined
-  /** Used for string -> arraybuffer when publishing */
+  /** @internal Used for string -> arraybuffer when publishing. */
   readonly textEncoder: InstanceType<typeof TextEncoder> = new TextEncoder()
-  // Buffer pool for publishes, let multiple microtasks publish at the same time but save on allocations
+  /** @internal Buffer pool for publishes. Lets multiple microtasks publish concurrently while saving on allocations. */
   readonly bufferPool: AMQPView[] = []
 
   /**
