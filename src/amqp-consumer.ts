@@ -111,8 +111,8 @@ export class AMQPGeneratorConsumer extends AMQPConsumer {
   private async *generateMessages(): AsyncGenerator<AMQPMessage, void, undefined> {
     try {
       while (!this.closedError && !this.closed) {
-        if (this.messageQueue.length > 0) {
-          const msg = this.messageQueue.shift()!
+        const msg = this.messageQueue.shift()
+        if (msg) {
           yield msg
         } else {
           const msg = await new Promise<AMQPMessage>((resolve) => {

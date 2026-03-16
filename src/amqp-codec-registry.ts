@@ -212,10 +212,10 @@ export class AMQPCodecRegistry {
     return bytes
   }
 
-  /** Decode a message body and set `decodedBody` on the message. */
+  /** Decode a message body, replacing the raw bytes on `msg.body`. */
   async decodeMessage(msg: AMQPMessage): Promise<void> {
-    if (msg.body) {
-      msg.setDecodedBody(await this.decodeAndParse(msg.body, msg.properties))
+    if (msg.rawBody) {
+      msg.body = await this.decodeAndParse(msg.rawBody, msg.properties)
     }
   }
 }
