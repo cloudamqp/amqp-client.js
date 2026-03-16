@@ -6,7 +6,7 @@ import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription
 import type { ConsumerDefinition } from "./amqp-subscription.js"
 import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
-import type { PublishBody } from "./amqp-publisher.js"
+import type { Body } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
 import { decodeMessage } from "./amqp-session-message.js"
 
@@ -59,7 +59,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
    * @param options - publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
-  async publish(body: PublishBody<C>, options: QueuePublishOptions = {}): Promise<AMQPQueue<C>> {
+  async publish(body: Body<C>, options: QueuePublishOptions = {}): Promise<AMQPQueue<C>> {
     const { confirm = true, ...properties } = options
     if (confirm) {
       await publishConfirmed(this.session, "", this.name, body, properties)

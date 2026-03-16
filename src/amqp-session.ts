@@ -2,7 +2,7 @@ import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { PlainBody, PublishBody } from "./amqp-publisher.js"
+import type { PlainBody, Body } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
@@ -159,7 +159,7 @@ export class AMQPSession<C extends CodecMode = "plain"> {
    * @internal
    */
   async encodeBody(
-    body: PublishBody<C>,
+    body: Body<C>,
     properties: AMQPProperties,
   ): Promise<{ body: PlainBody; properties: AMQPProperties }> {
     if (!this.codecs) {
@@ -315,7 +315,7 @@ export class AMQPSession<C extends CodecMode = "plain"> {
    */
   async rpcCall(
     queue: string,
-    body: PublishBody<C>,
+    body: Body<C>,
     options?: AMQPProperties & { timeout?: number },
   ): Promise<AMQPMessage> {
     const rpc = new AMQPRPCClient<C>(this)

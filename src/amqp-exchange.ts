@@ -1,7 +1,7 @@
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
-import type { PublishBody } from "./amqp-publisher.js"
+import type { Body } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
 
 /** Options for {@link AMQPExchange#publish}. */
@@ -39,7 +39,7 @@ export class AMQPExchange<C extends CodecMode = "plain"> {
    * @param options - routing key, publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
-  async publish(body: PublishBody<C>, options: ExchangePublishOptions = {}): Promise<AMQPExchange<C>> {
+  async publish(body: Body<C>, options: ExchangePublishOptions = {}): Promise<AMQPExchange<C>> {
     const { confirm = true, routingKey = "", ...properties } = options
     if (confirm) {
       await publishConfirmed(this.session, this.name, routingKey, body, properties)

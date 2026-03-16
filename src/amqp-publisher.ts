@@ -3,20 +3,20 @@ import type { AMQPSession } from "./amqp-session.js"
 import type { CodecMode } from "./amqp-message.js"
 
 export type PlainBody = string | Uint8Array | ArrayBuffer | Buffer | null
-export type Body = PlainBody | number | boolean | Record<string, unknown> | unknown[]
+type Serializable = PlainBody | number | boolean | Record<string, unknown> | unknown[]
 
 export function isPlainBody(data: unknown): data is PlainBody {
   return data === null || typeof data === "string" || data instanceof Uint8Array || data instanceof ArrayBuffer
 }
 
-export type PublishBody<C extends CodecMode> = C extends "codec" ? Body : PlainBody
+export type Body<C extends CodecMode> = C extends "codec" ? Serializable : PlainBody
 
 /** Publish with broker confirmation. */
 export async function publishConfirmed<C extends CodecMode>(
   session: AMQPSession<C>,
   exchange: string,
   routingKey: string,
-  body: PublishBody<C>,
+  body: Body<C>,
   properties?: AMQPProperties,
 ): Promise<void> {
   const encoded = await session.encodeBody(body, properties ?? {})
@@ -29,7 +29,7 @@ export async function publishNoConfirm<C extends CodecMode>(
   session: AMQPSession<C>,
   exchange: string,
   routingKey: string,
-  body: PublishBody<C>,
+  body: Body<C>,
   properties?: AMQPProperties,
 ): Promise<void> {
   const encoded = await session.encodeBody(body, properties ?? {})

@@ -1,7 +1,7 @@
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { CodecMode } from "./amqp-message.js"
-import type { PublishBody } from "./amqp-publisher.js"
+import type { Body } from "./amqp-publisher.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPSubscription } from "./amqp-subscription.js"
 
@@ -49,7 +49,7 @@ export class AMQPRPCServer<C extends CodecMode = "plain"> {
       const result = await handler(msg)
       const replyProps: AMQPProperties = {}
       if (correlationId !== undefined) replyProps.correlationId = correlationId
-      const encoded = await this.session.encodeBody(result as PublishBody<C>, replyProps)
+      const encoded = await this.session.encodeBody(result as Body<C>, replyProps)
       await msg.channel.basicPublish("", replyTo, encoded.body, encoded.properties)
     })
     return this
