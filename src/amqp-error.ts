@@ -1,11 +1,10 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 
 /**
- * An error, can be both AMQP level errors or socket errors
- * @property {string} message
- * @property {AMQPBaseClient} connection - The connection the error was raised on
+ * An error from the AMQP protocol or the underlying socket.
  */
 export class AMQPError extends Error {
+  /** The connection the error was raised on. */
   connection: AMQPBaseClient
   /**
    * @param message - Error description

@@ -6,8 +6,11 @@ import type { AMQPMessage } from "./amqp-message.js"
  * A consumer, subscribed to a queue
  */
 export class AMQPConsumer {
+  /** Channel this consumer is attached to. */
   readonly channel: AMQPChannel
+  /** Server-assigned consumer tag. */
   readonly tag: string
+  /** Callback invoked for each delivered message. */
   readonly onMessage: (msg: AMQPMessage) => void | Promise<void>
   protected closed = false
   protected closedError?: Error

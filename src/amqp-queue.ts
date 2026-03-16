@@ -48,7 +48,7 @@ export class AMQPQueue {
 
   /**
    * Publish a message directly to this queue (via the default exchange).
-   * @param [options.confirm=true] - wait for broker confirmation
+   * @param options - publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
   async publish(body: Body, options: QueuePublishOptions = {}): Promise<AMQPQueue> {

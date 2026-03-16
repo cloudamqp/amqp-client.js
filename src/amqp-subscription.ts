@@ -13,7 +13,7 @@ export interface ConsumerDefinition {
 }
 
 /**
- * A persistent queue subscription returned by {@link AMQPSession.subscribe}.
+ * A persistent queue subscription returned by {@link AMQPQueue.subscribe}.
  *
  * Remains valid across reconnections — the underlying channel and consumer tag
  * are swapped in-place after each reconnect. Use `cancel()` to unsubscribe and
@@ -62,7 +62,7 @@ export class AMQPSubscription {
 
 /**
  * A persistent queue subscription that yields messages via an async iterator.
- * Returned by {@link AMQPSession.subscribe} when no callback is provided.
+ * Returned by {@link AMQPQueue.subscribe} when no callback is provided.
  *
  * Bridges across reconnections — the iterator continues yielding after each
  * reconnect without the caller needing to re-subscribe.

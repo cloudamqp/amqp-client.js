@@ -29,8 +29,7 @@ export class AMQPExchange {
 
   /**
    * Publish a message to this exchange.
-   * @param [options.routingKey=""] - routing key
-   * @param [options.confirm=true] - wait for broker confirmation
+   * @param options - routing key, publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
   async publish(body: Body, options: ExchangePublishOptions = {}): Promise<AMQPExchange> {
