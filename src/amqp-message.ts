@@ -6,10 +6,6 @@ export type CodecMode = "plain" | "codec"
 
 /**
  * AMQP message.
- *
- * `rawBody` always contains the original wire bytes.
- * `body` returns the decoded value when codecs are configured on the session,
- * or the raw `Uint8Array` otherwise.
  */
 export class AMQPMessage {
   /** Channel this message was delivered on. */
@@ -22,8 +18,8 @@ export class AMQPMessage {
   properties: AMQPProperties = {}
   /** Byte size of the body. */
   bodySize = 0
-  /** @internal Raw wire bytes. Use `body` instead. */
-  rawBody: Uint8Array | null = null
+  /** Raw message body as bytes from the wire. */
+  body: Uint8Array | null = null
   /** @internal */
   bodyPos = 0
   /** Server-assigned delivery tag for ack/nack/reject. */
@@ -38,19 +34,17 @@ export class AMQPMessage {
   replyCode?: number
   /** Reason the message was returned. */
   replyText?: string
-  private _body: unknown = undefined
+  private _decodedBody: unknown = undefined
   private _decoded = false
   private acked = false
 
   /**
-   * The message body.
-   *
-   * Returns the decoded value if codecs processed the message,
-   * or the raw `Uint8Array | null` wire bytes otherwise.
+   * The decoded message body. Set by the session layer after
+   * deserializing + decompressing the raw bytes.
+   * Returns `undefined` when no codecs processed the message.
    */
-  get body(): unknown {
-    if (this._decoded) return this._body
-    return this.rawBody
+  get decodedBody(): unknown {
+    return this._decodedBody
   }
 
   /** True if the message has already been acked, nacked, or rejected. */
@@ -70,15 +64,20 @@ export class AMQPMessage {
    * deserializing + decompressing the raw bytes.
    */
   setDecodedBody(value: unknown): void {
-    this._body = value
+    this._decodedBody = value
     this._decoded = true
+  }
+
+  /** True when the session layer has decoded this message's body. */
+  get isDecoded(): boolean {
+    return this._decoded
   }
 
   /** Converts the raw message body to a string. */
   bodyToString(): string | null {
-    if (this.rawBody) {
-      if (typeof Buffer !== "undefined") return Buffer.from(this.rawBody).toString()
-      else return new TextDecoder().decode(this.rawBody)
+    if (this.body) {
+      if (typeof Buffer !== "undefined") return Buffer.from(this.body).toString()
+      else return new TextDecoder().decode(this.body)
     } else {
       return null
     }

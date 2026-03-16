@@ -710,7 +710,7 @@ test("codec: publish JSON object and parse via callback", () =>
 
     let parsed: unknown
     const sub = await q.subscribe({ noAck: true }, async (msg) => {
-      parsed = msg.body
+      parsed = msg.decodedBody
     })
     await new Promise((resolve) => setTimeout(resolve, 100))
 
@@ -728,7 +728,7 @@ test("codec: publish with default contentType", () =>
       const msg = await q.get({ noAck: true })
       expect(msg).not.toBeNull()
       expect(msg!.properties.contentType).toBe("application/json")
-      expect(msg!.body).toEqual({ key: "value" })
+      expect(msg!.decodedBody).toEqual({ key: "value" })
     },
     { defaultContentType: "application/json" },
   ))
@@ -742,7 +742,7 @@ test("codec: explicit contentType overrides default", () =>
 
       const msg = await q.get({ noAck: true })
       expect(msg!.properties.contentType).toBe("text/plain")
-      expect(msg!.body).toBe("plain text")
+      expect(msg!.decodedBody).toBe("plain text")
     },
     { defaultContentType: "application/json" },
   ))
@@ -757,7 +757,7 @@ test("codec: JSON + gzip round-trip via get", () =>
     const msg = await q.get({ noAck: true })
     expect(msg).not.toBeNull()
     expect(msg!.properties.contentEncoding).toBe("gzip")
-    expect(msg!.body).toEqual(data)
+    expect(msg!.decodedBody).toEqual(data)
   }))
 
 test("codec: default contentEncoding compresses automatically", () =>
@@ -770,7 +770,7 @@ test("codec: default contentEncoding compresses automatically", () =>
       const msg = await q.get({ noAck: true })
       expect(msg!.properties.contentType).toBe("application/json")
       expect(msg!.properties.contentEncoding).toBe("gzip")
-      expect(msg!.body).toEqual({ auto: "compressed" })
+      expect(msg!.decodedBody).toEqual({ auto: "compressed" })
     },
     { defaultContentType: "application/json", defaultContentEncoding: "gzip" },
   ))
@@ -786,7 +786,7 @@ test("codec: async generator receives decoded messages", () =>
       const results: unknown[] = []
       const sub = await q.subscribe({ noAck: true })
       for await (const msg of sub) {
-        results.push(msg.body)
+        results.push(msg.decodedBody)
         if (results.length >= 2) break
       }
 
@@ -810,7 +810,7 @@ test("codec: exchange publish encodes messages", () =>
 
     const msg = await q.get({ noAck: true })
     expect(msg).not.toBeNull()
-    expect(msg!.body).toEqual({ via: "exchange" })
+    expect(msg!.decodedBody).toEqual({ via: "exchange" })
   }))
 
 test("codec: no codecs configured leaves messages untouched", () =>
@@ -822,21 +822,21 @@ test("codec: no codecs configured leaves messages untouched", () =>
     const msg = await q.get({ noAck: true })
     expect(msg?.bodyString()).toBe("raw string")
     // body is raw Uint8Array when no codecs configured
-    expect(msg!.rawBody).toBeInstanceOf(Uint8Array)
+    expect(msg!.body).toBeInstanceOf(Uint8Array)
   }))
 
 test("codec: rpcClient and rpcServer round-trip with JSON encoding", () =>
   withCodecSession(
     async (session) => {
       await session.rpcServer("rpc-codec-queue", async (msg) => {
-        return { echo: msg.body }
+        return { echo: msg.decodedBody }
       })
 
       const rpc = await session.rpcClient()
       const reply = await rpc.call("rpc-codec-queue", { greeting: "hello" })
 
       expect(reply.properties.contentType).toBe("application/json")
-      expect(reply.body).toEqual({ echo: { greeting: "hello" } })
+      expect(reply.decodedBody).toEqual({ echo: { greeting: "hello" } })
 
       await rpc.close()
       await session.queue("rpc-codec-queue").then((q) => q.delete())
@@ -848,18 +848,18 @@ test("codec: rpcCall one-shot with JSON encoding", () =>
   withCodecSession(
     async (session) => {
       await session.rpcServer("rpc-codec-oneshot", async (msg) => {
-        return { got: msg.body }
+        return { got: msg.decodedBody }
       })
 
       const reply = await session.rpcCall("rpc-codec-oneshot", { ping: true })
-      expect(reply.body).toEqual({ got: { ping: true } })
+      expect(reply.decodedBody).toEqual({ got: { ping: true } })
 
       await session.queue("rpc-codec-oneshot").then((q) => q.delete())
     },
     { defaultContentType: "application/json" },
   ))
 
-test("subscribe callback receives AMQPMessage with rawBody", () =>
+test("subscribe callback receives AMQPMessage with body", () =>
   withSession(async (session) => {
     const q = await session.queue("test-sm-type-" + Math.random(), { durable: false, autoDelete: true })
     await q.publish("check type")
@@ -869,15 +869,15 @@ test("subscribe callback receives AMQPMessage with rawBody", () =>
     })
 
     expect(msg).toBeInstanceOf(AMQPMessage)
-    expect(msg.rawBody).toBeInstanceOf(Uint8Array)
+    expect(msg.body).toBeInstanceOf(Uint8Array)
   }))
 
-test("get() returns AMQPMessage with rawBody", () =>
+test("get() returns AMQPMessage with body", () =>
   withSession(async (session) => {
     const q = await session.queue("test-sm-get-" + Math.random(), { durable: false, autoDelete: true })
     await q.publish("check get")
 
     const msg = await q.get({ noAck: true })
     expect(msg).toBeInstanceOf(AMQPMessage)
-    expect(msg!.rawBody).toBeInstanceOf(Uint8Array)
+    expect(msg!.body).toBeInstanceOf(Uint8Array)
   }))
