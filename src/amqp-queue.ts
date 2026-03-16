@@ -39,6 +39,7 @@ export type QueuePublishOptions = AMQPProperties & {
  * Pass `{ confirm: false }` to skip the wait.
  */
 export class AMQPQueue<C extends CodecMode = "plain"> {
+  /** Queue name. */
   readonly name: string
   private readonly session: AMQPSession<C>
   private readonly subscriptions = new Set<AMQPSubscription>()

@@ -20,6 +20,7 @@ export type ExchangePublishOptions = AMQPProperties & {
  * call. `publish` waits for a broker confirm; pass `{ confirm: false }` to skip the wait.
  */
 export class AMQPExchange<C extends CodecMode = "plain"> {
+  /** Exchange name. */
   readonly name: string
   private readonly session: AMQPSession<C>
 

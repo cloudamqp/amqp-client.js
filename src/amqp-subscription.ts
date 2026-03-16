@@ -23,6 +23,7 @@ export interface ConsumerDefinition {
  */
 export class AMQPSubscription {
   protected consumer: AMQPConsumer
+  /** @internal Consumer definition used for recovery after reconnect. */
   readonly def: ConsumerDefinition
 
   /** @internal */
