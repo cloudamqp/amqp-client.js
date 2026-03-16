@@ -100,16 +100,16 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
     if (autoAck) consumeParams.noAck = false
 
     const codecs = this.session.codecs
-    const wrappedCallback = wrapCallbackWithAutoDecodeAndAck(callback, { codecs, autoAck, requeueOnNack })
+    callback = wrapCallbackWithAutoDecodeAndAck(callback, { codecs, autoAck, requeueOnNack })
     const def: ConsumerDefinition = {
       queueName: this.name,
       consumeParams,
-      ...(wrappedCallback !== undefined && { callback: wrappedCallback }),
+      ...(callback !== undefined && { callback }),
       ...(prefetch !== undefined && { prefetch }),
       ...(codecs && { codecs }),
     }
     const consumer = await this.openConsumer(def)
-    const sub = wrappedCallback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription(consumer, def)
+    const sub = callback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription(consumer, def)
     this.subscriptions.add(sub)
     sub.onCancel = () => {
       this.subscriptions.delete(sub)
