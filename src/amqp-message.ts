@@ -25,10 +25,7 @@ export class AMQPMessage {
   rawBody: Uint8Array | null = null
   /** @internal */
   bodyPos = 0
-  /**
-   * The message body. Raw `Uint8Array` bytes from the wire,
-   * or the decoded value when codecs are configured on the session.
-   */
+  /** Raw `Uint8Array` bytes, or the decoded value when codecs are configured. */
   body: unknown = null
   /** Server-assigned delivery tag for ack/nack/reject. */
   deliveryTag = 0
