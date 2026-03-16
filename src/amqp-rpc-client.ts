@@ -4,7 +4,6 @@ import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { Body } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
-import { decodeMessage } from "./amqp-session-message.js"
 
 const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
 
@@ -54,7 +53,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
         this.pending.delete(id)
         if (entry.timer) clearTimeout(entry.timer)
         try {
-          if (codecs) await decodeMessage(msg, codecs)
+          if (codecs) await codecs.decodeMessage(msg)
           entry.resolve(msg)
         } catch (err) {
           entry.reject(err instanceof Error ? err : new Error(String(err)))

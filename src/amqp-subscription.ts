@@ -4,7 +4,6 @@ import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { ConsumeParams } from "./amqp-channel.js"
-import { decodeMessage } from "./amqp-session-message.js"
 
 /** @internal */
 export interface ConsumerDefinition {
@@ -107,7 +106,7 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
         for await (const msg of consumer.messages) {
           if (this.stopped) return
           if (autoAck) await prev?.ack()
-          if (this.def.codecs) await decodeMessage(msg, this.def.codecs)
+          if (this.def.codecs) await this.def.codecs.decodeMessage(msg)
           prev = msg
           yield msg
         }

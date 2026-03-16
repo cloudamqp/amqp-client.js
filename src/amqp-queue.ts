@@ -9,7 +9,6 @@ import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
 import type { Body } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
-import { decodeMessage } from "./amqp-session-message.js"
 
 /**
  * Options for {@link AMQPQueue#subscribe}.
@@ -125,7 +124,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
     const ch = await this.session.getOpsChannel()
     const msg = await ch.basicGet(this.name, params)
     if (!msg) return null
-    if (this.session.codecs) await decodeMessage(msg, this.session.codecs)
+    if (this.session.codecs) await this.session.codecs.decodeMessage(msg)
     return msg
   }
 
@@ -212,7 +211,7 @@ function wrapCallbackWithAutoDecodeAndAck(
 ): MessageCallback | undefined {
   if (!callback) return undefined
   return async (msg: AMQPMessage) => {
-    if (opts.codecs) await decodeMessage(msg, opts.codecs)
+    if (opts.codecs) await opts.codecs.decodeMessage(msg)
     if (!opts.autoAck) {
       await callback(msg)
       return

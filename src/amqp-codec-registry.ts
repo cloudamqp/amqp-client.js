@@ -1,3 +1,4 @@
+import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import { isPlainBody } from "./amqp-publisher.js"
 
@@ -209,5 +210,12 @@ export class AMQPCodecRegistry {
     }
 
     return bytes
+  }
+
+  /** Decode a message body and set `decodedBody` on the message. */
+  async decodeMessage(msg: AMQPMessage): Promise<void> {
+    if (msg.body) {
+      msg.setDecodedBody(await this.decodeAndParse(msg.body, msg.properties))
+    }
   }
 }
