@@ -8,6 +8,7 @@ import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
 import type { Body } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
+import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import { decodeMessage } from "./amqp-session-message.js"
 
 /**
@@ -99,22 +100,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
     if (autoAck) consumeParams.noAck = false
 
     const codecs = this.session.codecs
-
-    const wrappedCallback = callback
-      ? async (msg: AMQPMessage) => {
-          if (codecs) await decodeMessage(msg, codecs)
-          if (!autoAck) {
-            await callback(msg)
-          } else {
-            try {
-              await callback(msg)
-              await msg.ack()
-            } catch {
-              await msg.nack(requeueOnNack)
-            }
-          }
-        }
-      : undefined
+    const wrappedCallback = callback ? wrapCallback(callback, { codecs, autoAck, requeueOnNack }) : undefined
     const def: ConsumerDefinition = {
       queueName: this.name,
       consumeParams,
@@ -215,5 +201,26 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
     return def.callback
       ? ch.basicConsume(def.queueName, def.consumeParams, def.callback)
       : ch.basicConsume(def.queueName, def.consumeParams)
+  }
+}
+
+type MessageCallback = (msg: AMQPMessage) => void | Promise<void>
+
+function wrapCallback(
+  callback: MessageCallback,
+  opts: { codecs: AMQPCodecRegistry | undefined; autoAck: boolean; requeueOnNack: boolean },
+): MessageCallback {
+  return async (msg: AMQPMessage) => {
+    if (opts.codecs) await decodeMessage(msg, opts.codecs)
+    if (!opts.autoAck) {
+      await callback(msg)
+      return
+    }
+    try {
+      await callback(msg)
+      await msg.ack()
+    } catch {
+      await msg.nack(opts.requeueOnNack)
+    }
   }
 }
