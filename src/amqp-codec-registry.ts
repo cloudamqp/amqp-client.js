@@ -1,5 +1,5 @@
 import type { AMQPProperties } from "./amqp-properties.js"
-import { isBody } from "./amqp-publisher.js"
+import { isWireBody } from "./amqp-publisher.js"
 
 /** Handles serialization/deserialization based on content-type. */
 export interface AMQPParser<T = unknown> {
@@ -152,7 +152,7 @@ export class AMQPCodecRegistry {
       const parser = this.parsers.get(props.contentType)
       if (parser) {
         bytes = parser.serialize(body, props)
-      } else if (isBody(body)) {
+      } else if (isWireBody(body)) {
         bytes = toBytes(body)
       } else {
         throw new Error(
@@ -160,7 +160,7 @@ export class AMQPCodecRegistry {
             `Register a parser via registerParser() or use enableBuiltinParsers().`,
         )
       }
-    } else if (isBody(body)) {
+    } else if (isWireBody(body)) {
       bytes = toBytes(body)
     } else {
       throw new Error(

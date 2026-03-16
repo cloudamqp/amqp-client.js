@@ -2,14 +2,14 @@ import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { CodecMode } from "./amqp-message.js"
 
-export type Body = string | Uint8Array | ArrayBuffer | Buffer | null
+export type WireBody = string | Uint8Array | ArrayBuffer | Buffer | null
+export type Body = WireBody | number | boolean | Record<string, unknown> | unknown[]
 
-export function isBody(data: unknown): data is Body {
+export function isWireBody(data: unknown): data is WireBody {
   return data === null || typeof data === "string" || data instanceof Uint8Array || data instanceof ArrayBuffer
 }
-export type Serializable = Body | number | boolean | Record<string, unknown> | unknown[]
 
-export type PublishBody<C extends CodecMode> = C extends "codec" ? Serializable : Body
+export type PublishBody<C extends CodecMode> = C extends "codec" ? Body : WireBody
 
 /** Publish with broker confirmation. */
 export async function publishConfirmed<C extends CodecMode>(

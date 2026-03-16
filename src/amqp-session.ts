@@ -2,7 +2,7 @@ import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { Body, PublishBody } from "./amqp-publisher.js"
+import type { WireBody, PublishBody } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
@@ -47,8 +47,8 @@ export interface AMQPSessionOptions {
  * High-level session with automatic reconnection and consumer recovery.
  *
  * The generic parameter `C` tracks whether a codec registry is configured.
- * When `C` is `"codec"`, publish methods accept `Serializable` bodies directly.
- * When `C` is `"plain"` (default), only raw `Body` types are accepted.
+ * When `C` is `"codec"`, publish methods accept any `Body` (objects, arrays, etc.).
+ * When `C` is `"plain"` (default), only raw wire types (string, Uint8Array, etc.) are accepted.
  *
  * Users never write `C` explicitly — it's inferred from the `connect()` call.
  *
@@ -161,9 +161,9 @@ export class AMQPSession<C extends CodecMode = "plain"> {
   async encodeBody(
     body: PublishBody<C>,
     properties: AMQPProperties,
-  ): Promise<{ body: Body; properties: AMQPProperties }> {
+  ): Promise<{ body: WireBody; properties: AMQPProperties }> {
     if (!this.codecs) {
-      return { body: body as Body, properties }
+      return { body: body as WireBody, properties }
     }
     const defaults: { contentType?: string; contentEncoding?: string } = {}
     if (this.defaultContentType) defaults.contentType = this.defaultContentType
