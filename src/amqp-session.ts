@@ -2,7 +2,7 @@ import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { WireBody, PublishBody } from "./amqp-publisher.js"
+import type { PlainBody, PublishBody } from "./amqp-publisher.js"
 import type { CodecMode } from "./amqp-message.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
@@ -161,9 +161,9 @@ export class AMQPSession<C extends CodecMode = "plain"> {
   async encodeBody(
     body: PublishBody<C>,
     properties: AMQPProperties,
-  ): Promise<{ body: WireBody; properties: AMQPProperties }> {
+  ): Promise<{ body: PlainBody; properties: AMQPProperties }> {
     if (!this.codecs) {
-      return { body: body as WireBody, properties }
+      return { body: body as PlainBody, properties }
     }
     const defaults: { contentType?: string; contentEncoding?: string } = {}
     if (this.defaultContentType) defaults.contentType = this.defaultContentType
