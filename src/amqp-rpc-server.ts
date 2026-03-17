@@ -8,7 +8,7 @@ import type { AMQPSubscription } from "./amqp-subscription.js"
  * Callback invoked for each incoming RPC request.
  * Receives a decoded {@link AMQPMessage} and returns the response body.
  */
-export type RPCHandler<C extends CodecMode = "plain"> = (msg: AMQPMessage) => Body<C> | Promise<Body<C>>
+export type RPCHandler<C extends CodecMode = "plain"> = (msg: AMQPMessage<C>) => Body<C> | Promise<Body<C>>
 
 /**
  * An RPC server that consumes messages from a queue and replies to each caller.

@@ -1,9 +1,9 @@
 import { AMQPGeneratorConsumer } from "./amqp-consumer.js"
-import { AMQPError } from "./amqp-error.js"
 import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
+import type { CodecMode } from "./amqp-publisher.js"
 import type { ConsumeParams } from "./amqp-channel.js"
 
 /** @internal */
@@ -79,7 +79,10 @@ export class AMQPSubscription {
  * }
  * ```
  */
-export class AMQPGeneratorSubscription extends AMQPSubscription implements AsyncIterable<AMQPMessage> {
+export class AMQPGeneratorSubscription<C extends CodecMode = "plain">
+  extends AMQPSubscription
+  implements AsyncIterable<AMQPMessage<C>>
+{
   private stopped = false
   private consumerReady?: () => void
 
@@ -96,7 +99,7 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
     await super.cancel()
   }
 
-  async *[Symbol.asyncIterator](): AsyncGenerator<AMQPMessage, void, undefined> {
+  async *[Symbol.asyncIterator](): AsyncGenerator<AMQPMessage<C>, void, undefined> {
     const autoAck = !this.def.consumeParams.noAck
     let prev: AMQPMessage | undefined
     while (!this.stopped) {
@@ -104,6 +107,7 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
       if (!(consumer instanceof AMQPGeneratorConsumer)) {
         throw new Error("Cannot iterate messages on a callback-based subscription")
       }
+      let decodeError: unknown
       try {
         for await (const msg of consumer.messages) {
           if (this.stopped) return
@@ -116,16 +120,17 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
                 await msg.nack(false)
                 continue
               }
+              decodeError = err
               throw err
             }
           }
           prev = msg
-          yield msg
+          yield msg as AMQPMessage<C>
         }
       } catch (err) {
-        // Channel-close errors (AMQPError) are expected during reconnect — swallow them.
-        // Anything else (e.g. decode errors) should propagate to the caller.
-        if (!(err instanceof AMQPError)) throw err
+        // Decode errors should propagate to the caller.
+        if (err === decodeError) throw err
+        // Channel/connection close errors are expected during reconnect — swallow them.
       }
       // Reset on disconnect; unacked messages are requeued by the server when the channel closes
       prev = undefined

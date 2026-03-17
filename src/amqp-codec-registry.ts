@@ -215,7 +215,9 @@ export class AMQPCodecRegistry {
   /** Decode a message body, replacing the raw bytes on `msg.body`. */
   async decodeMessage(msg: AMQPMessage): Promise<void> {
     if (msg.rawBody) {
-      msg.body = await this.decodeAndParse(msg.rawBody, msg.properties)
+      // After decoding, body holds the parsed value (not raw bytes).
+      // The caller is responsible for presenting the correct generic to consumers.
+      ;(msg as { body: unknown }).body = await this.decodeAndParse(msg.rawBody, msg.properties)
     }
   }
 }

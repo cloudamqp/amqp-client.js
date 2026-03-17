@@ -12,7 +12,8 @@ import type { AMQPQueue } from "../src/amqp-queue.js"
 import type { AMQPExchange } from "../src/amqp-exchange.js"
 import type { AMQPRPCClient } from "../src/amqp-rpc-client.js"
 import type { AMQPRPCServer, RPCHandler } from "../src/amqp-rpc-server.js"
-import type { AMQPMessage } from "../src/amqp-message.js"
+import type { AMQPMessage, MessageBody } from "../src/amqp-message.js"
+import type { AMQPGeneratorSubscription } from "../src/amqp-subscription.js"
 import type { Body, CodecMode, PlainBody } from "../src/amqp-publisher.js"
 
 // --- Body<C> conditional type ---
@@ -76,14 +77,28 @@ test("AMQPRPCServer defaults to plain mode", () => {
   expectTypeOf<AMQPRPCServer>().toEqualTypeOf<AMQPRPCServer<"plain">>()
 })
 
-// --- AMQPMessage is not generic ---
+// --- AMQPMessage generic ---
 
-test("AMQPMessage.body is unknown (decoded or raw bytes)", () => {
-  expectTypeOf<AMQPMessage["body"]>().toEqualTypeOf<unknown>()
+test("AMQPMessage defaults to plain mode", () => {
+  expectTypeOf<AMQPMessage>().toEqualTypeOf<AMQPMessage<"plain">>()
 })
 
-test("AMQPMessage.rawBody is Uint8Array | null", () => {
-  expectTypeOf<AMQPMessage["rawBody"]>().toEqualTypeOf<Uint8Array | null>()
+test("AMQPMessage<plain>.body is Uint8Array | null", () => {
+  expectTypeOf<AMQPMessage<"plain">["body"]>().toEqualTypeOf<Uint8Array | null>()
+})
+
+test("AMQPMessage<codec>.body is unknown", () => {
+  expectTypeOf<AMQPMessage<"codec">["body"]>().toEqualTypeOf<unknown>()
+})
+
+test("MessageBody follows CodecMode", () => {
+  expectTypeOf<MessageBody<"plain">>().toEqualTypeOf<Uint8Array | null>()
+  expectTypeOf<MessageBody<"codec">>().toEqualTypeOf<unknown>()
+})
+
+test("AMQPMessage.rawBody is always Uint8Array | null", () => {
+  expectTypeOf<AMQPMessage<"plain">["rawBody"]>().toEqualTypeOf<Uint8Array | null>()
+  expectTypeOf<AMQPMessage<"codec">["rawBody"]>().toEqualTypeOf<Uint8Array | null>()
 })
 
 // --- Plain queue rejects non-plain bodies at the type level ---
@@ -148,6 +163,46 @@ test("RPCHandler<codec> can return objects", () => {
 
 test("RPCHandler defaults to plain mode", () => {
   expectTypeOf<RPCHandler>().toEqualTypeOf<RPCHandler<"plain">>()
+})
+
+// --- Subscribe yields typed messages ---
+
+test("plain queue subscribe iterator yields AMQPMessage<plain>", () => {
+  type Sub = AMQPGeneratorSubscription<"plain">
+  type Yielded = Sub extends AsyncIterable<infer T> ? T : never
+  expectTypeOf<Yielded>().toEqualTypeOf<AMQPMessage<"plain">>()
+})
+
+test("codec queue subscribe iterator yields AMQPMessage<codec>", () => {
+  type Sub = AMQPGeneratorSubscription<"codec">
+  type Yielded = Sub extends AsyncIterable<infer T> ? T : never
+  expectTypeOf<Yielded>().toEqualTypeOf<AMQPMessage<"codec">>()
+})
+
+// --- RPC call returns typed messages ---
+
+test("plain rpcClient.call returns AMQPMessage<plain>", () => {
+  type R = AMQPRPCClient<"plain">
+  type Reply = Awaited<ReturnType<R["call"]>>
+  expectTypeOf<Reply>().toEqualTypeOf<AMQPMessage<"plain">>()
+})
+
+test("codec rpcClient.call returns AMQPMessage<codec>", () => {
+  type R = AMQPRPCClient<"codec">
+  type Reply = Awaited<ReturnType<R["call"]>>
+  expectTypeOf<Reply>().toEqualTypeOf<AMQPMessage<"codec">>()
+})
+
+// --- RPCHandler receives typed messages ---
+
+test("RPCHandler<plain> receives AMQPMessage<plain>", () => {
+  type Param = Parameters<RPCHandler<"plain">>[0]
+  expectTypeOf<Param>().toEqualTypeOf<AMQPMessage<"plain">>()
+})
+
+test("RPCHandler<codec> receives AMQPMessage<codec>", () => {
+  type Param = Parameters<RPCHandler<"codec">>[0]
+  expectTypeOf<Param>().toEqualTypeOf<AMQPMessage<"codec">>()
 })
 
 // --- CodecMode is a string literal union ---

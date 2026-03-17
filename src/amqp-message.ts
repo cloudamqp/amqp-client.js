@@ -1,13 +1,18 @@
 import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPProperties } from "./amqp-properties.js"
+import type { CodecMode } from "./amqp-publisher.js"
+
+/** The body type exposed on a message, narrowed by {@link CodecMode}. */
+export type MessageBody<C extends CodecMode> = C extends "codec" ? unknown : Uint8Array | null
 
 /**
  * AMQP message.
  *
- * `body` contains the message data: raw `Uint8Array` bytes from the wire,
- * or the decoded value when codecs are configured on the session.
+ * The generic parameter `C` controls the type of `body`:
+ * - `"plain"` (default): `Uint8Array | null` (raw wire bytes)
+ * - `"codec"`: `unknown` (decoded by the configured codec registry)
  */
-export class AMQPMessage {
+export class AMQPMessage<C extends CodecMode = "plain"> {
   /** Channel this message was delivered on. */
   channel: AMQPChannel
   /** Exchange the message was published to. */
@@ -22,8 +27,8 @@ export class AMQPMessage {
   rawBody: Uint8Array | null = null
   /** @internal */
   bodyPos = 0
-  /** Raw `Uint8Array` bytes, or the decoded value when codecs are configured. */
-  body: unknown = null
+  /** Message body. Raw `Uint8Array` bytes in plain mode; decoded value in codec mode. */
+  body: MessageBody<C> = null as MessageBody<C>
   /** Server-assigned delivery tag for ack/nack/reject. */
   deliveryTag = 0
   /** Consumer tag, if delivered to a consumer. */

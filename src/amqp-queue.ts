@@ -70,11 +70,11 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
   }
 
   /** Subscribe with a callback. Messages are acked after the callback returns, nacked on error. */
-  subscribe(callback: (msg: AMQPMessage) => void | Promise<void>): Promise<AMQPSubscription>
+  subscribe(callback: (msg: AMQPMessage<C>) => void | Promise<void>): Promise<AMQPSubscription>
   /** Subscribe with a callback and custom params. */
   subscribe(
     params: QueueSubscribeParams,
-    callback: (msg: AMQPMessage) => void | Promise<void>,
+    callback: (msg: AMQPMessage<C>) => void | Promise<void>,
   ): Promise<AMQPSubscription>
   /**
    * Subscribe via an async iterator. Messages continue yielding across reconnections.
@@ -86,11 +86,11 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
    * }
    * ```
    */
-  subscribe(params?: QueueSubscribeParams): Promise<AMQPGeneratorSubscription>
+  subscribe(params?: QueueSubscribeParams): Promise<AMQPGeneratorSubscription<C>>
   async subscribe(
-    params?: QueueSubscribeParams | ((msg: AMQPMessage) => void | Promise<void>),
-    callback?: (msg: AMQPMessage) => void | Promise<void>,
-  ): Promise<AMQPSubscription | AMQPGeneratorSubscription> {
+    params?: QueueSubscribeParams | ((msg: AMQPMessage<C>) => void | Promise<void>),
+    callback?: (msg: AMQPMessage<C>) => void | Promise<void>,
+  ): Promise<AMQPSubscription | AMQPGeneratorSubscription<C>> {
     if (typeof params === "function") [callback, params] = [params, undefined]
     const { prefetch, requeueOnNack = true, ...consumeParams } = params ?? {}
     // Force noAck: false when auto-acking so the server tracks delivery tags.
@@ -99,16 +99,16 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
     if (autoAck) consumeParams.noAck = false
 
     const codecs = this.session.codecs
-    callback = wrapCallbackWithAutoDecodeAndAck(callback, { codecs, autoAck, requeueOnNack })
+    const wrappedCallback = wrapCallbackWithAutoDecodeAndAck(callback, { codecs, autoAck, requeueOnNack })
     const def: ConsumerDefinition = {
       queueName: this.name,
       consumeParams,
-      ...(callback !== undefined && { callback }),
+      ...(wrappedCallback !== undefined && { callback: wrappedCallback }),
       ...(prefetch !== undefined && { prefetch }),
       ...(codecs && { codecs }),
     }
     const consumer = await this.openConsumer(def)
-    const sub = callback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription(consumer, def)
+    const sub = wrappedCallback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription<C>(consumer, def)
     this.subscriptions.add(sub)
     sub.onCancel = () => {
       this.subscriptions.delete(sub)
@@ -120,12 +120,12 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
    * Poll the queue for a single message.
    * @param [params.noAck=true] - automatically acknowledge on delivery
    */
-  async get(params?: { noAck?: boolean }): Promise<AMQPMessage | null> {
+  async get(params?: { noAck?: boolean }): Promise<AMQPMessage<C> | null> {
     const ch = await this.session.getOpsChannel()
     const msg = await ch.basicGet(this.name, params)
     if (!msg) return null
     if (this.session.codecs) await this.session.codecs.decodeMessage(msg)
-    return msg
+    return msg as AMQPMessage<C>
   }
 
   /**
@@ -203,23 +203,23 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
   }
 }
 
-type MessageCallback = (msg: AMQPMessage) => void | Promise<void>
+type InternalCallback = (msg: AMQPMessage) => void | Promise<void>
 
-function wrapCallbackWithAutoDecodeAndAck(
-  callback: MessageCallback | undefined,
+function wrapCallbackWithAutoDecodeAndAck<C extends CodecMode>(
+  callback: ((msg: AMQPMessage<C>) => void | Promise<void>) | undefined,
   opts: { codecs: AMQPCodecRegistry | undefined; autoAck: boolean; requeueOnNack: boolean },
-): MessageCallback | undefined {
+): InternalCallback | undefined {
   if (!callback) return undefined
   if (!opts.autoAck) {
     return async (msg: AMQPMessage) => {
       if (opts.codecs) await opts.codecs.decodeMessage(msg)
-      await callback(msg)
+      await callback(msg as AMQPMessage<C>)
     }
   }
   return async (msg: AMQPMessage) => {
     try {
       if (opts.codecs) await opts.codecs.decodeMessage(msg)
-      await callback(msg)
+      await callback(msg as AMQPMessage<C>)
       await msg.ack()
     } catch {
       await msg.nack(opts.requeueOnNack)

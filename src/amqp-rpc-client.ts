@@ -25,7 +25,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
   private readonly pending = new Map<
     string,
     {
-      resolve: (msg: AMQPMessage) => void
+      resolve: (msg: AMQPMessage<C>) => void
       reject: (err: Error) => void
       timer: ReturnType<typeof setTimeout> | undefined
     }
@@ -57,7 +57,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
         if (entry.timer) clearTimeout(entry.timer)
         try {
           if (codecs) await codecs.decodeMessage(msg)
-          entry.resolve(msg)
+          entry.resolve(msg as AMQPMessage<C>)
         } catch (err) {
           entry.reject(err instanceof Error ? err : new Error(String(err)))
         }
@@ -84,7 +84,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
     queue: string,
     body: Body<C>,
     { timeout, ...properties }: AMQPProperties & { timeout?: number } = {},
-  ): Promise<AMQPMessage> {
+  ): Promise<AMQPMessage<C>> {
     if (this.closed) throw new Error("RPC client is closed")
     if (!this.ch || this.ch.closed) throw new Error("RPC client not started, call start() first")
     const ch = this.ch
@@ -92,7 +92,7 @@ export class AMQPRPCClient<C extends CodecMode = "plain"> {
 
     const encoded = await this.session.encodeBody(body, properties)
 
-    return new Promise<AMQPMessage>((resolve, reject) => {
+    return new Promise<AMQPMessage<C>>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined
       if (timeout !== undefined && timeout > 0) {
         timer = setTimeout(() => {

@@ -311,7 +311,11 @@ export class AMQPSession<C extends CodecMode = "plain"> {
    * @param options.timeout - Timeout in milliseconds
    * @returns The reply {@link AMQPMessage}
    */
-  async rpcCall(queue: string, body: Body<C>, options?: AMQPProperties & { timeout?: number }): Promise<AMQPMessage> {
+  async rpcCall(
+    queue: string,
+    body: Body<C>,
+    options?: AMQPProperties & { timeout?: number },
+  ): Promise<AMQPMessage<C>> {
     const rpc = new AMQPRPCClient<C>(this)
     await rpc.start()
     try {
