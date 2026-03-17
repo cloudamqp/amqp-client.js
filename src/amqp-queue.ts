@@ -103,6 +103,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
     const def: ConsumerDefinition = {
       queueName: this.name,
       consumeParams,
+      requeueOnNack,
       ...(wrappedCallback !== undefined && { callback: wrappedCallback }),
       ...(prefetch !== undefined && { prefetch }),
       ...(codecs && { codecs }),

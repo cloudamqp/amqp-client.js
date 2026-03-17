@@ -13,6 +13,7 @@ export interface ConsumerDefinition {
   callback?: (msg: AMQPMessage) => void | Promise<void>
   prefetch?: number
   codecs?: AMQPCodecRegistry
+  requeueOnNack?: boolean
 }
 
 /**
@@ -101,6 +102,7 @@ export class AMQPGeneratorSubscription<C extends CodecMode = "plain">
 
   async *[Symbol.asyncIterator](): AsyncGenerator<AMQPMessage<C>, void, undefined> {
     const autoAck = !this.def.consumeParams.noAck
+    const requeueOnNack = this.def.requeueOnNack ?? true
     let prev: AMQPMessage | undefined
     while (!this.stopped) {
       const consumer = this.consumer
@@ -117,7 +119,7 @@ export class AMQPGeneratorSubscription<C extends CodecMode = "plain">
               await this.def.codecs.decodeMessage(msg)
             } catch (err) {
               if (autoAck) {
-                await msg.nack(false)
+                await msg.nack(requeueOnNack)
                 continue
               }
               decodeError = err
