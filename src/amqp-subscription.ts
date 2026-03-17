@@ -1,4 +1,5 @@
 import { AMQPGeneratorConsumer } from "./amqp-consumer.js"
+import { AMQPError } from "./amqp-error.js"
 import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPConsumer } from "./amqp-consumer.js"
@@ -107,12 +108,21 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
         for await (const msg of consumer.messages) {
           if (this.stopped) return
           if (autoAck) await prev?.ack()
-          if (this.def.codecs) await this.def.codecs.decodeMessage(msg)
+          if (this.def.codecs) {
+            try {
+              await this.def.codecs.decodeMessage(msg)
+            } catch (err) {
+              if (autoAck) { await msg.nack(false); continue }
+              throw err
+            }
+          }
           prev = msg
           yield msg
         }
-      } catch {
-        // Consumer's channel was closed — wait for reconnect to provide a new consumer
+      } catch (err) {
+        // Channel-close errors (AMQPError) are expected during reconnect — swallow them.
+        // Anything else (e.g. decode errors) should propagate to the caller.
+        if (!(err instanceof AMQPError)) throw err
       }
       // Reset on disconnect; unacked messages are requeued by the server when the channel closes
       prev = undefined
