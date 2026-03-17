@@ -413,7 +413,6 @@ export abstract class AMQPBaseClient {
                   const err = new AMQPError(msg, this)
                   channel.setClosed(err)
                   delete this.channels[channelId]
-
                   const closeOk = new AMQPFrame.Writer({
                     bufferSize: 12,
                     type: AMQPFrame.Type.METHOD,
@@ -669,7 +668,7 @@ export abstract class AMQPBaseClient {
           if (message) {
             message.bodySize = bodySize
             message.properties = properties
-            message.body = new Uint8Array(bodySize)
+            message.rawBody = new Uint8Array(bodySize)
             if (bodySize === 0) channel.onMessageReady(message)
           } else {
             this.logger?.warn("Header frame but no message")
@@ -678,9 +677,9 @@ export abstract class AMQPBaseClient {
         }
         case AMQPFrame.Type.BODY: {
           const message = channel.delivery || channel.getMessage || channel.returned
-          if (message && message.body) {
+          if (message && message.rawBody) {
             const bodyPart = new Uint8Array(view.buffer, view.byteOffset + i, frameSize)
-            message.body.set(bodyPart, message.bodyPos)
+            message.rawBody.set(bodyPart, message.bodyPos)
             message.bodyPos += frameSize
             i += frameSize
             if (message.bodyPos === message.bodySize) channel.onMessageReady(message)

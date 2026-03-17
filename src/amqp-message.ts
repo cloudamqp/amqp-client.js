@@ -1,10 +1,18 @@
 import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPProperties } from "./amqp-properties.js"
+import type { CodecMode } from "./amqp-publisher.js"
+
+/** The body type exposed on a message, narrowed by {@link CodecMode}. */
+export type MessageBody<C extends CodecMode> = C extends "codec" ? unknown : Uint8Array | null
 
 /**
  * AMQP message.
+ *
+ * The generic parameter `C` controls the type of `body`:
+ * - `"plain"` (default): `Uint8Array | null` (raw wire bytes)
+ * - `"codec"`: `unknown` (decoded by the configured codec registry)
  */
-export class AMQPMessage {
+export class AMQPMessage<C extends CodecMode = "plain"> {
   /** Channel this message was delivered on. */
   channel: AMQPChannel
   /** Exchange the message was published to. */
@@ -15,9 +23,12 @@ export class AMQPMessage {
   properties: AMQPProperties = {}
   /** Byte size of the body. */
   bodySize = 0
-  /** Raw message body as bytes from the wire. */
-  body: Uint8Array | null = null
+  /** @internal Raw bytes buffer used by the frame parser. */
+  rawBody: Uint8Array | null = null
+  /** @internal */
   bodyPos = 0
+  /** Message body. Raw `Uint8Array` bytes in plain mode; decoded value in codec mode. */
+  body: MessageBody<C> = null as MessageBody<C>
   /** Server-assigned delivery tag for ack/nack/reject. */
   deliveryTag = 0
   /** Consumer tag, if delivered to a consumer. */
@@ -44,13 +55,11 @@ export class AMQPMessage {
     this.channel = channel
   }
 
-  /**
-   * Converts the message (which is deliviered as an uint8array) to a string
-   */
+  /** Converts the raw message body to a string. */
   bodyToString(): string | null {
-    if (this.body) {
-      if (typeof Buffer !== "undefined") return Buffer.from(this.body).toString()
-      else return new TextDecoder().decode(this.body)
+    if (this.rawBody) {
+      if (typeof Buffer !== "undefined") return Buffer.from(this.rawBody).toString()
+      else return new TextDecoder().decode(this.rawBody)
     } else {
       return null
     }
