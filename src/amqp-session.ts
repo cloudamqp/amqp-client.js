@@ -157,18 +157,17 @@ export class AMQPSession<C extends CodecMode = "plain"> {
    * Applies `defaultContentType` / `defaultContentEncoding` as fallbacks.
    * @internal
    */
-  async encodeBody(
+  encodeBody(
     body: Body<C>,
     properties: AMQPProperties,
-  ): Promise<{ body: PlainBody; properties: AMQPProperties }> {
+  ): Promise<{ body: PlainBody; properties: AMQPProperties }> | { body: PlainBody; properties: AMQPProperties } {
     if (!this.codecs) {
       return { body: body as PlainBody, properties }
     }
     const defaults: { contentType?: string; contentEncoding?: string } = {}
     if (this.defaultContentType) defaults.contentType = this.defaultContentType
     if (this.defaultContentEncoding) defaults.contentEncoding = this.defaultContentEncoding
-    const result = await this.codecs.serializeAndEncode(body, properties, defaults)
-    return { body: result.body, properties: result.properties }
+    return this.codecs.serializeAndEncode(body, properties, defaults)
   }
 
   /**
@@ -351,7 +350,7 @@ export class AMQPSession<C extends CodecMode = "plain"> {
    * @param prefetch - Channel prefetch count (default: 1)
    * @returns A started {@link AMQPRPCServer}
    */
-  async rpcServer(queue: string, handler: RPCHandler, prefetch?: number): Promise<AMQPRPCServer<C>> {
+  async rpcServer(queue: string, handler: RPCHandler<C>, prefetch?: number): Promise<AMQPRPCServer<C>> {
     const server = new AMQPRPCServer<C>(this)
     await server.start(queue, handler, prefetch)
     return server

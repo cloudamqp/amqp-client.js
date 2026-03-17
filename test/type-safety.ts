@@ -11,7 +11,7 @@ import type { AMQPSession } from "../src/amqp-session.js"
 import type { AMQPQueue } from "../src/amqp-queue.js"
 import type { AMQPExchange } from "../src/amqp-exchange.js"
 import type { AMQPRPCClient } from "../src/amqp-rpc-client.js"
-import type { AMQPRPCServer } from "../src/amqp-rpc-server.js"
+import type { AMQPRPCServer, RPCHandler } from "../src/amqp-rpc-server.js"
 import type { AMQPMessage } from "../src/amqp-message.js"
 import type { Body, CodecMode, PlainBody } from "../src/amqp-publisher.js"
 
@@ -127,6 +127,27 @@ test("codec exchange publish accepts objects", () => {
   type X = AMQPExchange<"codec">
   type PublishBody = Parameters<X["publish"]>[0]
   expectTypeOf<{ key: string }>().toMatchTypeOf<PublishBody>()
+})
+
+// --- RPCHandler follows CodecMode ---
+
+test("RPCHandler<plain> must return PlainBody", () => {
+  type HandlerReturn = ReturnType<RPCHandler<"plain">>
+  expectTypeOf<string>().toMatchTypeOf<HandlerReturn>()
+  expectTypeOf<Uint8Array>().toMatchTypeOf<HandlerReturn>()
+  expectTypeOf<null>().toMatchTypeOf<HandlerReturn>()
+  // Objects should not be valid return values in plain mode
+  expectTypeOf<{ key: string }>().not.toMatchTypeOf<HandlerReturn>()
+})
+
+test("RPCHandler<codec> can return objects", () => {
+  type HandlerReturn = ReturnType<RPCHandler<"codec">>
+  expectTypeOf<{ key: string }>().toMatchTypeOf<HandlerReturn>()
+  expectTypeOf<number>().toMatchTypeOf<HandlerReturn>()
+})
+
+test("RPCHandler defaults to plain mode", () => {
+  expectTypeOf<RPCHandler>().toEqualTypeOf<RPCHandler<"plain">>()
 })
 
 // --- CodecMode is a string literal union ---

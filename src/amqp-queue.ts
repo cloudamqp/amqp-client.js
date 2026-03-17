@@ -210,13 +210,15 @@ function wrapCallbackWithAutoDecodeAndAck(
   opts: { codecs: AMQPCodecRegistry | undefined; autoAck: boolean; requeueOnNack: boolean },
 ): MessageCallback | undefined {
   if (!callback) return undefined
-  return async (msg: AMQPMessage) => {
-    if (opts.codecs) await opts.codecs.decodeMessage(msg)
-    if (!opts.autoAck) {
+  if (!opts.autoAck) {
+    return async (msg: AMQPMessage) => {
+      if (opts.codecs) await opts.codecs.decodeMessage(msg)
       await callback(msg)
-      return
     }
+  }
+  return async (msg: AMQPMessage) => {
     try {
+      if (opts.codecs) await opts.codecs.decodeMessage(msg)
       await callback(msg)
       await msg.ack()
     } catch {

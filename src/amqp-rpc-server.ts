@@ -8,7 +8,7 @@ import type { AMQPSubscription } from "./amqp-subscription.js"
  * Callback invoked for each incoming RPC request.
  * Receives a decoded {@link AMQPMessage} and returns the response body.
  */
-export type RPCHandler = (msg: AMQPMessage) => unknown | Promise<unknown>
+export type RPCHandler<C extends CodecMode = "plain"> = (msg: AMQPMessage) => Body<C> | Promise<Body<C>>
 
 /**
  * An RPC server that consumes messages from a queue and replies to each caller.
@@ -36,7 +36,7 @@ export class AMQPRPCServer<C extends CodecMode = "plain"> {
   }
 
   /** @internal Called by {@link AMQPSession.rpcServer}. */
-  async start(queue: string, handler: RPCHandler, prefetch = 1): Promise<this> {
+  async start(queue: string, handler: RPCHandler<C>, prefetch = 1): Promise<this> {
     if (this.subscription) throw new Error("RPC server already started")
     const q = await this.session.queue(queue)
     this.subscription = await q.subscribe({ prefetch, noAck: false, requeueOnNack: false }, async (msg) => {
@@ -48,7 +48,7 @@ export class AMQPRPCServer<C extends CodecMode = "plain"> {
       const result = await handler(msg)
       const replyProps: AMQPProperties = {}
       if (correlationId !== undefined) replyProps.correlationId = correlationId
-      const encoded = await this.session.encodeBody(result as Body<C>, replyProps)
+      const encoded = await this.session.encodeBody(result, replyProps)
       await msg.channel.basicPublish("", replyTo, encoded.body, encoded.properties)
     })
     return this
