@@ -112,7 +112,10 @@ export class AMQPGeneratorSubscription extends AMQPSubscription implements Async
             try {
               await this.def.codecs.decodeMessage(msg)
             } catch (err) {
-              if (autoAck) { await msg.nack(false); continue }
+              if (autoAck) {
+                await msg.nack(false)
+                continue
+              }
               throw err
             }
           }
