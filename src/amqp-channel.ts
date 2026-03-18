@@ -834,7 +834,9 @@ export class AMQPChannel {
     err ||= new Error("Connection closed by client")
     if (!this.closed) {
       this.closed = true
-      this.consumers.forEach((consumer) => consumer.setClosed(err))
+      // On client-initiated close, consumers resolve cleanly (no error).
+      // Only propagate the error when the server closed the channel/connection.
+      this.consumers.forEach((consumer) => consumer.setClosed(closedByServer ? err : undefined))
       this.consumers.clear()
 
       // Reject all pending RPC callbacks
