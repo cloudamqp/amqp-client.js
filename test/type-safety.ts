@@ -15,7 +15,7 @@ import type { AMQPRPCServer, RPCHandler } from "../src/amqp-rpc-server.js"
 import type { AMQPMessage, MessageBody } from "../src/amqp-message.js"
 import type { AMQPGeneratorSubscription } from "../src/amqp-subscription.js"
 import type { Body, CodecMode, PlainBody, ResolveBody } from "../src/amqp-publisher.js"
-import type { AMQPParser } from "../src/amqp-codec-registry.js"
+import type { AMQPParser, InferParserInput, InferParserOutput } from "../src/amqp-codec-registry.js"
 
 // --- Body<C> conditional type ---
 
@@ -216,8 +216,8 @@ test("CodecMode is exactly 'plain' | 'codec'", () => {
 // --- ResolveBody: content-type → body type cascade ---
 
 type TestParsers = {
-  "text/plain": AMQPParser<string>
-  "application/json": AMQPParser
+  "text/plain": AMQPParser<string, string>
+  "application/json": AMQPParser<unknown, unknown>
 }
 
 test("ResolveBody: explicit contentType selects that parser's input type", () => {
@@ -243,4 +243,18 @@ test("queue with parsers but no defaultContentType falls back to PlainBody", () 
   type Q = AMQPQueue<"codec", TestParsers, never>
   type PublishBody = Parameters<Q["publish"]>[0]
   expectTypeOf<PublishBody>().toEqualTypeOf<PlainBody>()
+})
+
+// --- AMQPParser<In, Out> ---
+
+test("AMQPParser<In, Out> separates input and output types", () => {
+  type P = AMQPParser<string, number>
+  expectTypeOf<InferParserInput<P>>().toEqualTypeOf<string>()
+  expectTypeOf<InferParserOutput<P>>().toEqualTypeOf<number>()
+})
+
+test("AMQPParser defaults both to unknown", () => {
+  type P = AMQPParser
+  expectTypeOf<InferParserInput<P>>().toEqualTypeOf<unknown>()
+  expectTypeOf<InferParserOutput<P>>().toEqualTypeOf<unknown>()
 })

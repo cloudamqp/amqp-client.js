@@ -1,6 +1,6 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
-import type { AMQPCodecRegistry, InferParserInput, ParserMap, Registry } from "./amqp-codec-registry.js"
+import type { AMQPCodecRegistry, InferParserInput, ParserMap, ParserRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { PlainBody, Body, CodecMode } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
@@ -35,7 +35,7 @@ export interface AMQPSessionOptions<T extends ParserMap = {}, K extends keyof T 
   /** Default content-encoding applied to published messages when not set explicitly. */
   defaultContentEncoding?: string
   // /** Parser registry for automatic message decoding. */
-  // parsers?: Registry<T>
+  // parsers?: ParserRegistry<T>
   /**
    * AMQP virtual host. For WebSocket URLs the URL path is the relay endpoint,
    * not the vhost — use this option to specify the vhost explicitly.
@@ -80,7 +80,7 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
   /** @internal Default content-encoding for published messages. */
   readonly defaultContentEncoding?: string
 
-  readonly parsers?: Registry<T>
+  readonly parsers?: ParserRegistry<T>
 
   private readonly options: {
     reconnectInterval: number
@@ -135,10 +135,13 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
    */
   static async connect<T extends ParserMap, K extends keyof T & string = keyof T & string>(
     url: string,
-    options: AMQPSessionOptions<T, K> & { codecs: AMQPCodecRegistry, parsers: Registry<T> },
+    options: AMQPSessionOptions<T, K> & { codecs: AMQPCodecRegistry; parsers: ParserRegistry<T> },
   ): Promise<AMQPSession<"codec", T>>
   static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession<"plain">>
-  static async connect<T extends ParserMap = {}, K extends keyof T & string = never>(url: string, options?: AMQPSessionOptions<T, K>): Promise<AMQPSession<CodecMode, T, K>> {
+  static async connect<T extends ParserMap = {}, K extends keyof T & string = never>(
+    url: string,
+    options?: AMQPSessionOptions<T, K>,
+  ): Promise<AMQPSession<CodecMode, T, K>> {
     const u = new URL(url)
     let client: AMQPBaseClient
     if (u.protocol === "ws:" || u.protocol === "wss:") {
@@ -156,7 +159,10 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
     return new AMQPSession(client, options)
   }
 
-  serializeBody<O extends keyof T & string = K>(body: InferParserInput<T[O]>, properties: Omit<AMQPProperties, "contentType"> & { contentType?: O }): Promise<{ body: PlainBody; properties: AMQPProperties }> {
+  serializeBody<O extends keyof T & string = K>(
+    body: InferParserInput<T[O]>,
+    properties: Omit<AMQPProperties, "contentType"> & { contentType?: O },
+  ): Promise<{ body: PlainBody; properties: AMQPProperties }> {
     const defaults: { contentType?: K; contentEncoding?: string } = {}
     if (!this.codecs) {
       throw new Error("No codec registry configured for this session")
@@ -386,7 +392,7 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
     }
     this.queues.clear()
     for (const rpc of this.rpcClients) {
-      rpc.close().catch(() => { })
+      rpc.close().catch(() => {})
     }
     this.rpcClients.clear()
     delete this.client.ondisconnect
