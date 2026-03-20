@@ -20,11 +20,16 @@ export type Body<C extends CodecMode> = C extends "codec" ? Serializable : Plain
  * `O` defaults to `K` (the session's `defaultContentType`) at the call site,
  * so the cascade is: explicit contentType → default contentType → PlainBody.
  */
-export type ResolveBody<T extends ParserMap, O extends keyof T & string> =
-  [O] extends [never] ? PlainBody : InferParserInput<T[O]>
+export type ResolveBody<T extends ParserMap, O extends keyof T & string> = [O] extends [never]
+  ? PlainBody
+  : InferParserInput<T[O]>
 
 /** Publish with broker confirmation. */
-export async function publishConfirmed<C extends CodecMode, T extends ParserMap, K extends keyof T & string = keyof T & string>(
+export async function publishConfirmed<
+  C extends CodecMode,
+  T extends ParserMap,
+  K extends keyof T & string = keyof T & string,
+>(
   session: AMQPSession<C, T, K>,
   exchange: string,
   routingKey: string,

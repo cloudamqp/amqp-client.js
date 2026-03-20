@@ -73,7 +73,7 @@ test("session.subscribe accepts a broker-named queue", () =>
 test("subscription.cancel() removes it from session recovery", () =>
   withSession(async (session) => {
     const q = await session.queue("test-cancel-" + Math.random(), { durable: false, autoDelete: true })
-    const sub = await q.subscribe({ noAck: true }, () => { })
+    const sub = await q.subscribe({ noAck: true }, () => {})
 
     await expect(sub.cancel()).resolves.toBeUndefined()
   }))
@@ -126,7 +126,7 @@ test("session.onfailed fires when maxRetries exhausted", () =>
       const client = testClient(session)
       const connectSpy = vi.spyOn(client, "connect").mockRejectedValue(new Error("forced failure"))
 
-        ; (client as AMQPClient).socket?.destroy()
+      ;(client as AMQPClient).socket?.destroy()
 
       // Wait long enough for 2 retries + backoff (50ms + 100ms) with buffer
       await new Promise((resolve) => setTimeout(resolve, 500))
@@ -153,7 +153,7 @@ test("session.onconnect fires after successful reconnection", () =>
         }
       })
 
-        ; (testClient(session) as AMQPClient).socket?.destroy()
+      ;(testClient(session) as AMQPClient).socket?.destroy()
 
       await reconnected
       expect(reconnectCount).toBe(1)
@@ -183,7 +183,7 @@ test("subscription recovers and receives messages after reconnection", () =>
         }
       })
 
-        ; (testClient(session) as AMQPClient).socket?.destroy()
+      ;(testClient(session) as AMQPClient).socket?.destroy()
 
       await reconnected
 
@@ -209,7 +209,7 @@ test("session.stop() during reconnection stops the loop", () =>
       const client = testClient(session)
       const connectSpy = vi.spyOn(client, "connect").mockRejectedValue(new Error("forced failure"))
 
-        ; (client as AMQPClient).socket?.destroy()
+      ;(client as AMQPClient).socket?.destroy()
 
       // Stop before the first reconnection attempt fires
       await new Promise((resolve) => setTimeout(resolve, 50))
@@ -227,7 +227,7 @@ test("session.stop() during reconnection stops the loop", () =>
 test("session.stop() when already disconnected does not throw", () =>
   withSession(
     async (session) => {
-      ; (testClient(session) as AMQPClient).socket?.destroy()
+      ;(testClient(session) as AMQPClient).socket?.destroy()
       await new Promise((resolve) => setTimeout(resolve, 50))
 
       await expect(session.stop()).resolves.toBeUndefined()
@@ -274,7 +274,7 @@ test("AMQPQueue (session-backed).subscribe() recovers after reconnect", () =>
           resolve()
         }
       })
-        ; (testClient(session) as AMQPClient).socket?.destroy()
+      ;(testClient(session) as AMQPClient).socket?.destroy()
       await reconnected
 
       await q.publish("after-reconnect")
@@ -688,16 +688,24 @@ test("session.rpcClient() close rejects pending calls", () =>
   }))
 
 // --- Codec registry integration tests ---
-const parsers = createParserRegistry({
-  "csv/simple": {
-    serialize: (body: string, properties: AMQPProperties): Uint8Array => {
-      return new TextEncoder().encode(body.split(",").map((s) => s.trim()).join(","))
+const parsers = createParserRegistry(
+  {
+    "csv/simple": {
+      serialize: (body: string, properties: AMQPProperties): Uint8Array => {
+        return new TextEncoder().encode(
+          body
+            .split(",")
+            .map((s) => s.trim())
+            .join(","),
+        )
+      },
+      parse: (body: Uint8Array, properties: AMQPProperties): string => {
+        return new TextDecoder().decode(body)
+      },
     },
-    parse: (body: Uint8Array, properties: AMQPProperties): string => {
-      return new TextDecoder().decode(body)
-    }
-  }
-}, true);
+  },
+  true,
+)
 async function withCodecSession(
   fn: (session: AMQPSession<"codec", typeof parsers, keyof typeof parsers & string>) => Promise<void>,
   codecOpts?: { defaultContentType?: keyof typeof parsers & string; defaultContentEncoding?: string },
@@ -713,23 +721,26 @@ async function withCodecSession(
 }
 
 test("codec: publish JSON object and parse via callback", () =>
-  withCodecSession(async (session) => {
-    const q = await session.queue("test-codec-json-" + Math.random(), { durable: false, autoDelete: true })
-    const obj = { users: ["alice", "bob"], count: 2 }
+  withCodecSession(
+    async (session) => {
+      const q = await session.queue("test-codec-json-" + Math.random(), { durable: false, autoDelete: true })
+      const obj = { users: ["alice", "bob"], count: 2 }
 
-    session.serializeBody(obj, { contentType: "csv/simple" })
+      session.serializeBody(obj, { contentType: "csv/simple" })
 
-    await q.publish(obj)
+      await q.publish(obj)
 
-    let parsed: unknown
-    const sub = await q.subscribe({ noAck: true }, async (msg) => {
-      parsed = msg.body
-    })
-    await new Promise((resolve) => setTimeout(resolve, 100))
+      let parsed: unknown
+      const sub = await q.subscribe({ noAck: true }, async (msg) => {
+        parsed = msg.body
+      })
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
-    expect(parsed).toEqual(obj)
-    await sub.cancel()
-  }, { defaultContentType: "csv/simple" }))
+      expect(parsed).toEqual(obj)
+      await sub.cancel()
+    },
+    { defaultContentType: "csv/simple" },
+  ))
 
 test("codec: publish with default contentType", () =>
   withCodecSession(

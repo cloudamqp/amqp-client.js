@@ -60,7 +60,10 @@ export class AMQPQueue<C extends CodecMode = "plain", T extends ParserMap = {}, 
    * @param options - publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
-  async publish<O extends keyof T & string = K>(body: ResolveBody<T, O>, options: QueuePublishOptions<O> = {}): Promise<AMQPQueue<C, T, K>> {
+  async publish<O extends keyof T & string = K>(
+    body: ResolveBody<T, O>,
+    options: QueuePublishOptions<O> = {},
+  ): Promise<AMQPQueue<C, T, K>> {
     const { confirm = true, ...properties } = options
     if (confirm) {
       await publishConfirmed(this.session, "", this.name, body, properties)
@@ -189,7 +192,7 @@ export class AMQPQueue<C extends CodecMode = "plain", T extends ParserMap = {}, 
    */
   cancelAll(): void {
     for (const sub of this.subscriptions) {
-      sub.cancel().catch(() => { })
+      sub.cancel().catch(() => {})
     }
     this.subscriptions.clear()
   }
