@@ -795,7 +795,7 @@ test("will split body over multiple frames", async () => {
   await ch.basicPublish("", q.name, "x".repeat(5000))
   const msg = await ch.basicGet(q.name)
   if (msg)
-    if (msg.rawBody) expect(msg.rawBody.length).toEqual(5000)
+    if (msg._rawBytes) expect(msg._rawBytes.length).toEqual(5000)
     else assert.fail("no body")
   else assert.fail("no msg")
 })
@@ -810,7 +810,7 @@ test("can republish in consume block without race condition", async () => {
   await ch.basicPublish("", q.name, "x".repeat(500))
   const consumer = await ch.basicConsume(q.name, { noAck: false }, async (msg) => {
     if (msg.deliveryTag < 10000) {
-      await Promise.all([ch.basicPublish("", q.name, msg.rawBody), ch.basicPublish("", q.name, msg.rawBody), msg.ack()])
+      await Promise.all([ch.basicPublish("", q.name, msg._rawBytes), ch.basicPublish("", q.name, msg._rawBytes), msg.ack()])
     } else if (msg.deliveryTag === 10000) {
       await msg.ack()
       await consumer.cancel()
