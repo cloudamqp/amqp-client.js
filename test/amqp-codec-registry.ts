@@ -1,5 +1,11 @@
 import { expect, test, describe, beforeEach } from "vitest"
-import { AMQPCodecRegistry, createCoderRegistry } from "../src/amqp-codec-registry.js"
+import {
+  AMQPCodecRegistry,
+  createCoderRegistry,
+  createParserRegistry,
+  serializeAndEncode,
+  decodeAndParse,
+} from "../src/amqp-codec-registry.js"
 import type { AMQPParser, AMQPCoder } from "../src/amqp-codec-registry.js"
 
 beforeEach(() => {
@@ -251,6 +257,69 @@ describe("AMQPCodecRegistry", () => {
       const parsed = await codecs.decodeAndParse(body, properties)
       expect(parsed).toEqual(obj)
     })
+  })
+})
+
+describe("standalone functions", () => {
+  test("serializeAndEncode: JSON round-trip", async () => {
+    const parsers = createParserRegistry({}, true)
+    const coders = createCoderRegistry({})
+    const obj = { hello: "world" }
+    const result = await serializeAndEncode(parsers, coders, obj, { contentType: "application/json" })
+    expect(result.body).toBeInstanceOf(Uint8Array)
+    const decoded = await decodeAndParse(parsers, coders, result.body, result.properties)
+    expect(decoded).toEqual(obj)
+  })
+
+  test("serializeAndEncode: sync fast path when no encoding", () => {
+    const parsers = createParserRegistry({}, true)
+    const coders = createCoderRegistry({})
+    const result = serializeAndEncode(parsers, coders, "hello", { contentType: "text/plain" })
+    expect(result).not.toBeInstanceOf(Promise)
+  })
+
+  test("serializeAndEncode: applies defaults", async () => {
+    const parsers = createParserRegistry({}, true)
+    const coders = createCoderRegistry({})
+    const result = await serializeAndEncode(parsers, coders, "test", {}, { contentType: "text/plain" })
+    expect(result.properties.contentType).toBe("text/plain")
+  })
+
+  test("decodeAndParse: missing coder throws", () => {
+    const parsers = createParserRegistry({}, true)
+    const coders = createCoderRegistry({})
+    const body = new TextEncoder().encode("test")
+    expect(() => decodeAndParse(parsers, coders, body, { contentEncoding: "brotli" })).toThrow(/No coder registered/)
+  })
+
+  test("decodeAndParse: missing parser returns raw bytes", async () => {
+    const parsers = createParserRegistry({})
+    const coders = createCoderRegistry({})
+    const body = new TextEncoder().encode("test")
+    const result = await decodeAndParse(parsers, coders, body, { contentType: "text/csv" })
+    expect(result).toBeInstanceOf(Uint8Array)
+  })
+
+  test("decodeAndParse: sync fast path when no encoding", () => {
+    const parsers = createParserRegistry({}, true)
+    const coders = createCoderRegistry({})
+    const body = new TextEncoder().encode('"hello"')
+    const result = decodeAndParse(parsers, coders, body, { contentType: "application/json" })
+    expect(result).not.toBeInstanceOf(Promise)
+  })
+
+  test("serializeAndEncode: throws for non-bytes body with unregistered contentType", () => {
+    const parsers = createParserRegistry({})
+    const coders = createCoderRegistry({})
+    expect(() => serializeAndEncode(parsers, coders, { foo: "bar" }, { contentType: "application/xml" })).toThrow(
+      /No parser registered/,
+    )
+  })
+
+  test("serializeAndEncode: throws for non-bytes body without contentType", () => {
+    const parsers = createParserRegistry({})
+    const coders = createCoderRegistry({})
+    expect(() => serializeAndEncode(parsers, coders, { foo: "bar" }, {})).toThrow(/no contentType specified/)
   })
 })
 

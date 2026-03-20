@@ -138,6 +138,93 @@ const DeflateCoder: AMQPCoder = {
   },
 }
 
+export function serializeAndEncode(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parsers: ParserRegistry<any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  coders: CoderRegistry<any>,
+  body: unknown,
+  properties: AMQPProperties,
+  defaults?: { contentType?: string; contentEncoding?: string },
+): Promise<{ body: Uint8Array; properties: AMQPProperties }> | { body: Uint8Array; properties: AMQPProperties } {
+  const props = { ...properties }
+  if (defaults?.contentType && !props.contentType) props.contentType = defaults.contentType
+  if (defaults?.contentEncoding && !props.contentEncoding) props.contentEncoding = defaults.contentEncoding
+
+  let bytes: Uint8Array
+  if (props.contentType) {
+    const parser = parsers[props.contentType]
+    if (parser) {
+      bytes = parser.serialize(body, props)
+    } else if (isPlainBody(body)) {
+      bytes = toBytes(body)
+    } else {
+      throw new Error(
+        `No parser registered for content-type "${props.contentType}" and body is not a string/Buffer/Uint8Array.`,
+      )
+    }
+  } else if (isPlainBody(body)) {
+    bytes = toBytes(body)
+  } else {
+    throw new Error(
+      "Cannot serialize body: no contentType specified and body is not a string/Buffer/Uint8Array. " +
+        "Set contentType or configure a defaultContentType on the session.",
+    )
+  }
+
+  if (props.contentEncoding) {
+    const coder = coders[props.contentEncoding]
+    if (!coder) {
+      throw new Error(`No coder registered for content-encoding "${props.contentEncoding}".`)
+    }
+    return coder.encode(bytes, props).then((encoded: Uint8Array) => ({ body: encoded, properties: props }))
+  }
+
+  return { body: bytes, properties: props }
+}
+
+export function decodeAndParse(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parsers: ParserRegistry<any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  coders: CoderRegistry<any>,
+  body: Uint8Array,
+  properties: AMQPProperties,
+): Promise<unknown> | unknown {
+  if (properties.contentEncoding) {
+    const coder = coders[properties.contentEncoding]
+    if (!coder) {
+      throw new Error(`No coder registered for content-encoding "${properties.contentEncoding}".`)
+    }
+    return coder.decode(body, properties).then((decoded: Uint8Array) => {
+      if (properties.contentType) {
+        const parser = parsers[properties.contentType]
+        if (parser) return parser.parse(decoded, properties)
+      }
+      return decoded
+    })
+  }
+
+  if (properties.contentType) {
+    const parser = parsers[properties.contentType]
+    if (parser) return parser.parse(body, properties)
+  }
+  return body
+}
+
+export async function decodeMessage(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  msg: AMQPMessage<any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parsers: ParserRegistry<any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  coders: CoderRegistry<any>,
+): Promise<void> {
+  if (msg.rawBody) {
+    ;(msg as { body: unknown }).body = await decodeAndParse(parsers, coders, msg.rawBody, msg.properties)
+  }
+}
+
 /**
  * Registry for message parsers (content-type) and coders (content-encoding).
  *
