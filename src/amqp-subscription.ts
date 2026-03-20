@@ -4,7 +4,7 @@ import type { AMQPConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { ConsumeParams } from "./amqp-channel.js"
 import { decodeMessage } from "./amqp-codec-registry.js"
-import type { ParserRegistry, CoderRegistry, ParserMap } from "./amqp-codec-registry.js"
+import type { ParserMap, CoderMap } from "./amqp-codec-registry.js"
 
 /** @internal */
 export interface ConsumerDefinition {
@@ -12,10 +12,8 @@ export interface ConsumerDefinition {
   consumeParams: ConsumeParams
   callback?: (msg: AMQPMessage) => void | Promise<void>
   prefetch?: number
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parsers?: ParserRegistry<any>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  coders?: CoderRegistry<any>
+  parsers?: ParserMap
+  coders?: CoderMap
   requeueOnNack?: boolean
 }
 

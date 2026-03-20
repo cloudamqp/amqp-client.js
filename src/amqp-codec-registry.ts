@@ -139,10 +139,8 @@ const DeflateCoder: AMQPCoder = {
 }
 
 export function serializeAndEncode(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parsers: ParserRegistry<any>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  coders: CoderRegistry<any>,
+  parsers: ParserMap,
+  coders: CoderMap,
   body: unknown,
   properties: AMQPProperties,
   defaults?: { contentType?: string; contentEncoding?: string },
@@ -184,10 +182,8 @@ export function serializeAndEncode(
 }
 
 export function decodeAndParse(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parsers: ParserRegistry<any>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  coders: CoderRegistry<any>,
+  parsers: ParserMap,
+  coders: CoderMap,
   body: Uint8Array,
   properties: AMQPProperties,
 ): Promise<unknown> | unknown {
@@ -212,14 +208,7 @@ export function decodeAndParse(
   return body
 }
 
-export async function decodeMessage(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  msg: AMQPMessage<any>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parsers: ParserRegistry<any>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  coders: CoderRegistry<any>,
-): Promise<void> {
+export async function decodeMessage(msg: AMQPMessage, parsers: ParserMap, coders: CoderMap): Promise<void> {
   if (msg._rawBytes) {
     ;(msg as { body: unknown }).body = await decodeAndParse(parsers, coders, msg._rawBytes, msg.properties)
   }

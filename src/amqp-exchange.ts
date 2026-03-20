@@ -2,7 +2,7 @@ import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { ResolveBody } from "./amqp-publisher.js"
 import { serializeAndEncode } from "./amqp-codec-registry.js"
-import type { ParserMap, CoderMap, ParserRegistry, CoderRegistry } from "./amqp-codec-registry.js"
+import type { ParserMap, CoderMap } from "./amqp-codec-registry.js"
 
 /** Options for {@link AMQPExchange#publish}. */
 export type ExchangePublishOptions<O extends string = string> = Omit<AMQPProperties, "contentType"> & {
@@ -55,10 +55,8 @@ export class AMQPExchange<
     if (this.session.defaultContentType) defaults.contentType = this.session.defaultContentType
     if (this.session.defaultContentEncoding) defaults.contentEncoding = this.session.defaultContentEncoding
     const encoded = await serializeAndEncode(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this.session.parsers ?? {}) as ParserRegistry<any>,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this.session.coders ?? {}) as CoderRegistry<any>,
+      this.session.parsers ?? {},
+      this.session.coders ?? {},
       body,
       properties,
       defaults,

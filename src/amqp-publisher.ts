@@ -1,4 +1,4 @@
-import type { ParserMap, InferParserOutput } from "./amqp-codec-registry.js"
+import type { ParserMap, InferParserInput, InferParserOutput } from "./amqp-codec-registry.js"
 
 export type PlainBody = string | Uint8Array | ArrayBuffer | Buffer | null
 
@@ -12,10 +12,7 @@ export function isPlainBody(data: unknown): data is PlainBody {
  */
 export type ResolveBody<P extends ParserMap, O extends keyof P & string> = [O] extends [never]
   ? PlainBody
-  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    P[O] extends { serialize(body: infer In, ...args: any[]): any }
-    ? In
-    : PlainBody
+  : InferParserInput<P[O]>
 
 /**
  * Resolve the message body type for consuming.

@@ -7,7 +7,7 @@ import type { ConsumerDefinition } from "./amqp-subscription.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { ResolveBody } from "./amqp-publisher.js"
 import { serializeAndEncode, decodeMessage } from "./amqp-codec-registry.js"
-import type { ParserMap, CoderMap, ParserRegistry, CoderRegistry } from "./amqp-codec-registry.js"
+import type { ParserMap, CoderMap } from "./amqp-codec-registry.js"
 
 /**
  * Options for {@link AMQPQueue#subscribe}.
@@ -74,10 +74,8 @@ export class AMQPQueue<
     if (this.session.defaultContentType) defaults.contentType = this.session.defaultContentType
     if (this.session.defaultContentEncoding) defaults.contentEncoding = this.session.defaultContentEncoding
     const encoded = await serializeAndEncode(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this.session.parsers ?? {}) as ParserRegistry<any>,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this.session.coders ?? {}) as CoderRegistry<any>,
+      this.session.parsers ?? {},
+      this.session.coders ?? {},
       body,
       properties,
       defaults,
@@ -146,11 +144,7 @@ export class AMQPQueue<
     const msg = await ch.basicGet(this.name, params)
     if (!msg) return null
     if (this.session.parsers || this.session.coders) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const p = (this.session.parsers ?? {}) as ParserRegistry<any>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const c = (this.session.coders ?? {}) as CoderRegistry<any>
-      await decodeMessage(msg, p, c)
+      await decodeMessage(msg, this.session.parsers ?? {}, this.session.coders ?? {})
     }
     return msg as AMQPMessage<P>
   }
@@ -239,10 +233,8 @@ type InternalCallback = (msg: AMQPMessage) => void | Promise<void>
 function wrapCallbackWithAutoDecodeAndAck<P extends ParserMap>(
   callback: ((msg: AMQPMessage<P>) => void | Promise<void>) | undefined,
   opts: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    parsers: ParserRegistry<any> | undefined
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    coders: CoderRegistry<any> | undefined
+    parsers: ParserMap | undefined
+    coders: CoderMap | undefined
     autoAck: boolean
     requeueOnNack: boolean
   },
