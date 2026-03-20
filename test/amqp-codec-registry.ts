@@ -1,6 +1,5 @@
 import { expect, test, describe, beforeEach } from "vitest"
 import {
-  AMQPCodecRegistry,
   createCoderRegistry,
   createParserRegistry,
   serializeAndEncode,
@@ -12,50 +11,54 @@ beforeEach(() => {
   expect.hasAssertions()
 })
 
-describe("AMQPCodecRegistry", () => {
+describe("builtin parsers and coders", () => {
   describe("builtin JSON parser", () => {
     test("serialize and parse round-trips an object", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({})
       const obj = { hello: "world", count: 42, nested: { ok: true } }
 
-      const { body, properties } = await codecs.serializeAndEncode(obj, {
+      const { body, properties } = await serializeAndEncode(parsers, coders, obj, {
         contentType: "application/json",
       })
 
       expect(properties.contentType).toBe("application/json")
       expect(body).toBeInstanceOf(Uint8Array)
 
-      const parsed = await codecs.decodeAndParse(body, properties)
+      const parsed = await decodeAndParse(parsers, coders, body, properties)
       expect(parsed).toEqual(obj)
     })
 
     test("serialize and parse round-trips an array", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({})
       const arr = [1, "two", null]
 
-      const { body, properties } = await codecs.serializeAndEncode(arr, {
+      const { body, properties } = await serializeAndEncode(parsers, coders, arr, {
         contentType: "application/json",
       })
-      const parsed = await codecs.decodeAndParse(body, properties)
+      const parsed = await decodeAndParse(parsers, coders, body, properties)
       expect(parsed).toEqual(arr)
     })
   })
 
   describe("builtin text/plain parser", () => {
     test("serialize and parse round-trips a string", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({})
 
-      const { body, properties } = await codecs.serializeAndEncode("hello", {
+      const { body, properties } = await serializeAndEncode(parsers, coders, "hello", {
         contentType: "text/plain",
       })
-      const parsed = await codecs.decodeAndParse(body, properties)
+      const parsed = await decodeAndParse(parsers, coders, body, properties)
       expect(parsed).toBe("hello")
     })
 
     test("serialize converts non-strings via String()", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({})
 
-      const { body } = await codecs.serializeAndEncode(42, {
+      const { body } = await serializeAndEncode(parsers, coders, 42, {
         contentType: "text/plain",
       })
       expect(new TextDecoder().decode(body)).toBe("42")
@@ -64,10 +67,11 @@ describe("AMQPCodecRegistry", () => {
 
   describe("builtin gzip coder", () => {
     test("encode and decode round-trips", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({}, true)
       const original = "compress me please"
 
-      const { body, properties } = await codecs.serializeAndEncode(original, {
+      const { body, properties } = await serializeAndEncode(parsers, coders, original, {
         contentType: "text/plain",
         contentEncoding: "gzip",
       })
@@ -77,45 +81,52 @@ describe("AMQPCodecRegistry", () => {
       const uncompressed = new TextEncoder().encode(original)
       expect(body).not.toEqual(uncompressed)
 
-      const parsed = await codecs.decodeAndParse(body, properties)
+      const parsed = await decodeAndParse(parsers, coders, body, properties)
       expect(parsed).toBe(original)
     })
   })
 
   describe("builtin deflate coder", () => {
     test("encode and decode round-trips", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({}, true)
       const original = { data: "deflate test" }
 
-      const { body, properties } = await codecs.serializeAndEncode(original, {
+      const { body, properties } = await serializeAndEncode(parsers, coders, original, {
         contentType: "application/json",
         contentEncoding: "deflate",
       })
 
-      const parsed = await codecs.decodeAndParse(body, properties)
+      const parsed = await decodeAndParse(parsers, coders, body, properties)
       expect(parsed).toEqual(original)
     })
   })
 
   describe("defaults", () => {
     test("applies default contentType when not set", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({})
 
-      const { body, properties } = await codecs.serializeAndEncode(
+      const { body, properties } = await serializeAndEncode(
+        parsers,
+        coders,
         { key: "value" },
         {},
         { contentType: "application/json" },
       )
 
       expect(properties.contentType).toBe("application/json")
-      const parsed = await codecs.decodeAndParse(body, properties)
+      const parsed = await decodeAndParse(parsers, coders, body, properties)
       expect(parsed).toEqual({ key: "value" })
     })
 
     test("explicit contentType overrides default", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({})
 
-      const { properties } = await codecs.serializeAndEncode(
+      const { properties } = await serializeAndEncode(
+        parsers,
+        coders,
         "hello",
         { contentType: "text/plain" },
         { contentType: "application/json" },
@@ -125,9 +136,12 @@ describe("AMQPCodecRegistry", () => {
     })
 
     test("applies default contentEncoding when not set", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({}, true)
 
-      const { properties } = await codecs.serializeAndEncode(
+      const { properties } = await serializeAndEncode(
+        parsers,
+        coders,
         "test",
         { contentType: "text/plain" },
         { contentEncoding: "gzip" },
@@ -139,55 +153,61 @@ describe("AMQPCodecRegistry", () => {
 
   describe("no-op passthrough", () => {
     test("unknown contentType passes body through as bytes", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({})
       const raw = new TextEncoder().encode("raw bytes")
 
-      const { body } = await codecs.serializeAndEncode(raw, {
+      const { body } = await serializeAndEncode(parsers, coders, raw, {
         contentType: "application/octet-stream",
       })
       expect(body).toEqual(raw)
     })
 
     test("unknown contentEncoding throws on decode", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({}, true)
       const data = new TextEncoder().encode("not compressed")
 
-      await expect(
-        codecs.decodeAndParse(data, {
+      expect(() =>
+        decodeAndParse(parsers, coders, data, {
           contentEncoding: "br",
         }),
-      ).rejects.toThrow(/No coder registered/)
+      ).toThrow(/No coder registered/)
     })
 
     test("no contentType or contentEncoding returns raw bytes", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({}, true)
       const raw = new TextEncoder().encode("raw")
 
-      const { body } = await codecs.serializeAndEncode(raw, {})
-      const result = await codecs.decodeAndParse(body, {})
+      const { body } = await serializeAndEncode(parsers, coders, raw, {})
+      const result = decodeAndParse(parsers, coders, body, {})
       expect(result).toEqual(raw)
     })
 
-    test("throws for non-bytes body with unregistered contentType", async () => {
-      const codecs = new AMQPCodecRegistry()
+    test("throws for non-bytes body with unregistered contentType", () => {
+      const parsers = createParserRegistry({})
+      const coders = createCoderRegistry({})
 
-      await expect(codecs.serializeAndEncode({ foo: "bar" }, { contentType: "application/xml" })).rejects.toThrow(
+      expect(() => serializeAndEncode(parsers, coders, { foo: "bar" }, { contentType: "application/xml" })).toThrow(
         /No parser registered/,
       )
     })
 
-    test("throws for unregistered contentEncoding on encode", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinParsers()
+    test("throws for unregistered contentEncoding on encode", () => {
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({})
 
-      await expect(
-        codecs.serializeAndEncode("hello", { contentType: "text/plain", contentEncoding: "br" }),
-      ).rejects.toThrow(/No coder registered/)
+      expect(() =>
+        serializeAndEncode(parsers, coders, "hello", { contentType: "text/plain", contentEncoding: "br" }),
+      ).toThrow(/No coder registered/)
     })
 
-    test("throws for non-bytes body without contentType", async () => {
-      const codecs = new AMQPCodecRegistry()
+    test("throws for non-bytes body without contentType", () => {
+      const parsers = createParserRegistry({})
+      const coders = createCoderRegistry({})
 
-      await expect(codecs.serializeAndEncode({ foo: "bar" }, {})).rejects.toThrow(/no contentType specified/)
+      expect(() => serializeAndEncode(parsers, coders, { foo: "bar" }, {})).toThrow(/no contentType specified/)
     })
   })
 
@@ -203,18 +223,18 @@ describe("AMQPCodecRegistry", () => {
         },
       }
 
-      const codecs = new AMQPCodecRegistry()
-      codecs.registerParser("text/csv", csvParser)
+      const parsers = createParserRegistry({ "text/csv": csvParser })
+      const coders = createCoderRegistry({})
 
       const data = [
         ["a", "b"],
         ["1", "2"],
       ]
-      const { body, properties } = await codecs.serializeAndEncode(data, {
+      const { body, properties } = await serializeAndEncode(parsers, coders, data, {
         contentType: "text/csv",
       })
 
-      const parsed = await codecs.decodeAndParse(body, properties)
+      const parsed = await decodeAndParse(parsers, coders, body, properties)
       expect(parsed).toEqual(data)
     })
 
@@ -229,24 +249,54 @@ describe("AMQPCodecRegistry", () => {
         },
       }
 
-      const codecs = new AMQPCodecRegistry().enableBuiltinParsers().registerCoder("reverse", reverseCoder)
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({ reverse: reverseCoder })
 
-      const { body, properties } = await codecs.serializeAndEncode("hello", {
+      const { body, properties } = await serializeAndEncode(parsers, coders, "hello", {
         contentType: "text/plain",
         contentEncoding: "reverse",
       })
 
-      const parsed = await codecs.decodeAndParse(body, properties)
+      const parsed = await decodeAndParse(parsers, coders, body, properties)
       expect(parsed).toBe("hello")
+    })
+
+    test("user parser overrides builtin when useDefaults is true", async () => {
+      // Custom JSON parser that wraps values in a marker object
+      const customJsonParser: AMQPParser<unknown, unknown> = {
+        serialize(body: unknown): Uint8Array {
+          return new TextEncoder().encode(JSON.stringify({ __custom: true, value: body }))
+        },
+        parse(body: Uint8Array): unknown {
+          const parsed = JSON.parse(new TextDecoder().decode(body)) as { __custom: boolean; value: unknown }
+          return parsed.value
+        },
+      }
+
+      const parsers = createParserRegistry({ "application/json": customJsonParser }, true)
+      const coders = createCoderRegistry({})
+
+      const obj = { hello: "world" }
+      const { body, properties } = await serializeAndEncode(parsers, coders, obj, {
+        contentType: "application/json",
+      })
+
+      // The raw bytes should contain the __custom marker, proving our override was used
+      const raw = new TextDecoder().decode(body)
+      expect(raw).toContain("__custom")
+
+      const parsed = await decodeAndParse(parsers, coders, body, properties)
+      expect(parsed).toEqual(obj)
     })
   })
 
   describe("full pipeline (serialize + compress + decompress + parse)", () => {
     test("JSON + gzip round-trip", async () => {
-      const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
+      const parsers = createParserRegistry({}, true)
+      const coders = createCoderRegistry({}, true)
       const obj = { users: [{ name: "Alice" }, { name: "Bob" }] }
 
-      const { body, properties } = await codecs.serializeAndEncode(obj, {
+      const { body, properties } = await serializeAndEncode(parsers, coders, obj, {
         contentType: "application/json",
         contentEncoding: "gzip",
       })
@@ -254,7 +304,7 @@ describe("AMQPCodecRegistry", () => {
       expect(properties.contentType).toBe("application/json")
       expect(properties.contentEncoding).toBe("gzip")
 
-      const parsed = await codecs.decodeAndParse(body, properties)
+      const parsed = await decodeAndParse(parsers, coders, body, properties)
       expect(parsed).toEqual(obj)
     })
   })
