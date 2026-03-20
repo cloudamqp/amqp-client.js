@@ -6,8 +6,8 @@ import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription
 import type { ConsumerDefinition } from "./amqp-subscription.js"
 import type { AMQPSession } from "./amqp-session.js"
 import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
-import type { Body, CodecMode } from "./amqp-publisher.js"
-import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
+import type { CodecMode, ResolveBody } from "./amqp-publisher.js"
+import type { AMQPCodecRegistry, ParserMap } from "./amqp-codec-registry.js"
 
 /**
  * Options for {@link AMQPQueue#subscribe}.
@@ -24,9 +24,10 @@ export type QueueSubscribeParams = ConsumeParams & {
 }
 
 /** Options for {@link AMQPQueue#publish}. */
-export type QueuePublishOptions = AMQPProperties & {
+export type QueuePublishOptions<T> = Omit<AMQPProperties, "contentType"> & {
   /** Wait for broker confirmation. Defaults to `true`. */
   confirm?: boolean
+  contentType?: T
 }
 
 /**
@@ -37,14 +38,14 @@ export type QueuePublishOptions = AMQPProperties & {
  * automatic consumer recovery. `publish` waits for a broker confirm; use
  * Pass `{ confirm: false }` to skip the wait.
  */
-export class AMQPQueue<C extends CodecMode = "plain"> {
+export class AMQPQueue<C extends CodecMode = "plain", T extends ParserMap = {}, K extends keyof T & string = never> {
   /** Queue name. */
   readonly name: string
-  private readonly session: AMQPSession<C>
+  private readonly session: AMQPSession<C, T, K>
   private readonly subscriptions = new Set<AMQPSubscription>()
 
   /** @internal */
-  constructor(session: AMQPSession<C>, name: string) {
+  constructor(session: AMQPSession<C, T, K>, name: string) {
     this.session = session
     this.name = name
   }
@@ -59,7 +60,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
    * @param options - publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
-  async publish(body: Body<C>, options: QueuePublishOptions = {}): Promise<AMQPQueue<C>> {
+  async publish<O extends keyof T & string = K>(body: ResolveBody<T, O>, options: QueuePublishOptions<O> = {}): Promise<AMQPQueue<C, T, K>> {
     const { confirm = true, ...properties } = options
     if (confirm) {
       await publishConfirmed(this.session, "", this.name, body, properties)
@@ -188,7 +189,7 @@ export class AMQPQueue<C extends CodecMode = "plain"> {
    */
   cancelAll(): void {
     for (const sub of this.subscriptions) {
-      sub.cancel().catch(() => {})
+      sub.cancel().catch(() => { })
     }
     this.subscriptions.clear()
   }

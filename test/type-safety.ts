@@ -14,7 +14,8 @@ import type { AMQPRPCClient } from "../src/amqp-rpc-client.js"
 import type { AMQPRPCServer, RPCHandler } from "../src/amqp-rpc-server.js"
 import type { AMQPMessage, MessageBody } from "../src/amqp-message.js"
 import type { AMQPGeneratorSubscription } from "../src/amqp-subscription.js"
-import type { Body, CodecMode, PlainBody } from "../src/amqp-publisher.js"
+import type { Body, CodecMode, PlainBody, ResolveBody } from "../src/amqp-publisher.js"
+import type { AMQPParser } from "../src/amqp-codec-registry.js"
 
 // --- Body<C> conditional type ---
 
@@ -120,14 +121,15 @@ test("plain queue publish accepts plain body types", () => {
   expectTypeOf<null>().toMatchTypeOf<PublishBody>()
 })
 
-// --- Codec queue accepts rich bodies ---
+// --- Codec queue without parsers falls back to PlainBody ---
 
-test("codec queue publish accepts objects and primitives", () => {
+test("codec queue without parsers defaults to PlainBody", () => {
   type Q = AMQPQueue<"codec">
   type PublishBody = Parameters<Q["publish"]>[0]
-  expectTypeOf<{ key: string }>().toMatchTypeOf<PublishBody>()
-  expectTypeOf<number>().toMatchTypeOf<PublishBody>()
   expectTypeOf<string>().toMatchTypeOf<PublishBody>()
+  expectTypeOf<Uint8Array>().toMatchTypeOf<PublishBody>()
+  expectTypeOf<null>().toMatchTypeOf<PublishBody>()
+  expectTypeOf<{ key: string }>().not.toMatchTypeOf<PublishBody>()
 })
 
 // --- Exchange publish follows the same pattern ---
@@ -209,4 +211,36 @@ test("RPCHandler<codec> receives AMQPMessage<codec>", () => {
 
 test("CodecMode is exactly 'plain' | 'codec'", () => {
   expectTypeOf<CodecMode>().toEqualTypeOf<"plain" | "codec">()
+})
+
+// --- ResolveBody: content-type → body type cascade ---
+
+type TestParsers = {
+  "text/plain": AMQPParser<string>
+  "application/json": AMQPParser
+}
+
+test("ResolveBody: explicit contentType selects that parser's input type", () => {
+  // O = "application/json" (explicit), K = anything — O wins
+  expectTypeOf<ResolveBody<TestParsers, "application/json">>().toEqualTypeOf<unknown>()
+  expectTypeOf<ResolveBody<TestParsers, "text/plain">>().toEqualTypeOf<string>()
+})
+
+test("ResolveBody: no content type at all resolves to PlainBody", () => {
+  // O = never (no explicit, no default)
+  expectTypeOf<ResolveBody<TestParsers, never>>().toEqualTypeOf<PlainBody>()
+})
+
+test("queue with parsers and defaultContentType constrains body to default parser", () => {
+  // K = "text/plain" → O defaults to "text/plain" → body must be string
+  type Q = AMQPQueue<"codec", TestParsers, "text/plain">
+  type PublishBody = Parameters<Q["publish"]>[0]
+  expectTypeOf<PublishBody>().toEqualTypeOf<string>()
+})
+
+test("queue with parsers but no defaultContentType falls back to PlainBody", () => {
+  // K = never → O defaults to never → PlainBody
+  type Q = AMQPQueue<"codec", TestParsers, never>
+  type PublishBody = Parameters<Q["publish"]>[0]
+  expectTypeOf<PublishBody>().toEqualTypeOf<PlainBody>()
 })

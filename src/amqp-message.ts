@@ -28,7 +28,7 @@ export class AMQPMessage<C extends CodecMode = "plain"> {
   /** @internal */
   bodyPos = 0
   /** Message body. Raw `Uint8Array` bytes in plain mode; decoded value in codec mode. */
-  body: MessageBody<C> = null as MessageBody<C>
+  body: MessageBody<C> = null
   /** Server-assigned delivery tag for ack/nack/reject. */
   deliveryTag = 0
   /** Consumer tag, if delivered to a consumer. */
