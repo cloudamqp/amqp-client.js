@@ -44,6 +44,34 @@ export function createParserRegistry<T extends ParserMap>(
 export type InferParserInput<P> = P extends AMQPParser<infer TInput, any> ? TInput : never
 export type InferParserOutput<P> = P extends AMQPParser<any, infer Out> ? Out : never
 
+export type CoderMap = { [K: string]: AMQPCoder }
+export type CoderRegistry<T extends CoderMap> = { readonly [K in keyof T & string]: T[K] }
+
+type BuiltinCoders = { gzip: AMQPCoder; deflate: AMQPCoder }
+
+export function createCoderRegistry<T extends CoderMap>(coders: T, useDefaults?: false): CoderRegistry<T>
+export function createCoderRegistry<T extends CoderMap>(coders: T, useDefaults: true): CoderRegistry<T & BuiltinCoders>
+export function createCoderRegistry<T extends CoderMap>(
+  coders: T,
+  useDefaults?: boolean,
+): CoderRegistry<T & BuiltinCoders> | CoderRegistry<T> {
+  if (useDefaults) {
+    if (
+      typeof CompressionStream === "undefined" ||
+      typeof DecompressionStream === "undefined" ||
+      typeof Blob === "undefined" ||
+      typeof Response === "undefined"
+    ) {
+      throw new Error(
+        "Built-in coders require CompressionStream, DecompressionStream, Blob, and Response " +
+          "(Node 18+, modern browsers). Register custom coders via createCoderRegistry() instead.",
+      )
+    }
+    return { gzip: GzipCoder, deflate: DeflateCoder, ...coders }
+  }
+  return coders
+}
+
 /** Handles serialization/deserialization based on content-type. */
 export interface AMQPParser<In = unknown, Out = unknown> {
   serialize(body: In, properties: AMQPProperties): Uint8Array

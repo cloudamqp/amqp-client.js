@@ -1,5 +1,5 @@
 import { expect, test, describe, beforeEach } from "vitest"
-import { AMQPCodecRegistry } from "../src/amqp-codec-registry.js"
+import { AMQPCodecRegistry, createCoderRegistry } from "../src/amqp-codec-registry.js"
 import type { AMQPParser, AMQPCoder } from "../src/amqp-codec-registry.js"
 
 beforeEach(() => {
@@ -251,5 +251,22 @@ describe("AMQPCodecRegistry", () => {
       const parsed = await codecs.decodeAndParse(body, properties)
       expect(parsed).toEqual(obj)
     })
+  })
+})
+
+describe("createCoderRegistry", () => {
+  test("returns registry with custom coders", () => {
+    const identity: AMQPCoder = {
+      encode: async (b) => b,
+      decode: async (b) => b,
+    }
+    const coders = createCoderRegistry({ identity: identity })
+    expect(coders["identity"]).toBe(identity)
+  })
+
+  test("with useDefaults includes gzip and deflate", () => {
+    const coders = createCoderRegistry({}, true)
+    expect(coders["gzip"]).toBeDefined()
+    expect(coders["deflate"]).toBeDefined()
   })
 })

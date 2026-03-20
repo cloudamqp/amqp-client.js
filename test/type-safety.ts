@@ -15,7 +15,13 @@ import type { AMQPRPCServer, RPCHandler } from "../src/amqp-rpc-server.js"
 import type { AMQPMessage, MessageBody } from "../src/amqp-message.js"
 import type { AMQPGeneratorSubscription } from "../src/amqp-subscription.js"
 import type { Body, CodecMode, PlainBody, ResolveBody } from "../src/amqp-publisher.js"
-import type { AMQPParser, InferParserInput, InferParserOutput } from "../src/amqp-codec-registry.js"
+import type {
+  AMQPParser,
+  InferParserInput,
+  InferParserOutput,
+  CoderRegistry,
+  AMQPCoder,
+} from "../src/amqp-codec-registry.js"
 
 // --- Body<C> conditional type ---
 
@@ -257,4 +263,12 @@ test("AMQPParser defaults both to unknown", () => {
   type P = AMQPParser
   expectTypeOf<InferParserInput<P>>().toEqualTypeOf<unknown>()
   expectTypeOf<InferParserOutput<P>>().toEqualTypeOf<unknown>()
+})
+
+// --- CoderRegistry ---
+
+test("CoderRegistry preserves keys in type", () => {
+  type R = CoderRegistry<{ custom: AMQPCoder } & { gzip: AMQPCoder; deflate: AMQPCoder }>
+  expectTypeOf<R["gzip"]>().toEqualTypeOf<AMQPCoder>()
+  expectTypeOf<R["custom"]>().toEqualTypeOf<AMQPCoder>()
 })
