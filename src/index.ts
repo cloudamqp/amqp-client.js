@@ -22,10 +22,10 @@ export { AMQPBaseClient } from "./amqp-base-client.js"
 export type { Logger } from "./types.js"
 export type { AMQPWebSocketInit } from "./amqp-websocket-client.js"
 export {
-  AMQPCodecRegistry,
   createParserRegistry,
   createCoderRegistry,
   serializeAndEncode,
+  decodeAndParse,
   decodeMessage,
 } from "./amqp-codec-registry.js"
 export type {
@@ -35,5 +35,8 @@ export type {
   CoderMap,
   ParserRegistry,
   CoderRegistry,
+  InferParserInput,
+  InferParserOutput,
+  JsonSerializable,
 } from "./amqp-codec-registry.js"
 export type { PlainBody, ResolveBody } from "./amqp-publisher.js"
