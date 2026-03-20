@@ -1,10 +1,10 @@
 import { AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import type { AMQPChannel } from "./amqp-channel.js"
-import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 import type { AMQPConsumer } from "./amqp-consumer.js"
 import type { AMQPMessage } from "./amqp-message.js"
-import type { CodecMode } from "./amqp-publisher.js"
 import type { ConsumeParams } from "./amqp-channel.js"
+import { decodeMessage } from "./amqp-codec-registry.js"
+import type { ParserRegistry, CoderRegistry, ParserMap } from "./amqp-codec-registry.js"
 
 /** @internal */
 export interface ConsumerDefinition {
@@ -12,7 +12,10 @@ export interface ConsumerDefinition {
   consumeParams: ConsumeParams
   callback?: (msg: AMQPMessage) => void | Promise<void>
   prefetch?: number
-  codecs?: AMQPCodecRegistry
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parsers?: ParserRegistry<any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  coders?: CoderRegistry<any>
   requeueOnNack?: boolean
 }
 
@@ -80,9 +83,9 @@ export class AMQPSubscription {
  * }
  * ```
  */
-export class AMQPGeneratorSubscription<C extends CodecMode = "plain">
+export class AMQPGeneratorSubscription<P extends ParserMap = {}>
   extends AMQPSubscription
-  implements AsyncIterable<AMQPMessage<C>>
+  implements AsyncIterable<AMQPMessage<P>>
 {
   private stopped = false
   private consumerReady?: () => void
@@ -100,7 +103,7 @@ export class AMQPGeneratorSubscription<C extends CodecMode = "plain">
     await super.cancel()
   }
 
-  async *[Symbol.asyncIterator](): AsyncGenerator<AMQPMessage<C>, void, undefined> {
+  async *[Symbol.asyncIterator](): AsyncGenerator<AMQPMessage<P>, void, undefined> {
     const autoAck = !this.def.consumeParams.noAck
     const requeueOnNack = this.def.requeueOnNack ?? true
     let prev: AMQPMessage | undefined
@@ -114,9 +117,9 @@ export class AMQPGeneratorSubscription<C extends CodecMode = "plain">
         for await (const msg of consumer.messages) {
           if (this.stopped) return
           if (autoAck) await prev?.ack()
-          if (this.def.codecs) {
+          if (this.def.parsers || this.def.coders) {
             try {
-              await this.def.codecs.decodeMessage(msg)
+              await decodeMessage(msg, this.def.parsers ?? {}, this.def.coders ?? {})
             } catch (err) {
               if (autoAck) {
                 await msg.nack(requeueOnNack)
@@ -127,7 +130,7 @@ export class AMQPGeneratorSubscription<C extends CodecMode = "plain">
             }
           }
           prev = msg
-          yield msg as AMQPMessage<C>
+          yield msg as AMQPMessage<P>
         }
       } catch (err) {
         // Decode errors should propagate to the caller.

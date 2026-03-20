@@ -220,8 +220,8 @@ export async function decodeMessage(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   coders: CoderRegistry<any>,
 ): Promise<void> {
-  if (msg.rawBody) {
-    ;(msg as { body: unknown }).body = await decodeAndParse(parsers, coders, msg.rawBody, msg.properties)
+  if (msg._rawBytes) {
+    ;(msg as { body: unknown }).body = await decodeAndParse(parsers, coders, msg._rawBytes, msg.properties)
   }
 }
 
@@ -371,10 +371,10 @@ export class AMQPCodecRegistry {
 
   /** Decode a message body, replacing the raw bytes on `msg.body`. */
   async decodeMessage(msg: AMQPMessage): Promise<void> {
-    if (msg.rawBody) {
+    if (msg._rawBytes) {
       // After decoding, body holds the parsed value (not raw bytes).
       // The caller is responsible for presenting the correct generic to consumers.
-      ;(msg as { body: unknown }).body = await this.decodeAndParse(msg.rawBody, msg.properties)
+      ;(msg as { body: unknown }).body = await this.decodeAndParse(msg._rawBytes, msg.properties)
     }
   }
 }

@@ -11,6 +11,13 @@ export default tseslint.config(
   tseslint.configs.recommended,
   prettierConfig,
   {
+    files: ["src/**/*.ts"],
+    rules: {
+      // {} is used extensively as a default for ParserMap/CoderMap generics
+      "@typescript-eslint/no-empty-object-type": ["error", { allowObjectTypes: "always" }],
+    },
+  },
+  {
     files: ["examples/*.js", "scripts/*.js"],
     languageOptions: {
       globals: {

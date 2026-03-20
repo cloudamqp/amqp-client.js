@@ -1,8 +1,8 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
-import type { AMQPCodecRegistry, InferParserInput, ParserMap, ParserRegistry } from "./amqp-codec-registry.js"
+import type { ParserMap, CoderMap, ParserRegistry, CoderRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { PlainBody, Body, CodecMode } from "./amqp-publisher.js"
+import type { ResolveBody } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
@@ -15,7 +15,12 @@ import type { AMQPMessage } from "./amqp-message.js"
 /**
  * Options for {@link AMQPSession.connect}.
  */
-export interface AMQPSessionOptions<T extends ParserMap = {}, K extends keyof T & string = never> {
+export interface AMQPSessionOptions<
+  P extends ParserMap = {},
+  C extends CoderMap = {},
+  KP extends keyof P & string = never,
+  KC extends keyof C & string = never,
+> {
   /** Initial delay in milliseconds before reconnecting (default: 1000) */
   reconnectInterval?: number
   /** Maximum delay in milliseconds between reconnection attempts (default: 30000) */
@@ -28,14 +33,14 @@ export interface AMQPSessionOptions<T extends ParserMap = {}, K extends keyof T 
   tlsOptions?: AMQPTlsOptions
   /** Logger instance. Pass `null` to disable logging explicitly. */
   logger?: Logger | null
-  /** Codec registry for automatic message encoding/decoding. */
-  codecs?: AMQPCodecRegistry
+  /** Parser registry for automatic message serialization/deserialization. */
+  parsers?: ParserRegistry<P>
+  /** Coder registry for automatic message encoding/decoding. */
+  coders?: CoderRegistry<C>
   /** Default content-type applied to published messages when not set explicitly. */
-  defaultContentType?: K
+  defaultContentType?: KP
   /** Default content-encoding applied to published messages when not set explicitly. */
-  defaultContentEncoding?: string
-  // /** Parser registry for automatic message decoding. */
-  // parsers?: ParserRegistry<T>
+  defaultContentEncoding?: KC
   /**
    * AMQP virtual host. For WebSocket URLs the URL path is the relay endpoint,
    * not the vhost — use this option to specify the vhost explicitly.
@@ -47,15 +52,19 @@ export interface AMQPSessionOptions<T extends ParserMap = {}, K extends keyof T 
 /**
  * High-level session with automatic reconnection and consumer recovery.
  *
- * The generic parameter `C` tracks whether a codec registry is configured.
- * When `C` is `"codec"`, publish methods accept any `Body` (objects, arrays, etc.).
- * When `C` is `"plain"` (default), only raw wire types (string, Uint8Array, etc.) are accepted.
+ * The generic parameters thread parser/coder type information through all
+ * session-owned handles (queues, exchanges, RPC clients/servers).
  *
- * Users never write `C` explicitly — it's inferred from the `connect()` call.
+ * Users never write the generics explicitly — they're inferred from the `connect()` call.
  *
  * Create via `AMQPSession.connect(url, options)`.
  */
-export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}, K extends keyof T & string = never> {
+export class AMQPSession<
+  P extends ParserMap = {},
+  C extends CoderMap = {},
+  KP extends keyof P & string = never,
+  KC extends keyof C & string = never,
+> {
   /** Fires after a successful (re)connection and consumer recovery */
   onconnect?: () => void
   /** Fires when max retries are exhausted */
@@ -73,14 +82,14 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
     return this.client.logger
   }
 
-  /** @internal Codec registry for publish encoding and consume decoding. */
-  readonly codecs?: AMQPCodecRegistry
+  /** @internal Parser registry for publish encoding and consume decoding. */
+  readonly parsers?: ParserRegistry<P>
+  /** @internal Coder registry for publish encoding and consume decoding. */
+  readonly coders?: CoderRegistry<C>
   /** @internal Default content-type for published messages. */
-  readonly defaultContentType?: K
+  readonly defaultContentType?: KP
   /** @internal Default content-encoding for published messages. */
-  readonly defaultContentEncoding?: string
-
-  readonly parsers?: ParserRegistry<T>
+  readonly defaultContentEncoding?: KC
 
   private readonly options: {
     reconnectInterval: number
@@ -88,8 +97,8 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
     backoffMultiplier: number
     maxRetries: number
   }
-  private readonly queues = new Map<string, AMQPQueue<C>>()
-  private readonly rpcClients = new Set<AMQPRPCClient<C>>()
+  private readonly queues = new Map<string, AMQPQueue<P, C, KP, KC>>()
+  private readonly rpcClients = new Set<AMQPRPCClient<P, C, KP, KC>>()
   private reconnectAttempts = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined
   private reconnectResolve: (() => void) | undefined
@@ -104,9 +113,10 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
   private opsChannelPromise: Promise<AMQPChannel> | null = null
   private confirmChannelPromise: Promise<AMQPChannel> | null = null
 
-  private constructor(client: AMQPBaseClient, options?: AMQPSessionOptions<T, K>) {
+  private constructor(client: AMQPBaseClient, options?: AMQPSessionOptions<P, C, KP, KC>) {
     this.client = client
-    if (options?.codecs) this.codecs = options.codecs
+    if (options?.parsers) this.parsers = options.parsers
+    if (options?.coders) this.coders = options.coders
     if (options?.defaultContentType) this.defaultContentType = options.defaultContentType
     if (options?.defaultContentEncoding) this.defaultContentEncoding = options.defaultContentEncoding
     this.options = {
@@ -133,15 +143,22 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
    * - `amqp://` / `amqps://` → TCP socket (`AMQPClient`)
    * - `ws://` / `wss://` → WebSocket (`AMQPWebSocketClient`)
    */
-  static async connect<T extends ParserMap, K extends keyof T & string = keyof T & string>(
+  static async connect<
+    P extends ParserMap,
+    C extends CoderMap,
+    KP extends keyof P & string = never,
+    KC extends keyof C & string = never,
+  >(
     url: string,
-    options: AMQPSessionOptions<T, K> & { codecs: AMQPCodecRegistry; parsers: ParserRegistry<T> },
-  ): Promise<AMQPSession<"codec", T>>
-  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession<"plain">>
-  static async connect<T extends ParserMap = {}, K extends keyof T & string = never>(
-    url: string,
-    options?: AMQPSessionOptions<T, K>,
-  ): Promise<AMQPSession<CodecMode, T, K>> {
+    options: AMQPSessionOptions<P, C, KP, KC> & { parsers: ParserRegistry<P> },
+  ): Promise<AMQPSession<P, C, KP, KC>>
+  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession>
+  static async connect<
+    P extends ParserMap = {},
+    C extends CoderMap = {},
+    KP extends keyof P & string = never,
+    KC extends keyof C & string = never,
+  >(url: string, options?: AMQPSessionOptions<P, C, KP, KC>): Promise<AMQPSession<P, C, KP, KC>> {
     const u = new URL(url)
     let client: AMQPBaseClient
     if (u.protocol === "ws:" || u.protocol === "wss:") {
@@ -157,37 +174,6 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
     }
     await client.connect()
     return new AMQPSession(client, options)
-  }
-
-  serializeBody<O extends keyof T & string = K>(
-    body: InferParserInput<T[O]>,
-    properties: Omit<AMQPProperties, "contentType"> & { contentType?: O },
-  ): Promise<{ body: PlainBody; properties: AMQPProperties }> {
-    const defaults: { contentType?: K; contentEncoding?: string } = {}
-    if (!this.codecs) {
-      throw new Error("No codec registry configured for this session")
-    }
-    if (this.defaultContentType) defaults.contentType = this.defaultContentType
-    if (this.defaultContentEncoding) defaults.contentEncoding = this.defaultContentEncoding
-    return this.codecs.serializeAndEncode(body, properties, defaults)
-  }
-
-  /**
-   * Encode a body for publishing using the configured codec registry.
-   * Applies `defaultContentType` / `defaultContentEncoding` as fallbacks.
-   * @internal
-   */
-  encodeBody(
-    body: Body<C>,
-    properties: AMQPProperties,
-  ): Promise<{ body: PlainBody; properties: AMQPProperties }> | { body: PlainBody; properties: AMQPProperties } {
-    if (!this.codecs) {
-      return { body: body as PlainBody, properties }
-    }
-    const defaults: { contentType?: string; contentEncoding?: string } = {}
-    if (this.defaultContentType) defaults.contentType = this.defaultContentType
-    if (this.defaultContentEncoding) defaults.contentEncoding = this.defaultContentEncoding
-    return this.codecs.serializeAndEncode(body, properties, defaults)
   }
 
   /**
@@ -245,12 +231,12 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
    * @param [params] - queue declaration parameters
    * @param [args] - optional queue arguments (e.g. `x-message-ttl`)
    */
-  async queue(name: string, params?: QueueParams, args?: Record<string, unknown>): Promise<AMQPQueue<C, T>> {
+  async queue(name: string, params?: QueueParams, args?: Record<string, unknown>): Promise<AMQPQueue<P, C, KP, KC>> {
     const ch = await this.getOpsChannel()
     const res = await ch.queueDeclare(name, params, args)
     const existing = this.queues.get(res.name)
     if (existing) return existing
-    const q = new AMQPQueue<C, T>(this, res.name)
+    const q = new AMQPQueue<P, C, KP, KC>(this, res.name)
     this.queues.set(res.name, q)
     return q
   }
@@ -267,10 +253,10 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
     type: ExchangeType,
     params?: ExchangeParams,
     args?: Record<string, unknown>,
-  ): Promise<AMQPExchange<C>> {
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     const ch = await this.getOpsChannel()
     await ch.exchangeDeclare(name, type, params, args)
-    return new AMQPExchange<C>(this, name)
+    return new AMQPExchange<P, C, KP, KC>(this, name)
   }
 
   /**
@@ -281,8 +267,8 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
     name = "amq.direct",
     params?: ExchangeParams,
     args?: Record<string, unknown>,
-  ): Promise<AMQPExchange<C>> {
-    if (name === "") return new AMQPExchange<C>(this, "") // default exchange — no declare needed
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
+    if (name === "") return new AMQPExchange<P, C, KP, KC>(this, "") // default exchange — no declare needed
     return this.exchange(name, "direct", params, args)
   }
 
@@ -294,7 +280,7 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
     name = "amq.fanout",
     params?: ExchangeParams,
     args?: Record<string, unknown>,
-  ): Promise<AMQPExchange<C>> {
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     return this.exchange(name, "fanout", params, args)
   }
 
@@ -302,7 +288,11 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
    * Declare a topic exchange and return a session-bound {@link AMQPExchange} handle.
    * @param [name="amq.topic"] - exchange name
    */
-  topicExchange(name = "amq.topic", params?: ExchangeParams, args?: Record<string, unknown>): Promise<AMQPExchange<C>> {
+  topicExchange(
+    name = "amq.topic",
+    params?: ExchangeParams,
+    args?: Record<string, unknown>,
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     return this.exchange(name, "topic", params, args)
   }
 
@@ -314,7 +304,7 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
     name = "amq.headers",
     params?: ExchangeParams,
     args?: Record<string, unknown>,
-  ): Promise<AMQPExchange<C>> {
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     return this.exchange(name, "headers", params, args)
   }
 
@@ -333,10 +323,10 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
    */
   async rpcCall(
     queue: string,
-    body: Body<C>,
+    body: ResolveBody<P, KP>,
     options?: AMQPProperties & { timeout?: number },
-  ): Promise<AMQPMessage<C>> {
-    const rpc = new AMQPRPCClient<C>(this)
+  ): Promise<AMQPMessage<P>> {
+    const rpc = new AMQPRPCClient<P, C, KP, KC>(this)
     await rpc.start()
     try {
       return await rpc.call(queue, body, options)
@@ -352,15 +342,15 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
    *
    * @returns A started {@link AMQPRPCClient} ready for {@link AMQPRPCClient.call} invocations.
    */
-  async rpcClient(): Promise<AMQPRPCClient<C>> {
-    const rpc = new AMQPRPCClient<C>(this)
+  async rpcClient(): Promise<AMQPRPCClient<P, C, KP, KC>> {
+    const rpc = new AMQPRPCClient<P, C, KP, KC>(this)
     await rpc.start()
     this.rpcClients.add(rpc)
     return rpc
   }
 
   /** @internal Remove an RPC client from session recovery tracking. */
-  untrackRPCClient(rpc: AMQPRPCClient<C>): void {
+  untrackRPCClient(rpc: AMQPRPCClient<P, C, KP, KC>): void {
     this.rpcClients.delete(rpc)
   }
 
@@ -374,8 +364,8 @@ export class AMQPSession<C extends CodecMode = "plain", T extends ParserMap = {}
    * @param prefetch - Channel prefetch count (default: 1)
    * @returns A started {@link AMQPRPCServer}
    */
-  async rpcServer(queue: string, handler: RPCHandler<C>, prefetch?: number): Promise<AMQPRPCServer<C>> {
-    const server = new AMQPRPCServer<C>(this)
+  async rpcServer(queue: string, handler: RPCHandler<P, KP>, prefetch?: number): Promise<AMQPRPCServer<P, C, KP, KC>> {
+    const server = new AMQPRPCServer<P, C, KP, KC>(this)
     await server.start(queue, handler, prefetch)
     return server
   }

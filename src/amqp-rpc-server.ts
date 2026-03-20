@@ -1,14 +1,18 @@
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { Body, CodecMode } from "./amqp-publisher.js"
+import type { ResolveBody } from "./amqp-publisher.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPSubscription } from "./amqp-subscription.js"
+import { serializeAndEncode } from "./amqp-codec-registry.js"
+import type { ParserMap, CoderMap, ParserRegistry, CoderRegistry } from "./amqp-codec-registry.js"
 
 /**
  * Callback invoked for each incoming RPC request.
  * Receives a decoded {@link AMQPMessage} and returns the response body.
  */
-export type RPCHandler<C extends CodecMode = "plain"> = (msg: AMQPMessage<C>) => Body<C> | Promise<Body<C>>
+export type RPCHandler<P extends ParserMap = {}, KP extends keyof P & string = never> = (
+  msg: AMQPMessage<P>,
+) => ResolveBody<P, KP> | Promise<ResolveBody<P, KP>>
 
 /**
  * An RPC server that consumes messages from a queue and replies to each caller.
@@ -26,17 +30,22 @@ export type RPCHandler<C extends CodecMode = "plain"> = (msg: AMQPMessage<C>) =>
  * await session.stop()
  * ```
  */
-export class AMQPRPCServer<C extends CodecMode = "plain"> {
-  private readonly session: AMQPSession<C>
+export class AMQPRPCServer<
+  P extends ParserMap = {},
+  C extends CoderMap = {},
+  KP extends keyof P & string = never,
+  KC extends keyof C & string = never,
+> {
+  private readonly session: AMQPSession<P, C, KP, KC>
   private subscription: AMQPSubscription | null = null
 
   /** @internal Use {@link AMQPSession.rpcServer} instead. */
-  constructor(session: AMQPSession<C>) {
+  constructor(session: AMQPSession<P, C, KP, KC>) {
     this.session = session
   }
 
   /** @internal Called by {@link AMQPSession.rpcServer}. */
-  async start(queue: string, handler: RPCHandler<C>, prefetch = 1): Promise<this> {
+  async start(queue: string, handler: RPCHandler<P, KP>, prefetch = 1): Promise<this> {
     if (this.subscription) throw new Error("RPC server already started")
     const q = await this.session.queue(queue)
     this.subscription = await q.subscribe({ prefetch, noAck: false, requeueOnNack: false }, async (msg) => {
@@ -48,7 +57,18 @@ export class AMQPRPCServer<C extends CodecMode = "plain"> {
       const result = await handler(msg)
       const replyProps: AMQPProperties = {}
       if (correlationId !== undefined) replyProps.correlationId = correlationId
-      const encoded = await this.session.encodeBody(result, replyProps)
+      const defaults: { contentType?: string; contentEncoding?: string } = {}
+      if (this.session.defaultContentType) defaults.contentType = this.session.defaultContentType
+      if (this.session.defaultContentEncoding) defaults.contentEncoding = this.session.defaultContentEncoding
+      const encoded = await serializeAndEncode(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this.session.parsers ?? {}) as ParserRegistry<any>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this.session.coders ?? {}) as CoderRegistry<any>,
+        result,
+        replyProps,
+        defaults,
+      )
       await msg.channel.basicPublish("", replyTo, encoded.body, encoded.properties)
     })
     return this

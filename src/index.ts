@@ -6,7 +6,7 @@ export type { QueuePublishOptions } from "./amqp-queue.js"
 export { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 export { AMQPError } from "./amqp-error.js"
 export { AMQPMessage } from "./amqp-message.js"
-export type { MessageBody } from "./amqp-message.js"
+export type { ResolveMessageBody } from "./amqp-publisher.js"
 export { AMQPProperties, Field } from "./amqp-properties.js"
 export { AMQPTlsOptions } from "./amqp-tls-options.js"
 export { AMQPSession } from "./amqp-session.js"
@@ -21,6 +21,19 @@ export type { RPCHandler } from "./amqp-rpc-server.js"
 export { AMQPBaseClient } from "./amqp-base-client.js"
 export type { Logger } from "./types.js"
 export type { AMQPWebSocketInit } from "./amqp-websocket-client.js"
-export { AMQPCodecRegistry } from "./amqp-codec-registry.js"
-export type { AMQPParser, AMQPCoder } from "./amqp-codec-registry.js"
-export type { Body, CodecMode, PlainBody } from "./amqp-publisher.js"
+export {
+  AMQPCodecRegistry,
+  createParserRegistry,
+  createCoderRegistry,
+  serializeAndEncode,
+  decodeMessage,
+} from "./amqp-codec-registry.js"
+export type {
+  AMQPParser,
+  AMQPCoder,
+  ParserMap,
+  CoderMap,
+  ParserRegistry,
+  CoderRegistry,
+} from "./amqp-codec-registry.js"
+export type { PlainBody, ResolveBody } from "./amqp-publisher.js"
