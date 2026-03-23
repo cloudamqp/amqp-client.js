@@ -2,10 +2,80 @@ import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import { isPlainBody } from "./amqp-publisher.js"
 
+// 1. Define a type that represents a map of different Parsers
+export type ParserMap = {
+  [K: string]: AMQPParser<any, any>
+}
+
+// 2. The ParserRegistry type uses a Mapped Type to preserve the unique In/Out of each key
+export type ParserRegistry<T extends ParserMap> = {
+  readonly [K in keyof T & string]: T[K]
+}
+
+export type JsonSerializable =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonSerializable[]
+  | { [key: string]: JsonSerializable }
+
+type BuiltinParsers = {
+  "text/plain": AMQPParser<string, string>
+  "application/json": AMQPParser<JsonSerializable, unknown>
+}
+
+// 3. The factory function
+export function createParserRegistry<T extends ParserMap>(parsers: T, useDefaultParsers?: false): ParserRegistry<T>
+export function createParserRegistry<T extends ParserMap>(
+  parsers: T,
+  useDefaultParsers: true,
+): ParserRegistry<T & BuiltinParsers>
+export function createParserRegistry<T extends ParserMap>(
+  parsers: T,
+  useDefaultParsers?: boolean,
+): ParserRegistry<T & BuiltinParsers> | ParserRegistry<T> {
+  if (useDefaultParsers) {
+    return { "text/plain": PlainParser, "application/json": JSONParser, ...parsers }
+  }
+  return parsers
+}
+
+export type InferParserInput<P> = P extends AMQPParser<infer TInput, any> ? TInput : never
+export type InferParserOutput<P> = P extends AMQPParser<any, infer Out> ? Out : never
+
+export type CoderMap = { [K: string]: AMQPCoder }
+export type CoderRegistry<T extends CoderMap> = { readonly [K in keyof T & string]: T[K] }
+
+type BuiltinCoders = { gzip: AMQPCoder; deflate: AMQPCoder }
+
+export function createCoderRegistry<T extends CoderMap>(coders: T, useDefaults?: false): CoderRegistry<T>
+export function createCoderRegistry<T extends CoderMap>(coders: T, useDefaults: true): CoderRegistry<T & BuiltinCoders>
+export function createCoderRegistry<T extends CoderMap>(
+  coders: T,
+  useDefaults?: boolean,
+): CoderRegistry<T & BuiltinCoders> | CoderRegistry<T> {
+  if (useDefaults) {
+    if (
+      typeof CompressionStream === "undefined" ||
+      typeof DecompressionStream === "undefined" ||
+      typeof Blob === "undefined" ||
+      typeof Response === "undefined"
+    ) {
+      throw new Error(
+        "Built-in coders require CompressionStream, DecompressionStream, Blob, and Response " +
+          "(Node 18+, modern browsers). Register custom coders via createCoderRegistry() instead.",
+      )
+    }
+    return { gzip: GzipCoder, deflate: DeflateCoder, ...coders }
+  }
+  return coders
+}
+
 /** Handles serialization/deserialization based on content-type. */
-export interface AMQPParser<T = unknown> {
-  serialize(body: T, properties: AMQPProperties): Uint8Array
-  parse(body: Uint8Array, properties: AMQPProperties): T
+export interface AMQPParser<In = unknown, Out = unknown> {
+  serialize(body: In, properties: AMQPProperties): Uint8Array
+  parse(body: Uint8Array, properties: AMQPProperties): Out
 }
 
 /** Handles compression/decompression based on content-encoding. */
@@ -22,7 +92,7 @@ function toBytes(data: string | Uint8Array | ArrayBuffer | Buffer | null): Uint8
   return new Uint8Array(data)
 }
 
-const PlainParser: AMQPParser<string> = {
+const PlainParser: AMQPParser<string, string> = {
   serialize(body: string): Uint8Array {
     return new TextEncoder().encode(String(body))
   },
@@ -31,8 +101,8 @@ const PlainParser: AMQPParser<string> = {
   },
 }
 
-const JSONParser: AMQPParser = {
-  serialize(body: unknown): Uint8Array {
+const JSONParser: AMQPParser<JsonSerializable, unknown> = {
+  serialize(body: JsonSerializable): Uint8Array {
     return new TextEncoder().encode(JSON.stringify(body))
   },
   parse(body: Uint8Array): unknown {
@@ -68,156 +138,79 @@ const DeflateCoder: AMQPCoder = {
   },
 }
 
-/**
- * Registry for message parsers (content-type) and coders (content-encoding).
- *
- * Built-in parsers: `text/plain`, `application/json`.
- * Built-in coders: `gzip`, `deflate`.
- *
- * @example
- * ```ts
- * const codecs = new AMQPCodecRegistry()
- * codecs.enableBuiltinCodecs()
- * const session = await AMQPSession.connect(url, {
- *   codecs,
- *   defaultContentType: "application/json",
- * })
- * ```
- */
-export class AMQPCodecRegistry {
-  private readonly parsers = new Map<string, AMQPParser>()
-  private readonly coders = new Map<string, AMQPCoder>()
+export function serializeAndEncode(
+  parsers: ParserMap,
+  coders: CoderMap,
+  body: unknown,
+  properties: AMQPProperties,
+  defaults?: { contentType?: string; contentEncoding?: string },
+): Promise<{ body: Uint8Array; properties: AMQPProperties }> | { body: Uint8Array; properties: AMQPProperties } {
+  const props = { ...properties }
+  if (defaults?.contentType && !props.contentType) props.contentType = defaults.contentType
+  if (defaults?.contentEncoding && !props.contentEncoding) props.contentEncoding = defaults.contentEncoding
 
-  registerParser<T>(contentType: string, parser: AMQPParser<T>): this {
-    this.parsers.set(contentType, parser)
-    return this
-  }
-
-  registerCoder(contentEncoding: string, coder: AMQPCoder): this {
-    this.coders.set(contentEncoding, coder)
-    return this
-  }
-
-  findParser(contentType: string): AMQPParser | undefined {
-    return this.parsers.get(contentType)
-  }
-
-  findCoder(contentEncoding: string): AMQPCoder | undefined {
-    return this.coders.get(contentEncoding)
-  }
-
-  enableBuiltinParsers(): this {
-    this.parsers.set("text/plain", PlainParser)
-    this.parsers.set("application/json", JSONParser)
-    return this
-  }
-
-  enableBuiltinCoders(): this {
-    if (
-      typeof CompressionStream === "undefined" ||
-      typeof DecompressionStream === "undefined" ||
-      typeof Blob === "undefined" ||
-      typeof Response === "undefined"
-    ) {
-      throw new Error(
-        "Built-in coders require CompressionStream, DecompressionStream, Blob, and Response " +
-          "(Node 18+, modern browsers). Register custom coders via registerCoder() instead.",
-      )
-    }
-    this.coders.set("gzip", GzipCoder)
-    this.coders.set("deflate", DeflateCoder)
-    return this
-  }
-
-  enableBuiltinCodecs(): this {
-    this.enableBuiltinParsers()
-    this.enableBuiltinCoders()
-    return this
-  }
-
-  /**
-   * Serialize and encode a body for publishing.
-   * Returns the transformed body and updated properties.
-   */
-  async serializeAndEncode(
-    body: unknown,
-    properties: AMQPProperties,
-    defaults?: { contentType?: string; contentEncoding?: string },
-  ): Promise<{ body: Uint8Array; properties: AMQPProperties }> {
-    const props = { ...properties }
-    if (defaults?.contentType && !props.contentType) props.contentType = defaults.contentType
-    if (defaults?.contentEncoding && !props.contentEncoding) props.contentEncoding = defaults.contentEncoding
-
-    let bytes: Uint8Array
-    if (props.contentType) {
-      const parser = this.parsers.get(props.contentType)
-      if (parser) {
-        bytes = parser.serialize(body, props)
-      } else if (isPlainBody(body)) {
-        bytes = toBytes(body)
-      } else {
-        throw new Error(
-          `No parser registered for content-type "${props.contentType}" and body is not a string/Buffer/Uint8Array. ` +
-            `Register a parser via registerParser() or use enableBuiltinParsers().`,
-        )
-      }
+  let bytes: Uint8Array
+  if (props.contentType) {
+    const parser = parsers[props.contentType]
+    if (parser) {
+      bytes = parser.serialize(body, props)
     } else if (isPlainBody(body)) {
       bytes = toBytes(body)
     } else {
       throw new Error(
-        "Cannot serialize body: no contentType specified and body is not a string/Buffer/Uint8Array. " +
-          "Set contentType or configure a defaultContentType on the session.",
+        `No parser registered for content-type "${props.contentType}" and body is not a string/Buffer/Uint8Array.`,
       )
     }
-
-    if (props.contentEncoding) {
-      const coder = this.coders.get(props.contentEncoding)
-      if (!coder) {
-        throw new Error(
-          `No coder registered for content-encoding "${props.contentEncoding}". ` +
-            `Register a coder via registerCoder() or use enableBuiltinCoders().`,
-        )
-      }
-      bytes = await coder.encode(bytes, props)
-    }
-
-    return { body: bytes, properties: props }
+  } else if (isPlainBody(body)) {
+    bytes = toBytes(body)
+  } else {
+    throw new Error(
+      "Cannot serialize body: no contentType specified and body is not a string/Buffer/Uint8Array. " +
+        "Set contentType or configure a defaultContentType on the session.",
+    )
   }
 
-  /**
-   * Decode and parse a message body.
-   * Reverses the encoding pipeline: decompress then deserialize.
-   */
-  async decodeAndParse(body: Uint8Array, properties: AMQPProperties): Promise<unknown> {
-    let bytes = body
-
-    if (properties.contentEncoding) {
-      const coder = this.coders.get(properties.contentEncoding)
-      if (!coder) {
-        throw new Error(
-          `No coder registered for content-encoding "${properties.contentEncoding}". ` +
-            `Register a coder via registerCoder() or use enableBuiltinCoders().`,
-        )
-      }
-      bytes = await coder.decode(bytes, properties)
+  if (props.contentEncoding) {
+    const coder = coders[props.contentEncoding]
+    if (!coder) {
+      throw new Error(`No coder registered for content-encoding "${props.contentEncoding}".`)
     }
-
-    if (properties.contentType) {
-      const parser = this.parsers.get(properties.contentType)
-      if (parser) {
-        return parser.parse(bytes, properties)
-      }
-    }
-
-    return bytes
+    return coder.encode(bytes, props).then((encoded: Uint8Array) => ({ body: encoded, properties: props }))
   }
 
-  /** Decode a message body, replacing the raw bytes on `msg.body`. */
-  async decodeMessage(msg: AMQPMessage): Promise<void> {
-    if (msg.rawBody) {
-      // After decoding, body holds the parsed value (not raw bytes).
-      // The caller is responsible for presenting the correct generic to consumers.
-      ;(msg as { body: unknown }).body = await this.decodeAndParse(msg.rawBody, msg.properties)
+  return { body: bytes, properties: props }
+}
+
+export function decodeAndParse(
+  parsers: ParserMap,
+  coders: CoderMap,
+  body: Uint8Array,
+  properties: AMQPProperties,
+): Promise<unknown> | unknown {
+  if (properties.contentEncoding) {
+    const coder = coders[properties.contentEncoding]
+    if (!coder) {
+      throw new Error(`No coder registered for content-encoding "${properties.contentEncoding}".`)
     }
+    return coder.decode(body, properties).then((decoded: Uint8Array) => {
+      if (properties.contentType) {
+        const parser = parsers[properties.contentType]
+        if (parser) return parser.parse(decoded, properties)
+      }
+      return decoded
+    })
+  }
+
+  if (properties.contentType) {
+    const parser = parsers[properties.contentType]
+    if (parser) return parser.parse(body, properties)
+  }
+  return body
+}
+
+export async function decodeMessage(msg: AMQPMessage, parsers: ParserMap, coders: CoderMap): Promise<void> {
+  if (msg._rawBytes) {
+    ;(msg as { body: unknown }).body = await decodeAndParse(parsers, coders, msg._rawBytes, msg.properties)
   }
 }
+

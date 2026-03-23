@@ -4,21 +4,20 @@ import { AMQPSession } from "../src/amqp-session.js"
 import { AMQPQueue } from "../src/amqp-queue.js"
 import { AMQPExchange } from "../src/amqp-exchange.js"
 import { AMQPMessage } from "../src/amqp-message.js"
-import { AMQPCodecRegistry } from "../src/amqp-codec-registry.js"
+import { createParserRegistry, createCoderRegistry } from "../src/amqp-codec-registry.js"
 import type { AMQPBaseClient } from "../src/amqp-base-client.js"
-import type { CodecMode } from "../src/amqp-publisher.js"
 
 beforeEach(() => {
   expect.hasAssertions()
 })
 
 /** Access the private client for test-only operations (socket destruction, spying). */
-function testClient(session: AMQPSession<CodecMode>): AMQPBaseClient {
+function testClient(session: AMQPSession): AMQPBaseClient {
   return (session as unknown as { client: AMQPBaseClient }).client
 }
 
 async function withSession(
-  fn: (session: AMQPSession<"plain">) => Promise<void>,
+  fn: (session: AMQPSession) => Promise<void>,
   options?: Parameters<typeof AMQPSession.connect>[1],
 ): Promise<void> {
   const session = await AMQPSession.connect("amqp://127.0.0.1", options)
@@ -687,13 +686,37 @@ test("session.rpcClient() close rejects pending calls", () =>
   }))
 
 // --- Codec registry integration tests ---
+const parsers = createParserRegistry(
+  {
+    "csv/simple": {
+      serialize: (body: string): Uint8Array => {
+        return new TextEncoder().encode(
+          body
+            .split(",")
+            .map((s) => s.trim())
+            .join(","),
+        )
+      },
+      parse: (body: Uint8Array): string => {
+        return new TextDecoder().decode(body)
+      },
+    },
+  },
+  true,
+)
+const coders = createCoderRegistry({}, true)
 
 async function withCodecSession(
-  fn: (session: AMQPSession<"codec">) => Promise<void>,
-  codecOpts?: { defaultContentType?: string; defaultContentEncoding?: string },
+  fn: (
+    session: AMQPSession<typeof parsers, typeof coders, keyof typeof parsers & string, keyof typeof coders & string>,
+  ) => Promise<void>,
+  codecOpts?: {
+    defaultContentType?: keyof typeof parsers & string
+    defaultContentEncoding?: keyof typeof coders & string
+  },
 ): Promise<void> {
-  const codecs = new AMQPCodecRegistry().enableBuiltinCodecs()
-  const session = await AMQPSession.connect("amqp://127.0.0.1", { codecs, ...codecOpts })
+  const options = { parsers, coders, ...(codecOpts ?? {}) }
+  const session = await AMQPSession.connect("amqp://127.0.0.1", options)
   try {
     await fn(session)
   } finally {
@@ -702,21 +725,24 @@ async function withCodecSession(
 }
 
 test("codec: publish JSON object and parse via callback", () =>
-  withCodecSession(async (session) => {
-    const q = await session.queue("test-codec-json-" + Math.random(), { durable: false, autoDelete: true })
-    const obj = { users: ["alice", "bob"], count: 2 }
+  withCodecSession(
+    async (session) => {
+      const q = await session.queue("test-codec-json-" + Math.random(), { durable: false, autoDelete: true })
+      const obj = { users: ["alice", "bob"], count: 2 }
 
-    await q.publish(obj, { contentType: "application/json" })
+      await q.publish(obj)
 
-    let parsed: unknown
-    const sub = await q.subscribe({ noAck: true }, async (msg) => {
-      parsed = msg.body
-    })
-    await new Promise((resolve) => setTimeout(resolve, 100))
+      let parsed: unknown
+      const sub = await q.subscribe({ noAck: true }, async (msg) => {
+        parsed = msg.body
+      })
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
-    expect(parsed).toEqual(obj)
-    await sub.cancel()
-  }))
+      expect(parsed).toEqual(obj)
+      await sub.cancel()
+    },
+    { defaultContentType: "application/json" },
+  ))
 
 test("codec: publish with default contentType", () =>
   withCodecSession(
@@ -829,7 +855,7 @@ test("codec: rpcClient and rpcServer round-trip with JSON encoding", () =>
   withCodecSession(
     async (session) => {
       await session.rpcServer("rpc-codec-queue", async (msg) => {
-        return { echo: msg.body }
+        return { echo: msg.body } as import("../src/amqp-codec-registry.js").JsonSerializable
       })
 
       const rpc = await session.rpcClient()
@@ -848,7 +874,7 @@ test("codec: rpcCall one-shot with JSON encoding", () =>
   withCodecSession(
     async (session) => {
       await session.rpcServer("rpc-codec-oneshot", async (msg) => {
-        return { got: msg.body }
+        return { got: msg.body } as import("../src/amqp-codec-registry.js").JsonSerializable
       })
 
       const reply = await session.rpcCall("rpc-codec-oneshot", { ping: true })

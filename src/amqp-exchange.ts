@@ -1,14 +1,16 @@
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { AMQPSession } from "./amqp-session.js"
-import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
-import type { Body, CodecMode } from "./amqp-publisher.js"
+import type { ResolveBody } from "./amqp-publisher.js"
+import { serializeAndEncode } from "./amqp-codec-registry.js"
+import type { ParserMap, CoderMap } from "./amqp-codec-registry.js"
 
 /** Options for {@link AMQPExchange#publish}. */
-export type ExchangePublishOptions = AMQPProperties & {
+export type ExchangePublishOptions<O extends string = string> = Omit<AMQPProperties, "contentType"> & {
   /** Routing key. Defaults to `""`. */
   routingKey?: string
   /** Wait for broker confirmation. Defaults to `true`. */
   confirm?: boolean
+  contentType?: O
 }
 
 /**
@@ -18,13 +20,18 @@ export type ExchangePublishOptions = AMQPProperties & {
  * All operations are reconnect-safe: they acquire a session channel on each
  * call. `publish` waits for a broker confirm; pass `{ confirm: false }` to skip the wait.
  */
-export class AMQPExchange<C extends CodecMode = "plain"> {
+export class AMQPExchange<
+  P extends ParserMap = {},
+  C extends CoderMap = {},
+  KP extends keyof P & string = never,
+  KC extends keyof C & string = never,
+> {
   /** Exchange name. */
   readonly name: string
-  private readonly session: AMQPSession<C>
+  private readonly session: AMQPSession<P, C, KP, KC>
 
   /** @internal */
-  constructor(session: AMQPSession<C>, name: string) {
+  constructor(session: AMQPSession<P, C, KP, KC>, name: string) {
     this.session = session
     this.name = name
   }
@@ -32,20 +39,30 @@ export class AMQPExchange<C extends CodecMode = "plain"> {
   /**
    * Publish a message to this exchange.
    *
-   * When the session has a codec registry configured, `body` can be any value
-   * (objects, arrays, etc.) and will be serialized according to `contentType`.
-   * Without codecs, `body` must be a string, Buffer, Uint8Array, or null.
+   * When the session has parsers configured, `body` can be any value accepted
+   * by the matching parser's `serialize` method. Without parsers, `body` must
+   * be a string, Buffer, Uint8Array, or null.
    *
    * @param options - routing key, publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
-  async publish(body: Body<C>, options: ExchangePublishOptions = {}): Promise<AMQPExchange<C>> {
+  async publish<O extends keyof P & string = KP>(
+    body: ResolveBody<P, O>,
+    options: ExchangePublishOptions<O> = {},
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     const { confirm = true, routingKey = "", ...properties } = options
-    if (confirm) {
-      await publishConfirmed(this.session, this.name, routingKey, body, properties)
-    } else {
-      await publishNoConfirm(this.session, this.name, routingKey, body, properties)
-    }
+    const defaults: { contentType?: string; contentEncoding?: string } = {}
+    if (this.session.defaultContentType) defaults.contentType = this.session.defaultContentType
+    if (this.session.defaultContentEncoding) defaults.contentEncoding = this.session.defaultContentEncoding
+    const encoded = await serializeAndEncode(
+      this.session.parsers ?? {},
+      this.session.coders ?? {},
+      body,
+      properties,
+      defaults,
+    )
+    const ch = confirm ? await this.session.getConfirmChannel() : await this.session.getOpsChannel()
+    await ch.basicPublish(this.name, routingKey, encoded.body, encoded.properties)
     return this
   }
 
@@ -55,10 +72,10 @@ export class AMQPExchange<C extends CodecMode = "plain"> {
    * @returns `this` for chaining
    */
   async bind(
-    source: string | AMQPExchange<C>,
+    source: string | AMQPExchange<P, C, KP, KC>,
     routingKey = "",
     args: Record<string, unknown> = {},
-  ): Promise<AMQPExchange<C>> {
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     const sourceName = typeof source === "string" ? source : source.name
     const ch = await this.session.getOpsChannel()
     await ch.exchangeBind(this.name, sourceName, routingKey, args)
@@ -71,10 +88,10 @@ export class AMQPExchange<C extends CodecMode = "plain"> {
    * @returns `this` for chaining
    */
   async unbind(
-    source: string | AMQPExchange<C>,
+    source: string | AMQPExchange<P, C, KP, KC>,
     routingKey = "",
     args: Record<string, unknown> = {},
-  ): Promise<AMQPExchange<C>> {
+  ): Promise<AMQPExchange<P, C, KP, KC>> {
     const sourceName = typeof source === "string" ? source : source.name
     const ch = await this.session.getOpsChannel()
     await ch.exchangeUnbind(this.name, sourceName, routingKey, args)

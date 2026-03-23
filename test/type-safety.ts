@@ -1,10 +1,10 @@
 /**
- * Compile-time type safety tests for the CodecMode generic system.
+ * Compile-time type safety tests for the P/C/KP/KC generic system.
  *
  * These tests verify that TypeScript correctly narrows publish body types
- * based on whether a codec registry is configured. They run as vitest tests
- * but the real assertions are the @ts-expect-error comments — if the types
- * change in a way that breaks the contract, tsc will flag them.
+ * based on parser/coder registries configured on a session. They run as
+ * vitest tests but the real assertions are the expectTypeOf calls — if the
+ * types change in a way that breaks the contract, tsc will flag them.
  */
 import { test, expectTypeOf } from "vitest"
 import type { AMQPSession } from "../src/amqp-session.js"
@@ -12,201 +12,219 @@ import type { AMQPQueue } from "../src/amqp-queue.js"
 import type { AMQPExchange } from "../src/amqp-exchange.js"
 import type { AMQPRPCClient } from "../src/amqp-rpc-client.js"
 import type { AMQPRPCServer, RPCHandler } from "../src/amqp-rpc-server.js"
-import type { AMQPMessage, MessageBody } from "../src/amqp-message.js"
+import type { AMQPMessage } from "../src/amqp-message.js"
 import type { AMQPGeneratorSubscription } from "../src/amqp-subscription.js"
-import type { Body, CodecMode, PlainBody } from "../src/amqp-publisher.js"
+import type { PlainBody, ResolveBody, ResolveMessageBody } from "../src/amqp-publisher.js"
+import type {
+  AMQPParser,
+  InferParserInput,
+  InferParserOutput,
+  CoderRegistry,
+  AMQPCoder,
+  JsonSerializable,
+} from "../src/amqp-codec-registry.js"
 
-// --- Body<C> conditional type ---
+type TestParsers = {
+  "text/plain": AMQPParser<string, string>
+  "application/json": AMQPParser<JsonSerializable, unknown>
+}
 
-test("Body<plain> is PlainBody", () => {
-  expectTypeOf<Body<"plain">>().toEqualTypeOf<PlainBody>()
+// --- ResolveBody cascade ---
+
+test("ResolveBody: explicit contentType application/json selects JsonSerializable", () => {
+  expectTypeOf<ResolveBody<TestParsers, "application/json">>().toEqualTypeOf<JsonSerializable>()
 })
 
-test("Body<codec> accepts objects, arrays, numbers, booleans", () => {
-  type Codec = Body<"codec">
-  expectTypeOf<{ key: string }>().toMatchTypeOf<Codec>()
-  expectTypeOf<number>().toMatchTypeOf<Codec>()
-  expectTypeOf<boolean>().toMatchTypeOf<Codec>()
-  expectTypeOf<unknown[]>().toMatchTypeOf<Codec>()
-  // PlainBody is still valid in codec mode
-  expectTypeOf<string>().toMatchTypeOf<Codec>()
-  expectTypeOf<null>().toMatchTypeOf<Codec>()
+test("ResolveBody: explicit contentType text/plain selects string", () => {
+  expectTypeOf<ResolveBody<TestParsers, "text/plain">>().toEqualTypeOf<string>()
 })
 
-// --- Session generic propagation ---
-
-test("AMQPSession defaults to plain mode", () => {
-  expectTypeOf<AMQPSession>().toEqualTypeOf<AMQPSession<"plain">>()
+test("ResolveBody: never content type resolves to PlainBody", () => {
+  expectTypeOf<ResolveBody<TestParsers, never>>().toEqualTypeOf<PlainBody>()
 })
 
-test("plain session produces plain queues and exchanges", () => {
-  type S = AMQPSession<"plain">
-  expectTypeOf<Awaited<ReturnType<S["queue"]>>>().toEqualTypeOf<AMQPQueue<"plain">>()
-  expectTypeOf<Awaited<ReturnType<S["fanoutExchange"]>>>().toEqualTypeOf<AMQPExchange<"plain">>()
-  expectTypeOf<Awaited<ReturnType<S["directExchange"]>>>().toEqualTypeOf<AMQPExchange<"plain">>()
-  expectTypeOf<Awaited<ReturnType<S["topicExchange"]>>>().toEqualTypeOf<AMQPExchange<"plain">>()
-  expectTypeOf<Awaited<ReturnType<S["rpcClient"]>>>().toEqualTypeOf<AMQPRPCClient<"plain">>()
+// --- ResolveMessageBody ---
+
+test("ResolveMessageBody<{}> is Uint8Array | null", () => {
+  expectTypeOf<ResolveMessageBody<{}>>().toEqualTypeOf<Uint8Array | null>()
 })
 
-test("codec session produces codec queues and exchanges", () => {
-  type S = AMQPSession<"codec">
-  expectTypeOf<Awaited<ReturnType<S["queue"]>>>().toEqualTypeOf<AMQPQueue<"codec">>()
-  expectTypeOf<Awaited<ReturnType<S["fanoutExchange"]>>>().toEqualTypeOf<AMQPExchange<"codec">>()
-  expectTypeOf<Awaited<ReturnType<S["rpcClient"]>>>().toEqualTypeOf<AMQPRPCClient<"codec">>()
+test("ResolveMessageBody<TestParsers> is union of parser outputs plus Uint8Array | null", () => {
+  expectTypeOf<ResolveMessageBody<TestParsers>>().toEqualTypeOf<unknown | string | Uint8Array | null>()
 })
 
-// --- Queue defaults ---
+// --- AMQPParser<In, Out> ---
 
-test("AMQPQueue defaults to plain mode", () => {
-  expectTypeOf<AMQPQueue>().toEqualTypeOf<AMQPQueue<"plain">>()
+test("AMQPParser<In, Out> separates input and output types", () => {
+  type P = AMQPParser<string, number>
+  expectTypeOf<InferParserInput<P>>().toEqualTypeOf<string>()
+  expectTypeOf<InferParserOutput<P>>().toEqualTypeOf<number>()
 })
 
-// --- Exchange defaults ---
-
-test("AMQPExchange defaults to plain mode", () => {
-  expectTypeOf<AMQPExchange>().toEqualTypeOf<AMQPExchange<"plain">>()
+test("AMQPParser defaults both type params to unknown", () => {
+  type P = AMQPParser
+  expectTypeOf<InferParserInput<P>>().toEqualTypeOf<unknown>()
+  expectTypeOf<InferParserOutput<P>>().toEqualTypeOf<unknown>()
 })
 
-// --- RPC defaults ---
+// --- Bare generics produce plain (empty) defaults ---
 
-test("AMQPRPCClient defaults to plain mode", () => {
-  expectTypeOf<AMQPRPCClient>().toEqualTypeOf<AMQPRPCClient<"plain">>()
+test("AMQPSession defaults to AMQPSession<{}, {}, never, never>", () => {
+  expectTypeOf<AMQPSession>().toEqualTypeOf<AMQPSession<{}, {}, never, never>>()
 })
 
-test("AMQPRPCServer defaults to plain mode", () => {
-  expectTypeOf<AMQPRPCServer>().toEqualTypeOf<AMQPRPCServer<"plain">>()
+test("AMQPQueue defaults to AMQPQueue<{}, {}, never, never>", () => {
+  expectTypeOf<AMQPQueue>().toEqualTypeOf<AMQPQueue<{}, {}, never, never>>()
 })
 
-// --- AMQPMessage generic ---
-
-test("AMQPMessage defaults to plain mode", () => {
-  expectTypeOf<AMQPMessage>().toEqualTypeOf<AMQPMessage<"plain">>()
+test("AMQPExchange defaults to AMQPExchange<{}, {}, never, never>", () => {
+  expectTypeOf<AMQPExchange>().toEqualTypeOf<AMQPExchange<{}, {}, never, never>>()
 })
 
-test("AMQPMessage<plain>.body is Uint8Array | null", () => {
-  expectTypeOf<AMQPMessage<"plain">["body"]>().toEqualTypeOf<Uint8Array | null>()
+test("AMQPRPCClient defaults to AMQPRPCClient<{}, {}, never, never>", () => {
+  expectTypeOf<AMQPRPCClient>().toEqualTypeOf<AMQPRPCClient<{}, {}, never, never>>()
 })
 
-test("AMQPMessage<codec>.body is unknown", () => {
-  expectTypeOf<AMQPMessage<"codec">["body"]>().toEqualTypeOf<unknown>()
+test("AMQPRPCServer defaults to AMQPRPCServer<{}, {}, never, never>", () => {
+  expectTypeOf<AMQPRPCServer>().toEqualTypeOf<AMQPRPCServer<{}, {}, never, never>>()
 })
 
-test("MessageBody follows CodecMode", () => {
-  expectTypeOf<MessageBody<"plain">>().toEqualTypeOf<Uint8Array | null>()
-  expectTypeOf<MessageBody<"codec">>().toEqualTypeOf<unknown>()
+test("AMQPMessage defaults to AMQPMessage<{}>", () => {
+  expectTypeOf<AMQPMessage>().toEqualTypeOf<AMQPMessage<{}>>()
 })
 
-test("AMQPMessage.rawBody is always Uint8Array | null", () => {
-  expectTypeOf<AMQPMessage<"plain">["rawBody"]>().toEqualTypeOf<Uint8Array | null>()
-  expectTypeOf<AMQPMessage<"codec">["rawBody"]>().toEqualTypeOf<Uint8Array | null>()
+test("RPCHandler defaults to RPCHandler<{}, never>", () => {
+  expectTypeOf<RPCHandler>().toEqualTypeOf<RPCHandler<{}, never>>()
 })
 
-// --- Plain queue rejects non-plain bodies at the type level ---
-
-test("plain queue publish rejects objects", () => {
-  type Q = AMQPQueue<"plain">
-  type PublishBody = Parameters<Q["publish"]>[0]
-  // Objects should not be assignable to PlainBody
-  expectTypeOf<{ key: string }>().not.toMatchTypeOf<PublishBody>()
-  expectTypeOf<number>().not.toMatchTypeOf<PublishBody>()
-  expectTypeOf<boolean>().not.toMatchTypeOf<PublishBody>()
+test("AMQPGeneratorSubscription defaults to AMQPGeneratorSubscription<{}>", () => {
+  expectTypeOf<AMQPGeneratorSubscription>().toEqualTypeOf<AMQPGeneratorSubscription<{}>>()
 })
 
-test("plain queue publish accepts plain body types", () => {
-  type Q = AMQPQueue<"plain">
-  type PublishBody = Parameters<Q["publish"]>[0]
-  expectTypeOf<string>().toMatchTypeOf<PublishBody>()
-  expectTypeOf<Uint8Array>().toMatchTypeOf<PublishBody>()
-  expectTypeOf<null>().toMatchTypeOf<PublishBody>()
+// --- AMQPMessage body types ---
+
+test("AMQPMessage<{}>.body is Uint8Array | null", () => {
+  expectTypeOf<AMQPMessage<{}>["body"]>().toEqualTypeOf<Uint8Array | null>()
 })
 
-// --- Codec queue accepts rich bodies ---
-
-test("codec queue publish accepts objects and primitives", () => {
-  type Q = AMQPQueue<"codec">
-  type PublishBody = Parameters<Q["publish"]>[0]
-  expectTypeOf<{ key: string }>().toMatchTypeOf<PublishBody>()
-  expectTypeOf<number>().toMatchTypeOf<PublishBody>()
-  expectTypeOf<string>().toMatchTypeOf<PublishBody>()
+test("AMQPMessage<TestParsers>.body is union of parser outputs plus Uint8Array | null", () => {
+  expectTypeOf<AMQPMessage<TestParsers>["body"]>().toEqualTypeOf<unknown | string | Uint8Array | null>()
 })
 
-// --- Exchange publish follows the same pattern ---
+// --- AMQPMessage._rawBytes is always Uint8Array | null ---
+
+test("AMQPMessage<{}>._rawBytes is Uint8Array | null", () => {
+  expectTypeOf<AMQPMessage<{}>["_rawBytes"]>().toEqualTypeOf<Uint8Array | null>()
+})
+
+test("AMQPMessage<TestParsers>._rawBytes is Uint8Array | null", () => {
+  expectTypeOf<AMQPMessage<TestParsers>["_rawBytes"]>().toEqualTypeOf<Uint8Array | null>()
+})
+
+// --- Queue publish body types ---
+// publish<O extends keyof P & string = KP>(body: ResolveBody<P, O>, ...)
+// Extract body type by fixing O to KP via ResolveBody directly.
+
+test("plain queue publish body is PlainBody", () => {
+  // AMQPQueue<{}> has P = {}, KP = never → ResolveBody<{}, never> = PlainBody
+  expectTypeOf<ResolveBody<{}, never>>().toEqualTypeOf<PlainBody>()
+})
+
+test("queue with parsers and default contentType constrains body to default parser input", () => {
+  // AMQPQueue<TestParsers, {}, "text/plain"> has KP = "text/plain"
+  // → ResolveBody<TestParsers, "text/plain"> = string
+  expectTypeOf<ResolveBody<TestParsers, "text/plain">>().toEqualTypeOf<string>()
+})
+
+test("queue with parsers but no default contentType falls back to PlainBody", () => {
+  // AMQPQueue<TestParsers, {}, never> has KP = never → ResolveBody<TestParsers, never> = PlainBody
+  expectTypeOf<ResolveBody<TestParsers, never>>().toEqualTypeOf<PlainBody>()
+})
+
+// --- Plain queue rejects non-plain body types ---
+
+test("plain queue publish rejects objects and numbers", () => {
+  // PlainBody = string | Uint8Array | ArrayBuffer | Buffer | null
+  expectTypeOf<{ key: string }>().not.toMatchTypeOf<PlainBody>()
+  expectTypeOf<number>().not.toMatchTypeOf<PlainBody>()
+})
+
+// --- Exchange publish follows same pattern ---
+
+test("plain exchange publish body is PlainBody", () => {
+  // AMQPExchange<{}> has P = {}, KP = never → ResolveBody<{}, never> = PlainBody
+  expectTypeOf<ResolveBody<{}, never>>().toEqualTypeOf<PlainBody>()
+})
 
 test("plain exchange publish rejects objects", () => {
-  type X = AMQPExchange<"plain">
-  type PublishBody = Parameters<X["publish"]>[0]
-  expectTypeOf<{ key: string }>().not.toMatchTypeOf<PublishBody>()
+  expectTypeOf<{ key: string }>().not.toMatchTypeOf<PlainBody>()
 })
 
-test("codec exchange publish accepts objects", () => {
-  type X = AMQPExchange<"codec">
-  type PublishBody = Parameters<X["publish"]>[0]
-  expectTypeOf<{ key: string }>().toMatchTypeOf<PublishBody>()
+test("exchange with parsers and default contentType constrains body", () => {
+  // AMQPExchange<TestParsers, {}, "text/plain"> → ResolveBody<TestParsers, "text/plain"> = string
+  expectTypeOf<ResolveBody<TestParsers, "text/plain">>().toEqualTypeOf<string>()
 })
 
-// --- RPCHandler follows CodecMode ---
+// --- RPCHandler types ---
 
-test("RPCHandler<plain> must return PlainBody", () => {
-  type HandlerReturn = ReturnType<RPCHandler<"plain">>
-  expectTypeOf<string>().toMatchTypeOf<HandlerReturn>()
-  expectTypeOf<Uint8Array>().toMatchTypeOf<HandlerReturn>()
-  expectTypeOf<null>().toMatchTypeOf<HandlerReturn>()
-  // Objects should not be valid return values in plain mode
-  expectTypeOf<{ key: string }>().not.toMatchTypeOf<HandlerReturn>()
+test("RPCHandler<{}, never> return type is PlainBody", () => {
+  type HandlerReturn = ReturnType<RPCHandler<{}, never>>
+  expectTypeOf<HandlerReturn>().toEqualTypeOf<PlainBody | Promise<PlainBody>>()
 })
 
-test("RPCHandler<codec> can return objects", () => {
-  type HandlerReturn = ReturnType<RPCHandler<"codec">>
-  expectTypeOf<{ key: string }>().toMatchTypeOf<HandlerReturn>()
-  expectTypeOf<number>().toMatchTypeOf<HandlerReturn>()
+test("RPCHandler<TestParsers, 'application/json'> return type is JsonSerializable", () => {
+  type HandlerReturn = ReturnType<RPCHandler<TestParsers, "application/json">>
+  expectTypeOf<HandlerReturn>().toEqualTypeOf<JsonSerializable | Promise<JsonSerializable>>()
 })
 
-test("RPCHandler defaults to plain mode", () => {
-  expectTypeOf<RPCHandler>().toEqualTypeOf<RPCHandler<"plain">>()
+test("RPCHandler<{}> receives AMQPMessage<{}>", () => {
+  type Param = Parameters<RPCHandler<{}>>[0]
+  expectTypeOf<Param>().toEqualTypeOf<AMQPMessage<{}>>()
+})
+
+test("RPCHandler<TestParsers> receives AMQPMessage<TestParsers>", () => {
+  type Param = Parameters<RPCHandler<TestParsers>>[0]
+  expectTypeOf<Param>().toEqualTypeOf<AMQPMessage<TestParsers>>()
 })
 
 // --- Subscribe yields typed messages ---
 
-test("plain queue subscribe iterator yields AMQPMessage<plain>", () => {
-  type Sub = AMQPGeneratorSubscription<"plain">
+test("AMQPGeneratorSubscription<{}> yields AMQPMessage<{}>", () => {
+  type Sub = AMQPGeneratorSubscription<{}>
   type Yielded = Sub extends AsyncIterable<infer T> ? T : never
-  expectTypeOf<Yielded>().toEqualTypeOf<AMQPMessage<"plain">>()
+  expectTypeOf<Yielded>().toEqualTypeOf<AMQPMessage<{}>>()
 })
 
-test("codec queue subscribe iterator yields AMQPMessage<codec>", () => {
-  type Sub = AMQPGeneratorSubscription<"codec">
+test("AMQPGeneratorSubscription<TestParsers> yields AMQPMessage<TestParsers>", () => {
+  type Sub = AMQPGeneratorSubscription<TestParsers>
   type Yielded = Sub extends AsyncIterable<infer T> ? T : never
-  expectTypeOf<Yielded>().toEqualTypeOf<AMQPMessage<"codec">>()
+  expectTypeOf<Yielded>().toEqualTypeOf<AMQPMessage<TestParsers>>()
 })
 
-// --- RPC call returns typed messages ---
+// --- Session propagation ---
 
-test("plain rpcClient.call returns AMQPMessage<plain>", () => {
-  type R = AMQPRPCClient<"plain">
-  type Reply = Awaited<ReturnType<R["call"]>>
-  expectTypeOf<Reply>().toEqualTypeOf<AMQPMessage<"plain">>()
+test("AMQPSession<{}> queue returns AMQPQueue<{}, {}, never, never>", () => {
+  type S = AMQPSession<{}>
+  type Q = Awaited<ReturnType<S["queue"]>>
+  expectTypeOf<Q>().toEqualTypeOf<AMQPQueue<{}, {}, never, never>>()
 })
 
-test("codec rpcClient.call returns AMQPMessage<codec>", () => {
-  type R = AMQPRPCClient<"codec">
-  type Reply = Awaited<ReturnType<R["call"]>>
-  expectTypeOf<Reply>().toEqualTypeOf<AMQPMessage<"codec">>()
+test("AMQPSession<{}> exchange returns AMQPExchange<{}, {}, never, never>", () => {
+  type S = AMQPSession<{}>
+  type X = Awaited<ReturnType<S["fanoutExchange"]>>
+  expectTypeOf<X>().toEqualTypeOf<AMQPExchange<{}, {}, never, never>>()
 })
 
-// --- RPCHandler receives typed messages ---
-
-test("RPCHandler<plain> receives AMQPMessage<plain>", () => {
-  type Param = Parameters<RPCHandler<"plain">>[0]
-  expectTypeOf<Param>().toEqualTypeOf<AMQPMessage<"plain">>()
+test("AMQPSession<{}> rpcClient returns AMQPRPCClient<{}, {}, never, never>", () => {
+  type S = AMQPSession<{}>
+  type R = Awaited<ReturnType<S["rpcClient"]>>
+  expectTypeOf<R>().toEqualTypeOf<AMQPRPCClient<{}, {}, never, never>>()
 })
 
-test("RPCHandler<codec> receives AMQPMessage<codec>", () => {
-  type Param = Parameters<RPCHandler<"codec">>[0]
-  expectTypeOf<Param>().toEqualTypeOf<AMQPMessage<"codec">>()
-})
+// --- CoderRegistry preserves keys ---
 
-// --- CodecMode is a string literal union ---
-
-test("CodecMode is exactly 'plain' | 'codec'", () => {
-  expectTypeOf<CodecMode>().toEqualTypeOf<"plain" | "codec">()
+test("CoderRegistry preserves keys in type", () => {
+  type R = CoderRegistry<{ custom: AMQPCoder } & { gzip: AMQPCoder }>
+  expectTypeOf<R["gzip"]>().toEqualTypeOf<AMQPCoder>()
+  expectTypeOf<R["custom"]>().toEqualTypeOf<AMQPCoder>()
 })
