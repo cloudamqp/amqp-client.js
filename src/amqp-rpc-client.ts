@@ -1,8 +1,8 @@
 import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { Body } from "./amqp-publisher.js"
 import type { AMQPSession } from "./amqp-session.js"
+import type { Body, CodecMode } from "./amqp-publisher.js"
 
 const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
 
@@ -18,14 +18,14 @@ const DIRECT_REPLY_TO = "amq.rabbitmq.reply-to"
  * await rpc.close()
  * ```
  */
-export class AMQPRPCClient {
-  private readonly session: AMQPSession
+export class AMQPRPCClient<C extends CodecMode = "plain"> {
+  private readonly session: AMQPSession<C>
   private ch: AMQPChannel | null = null
   private correlationId = 0
   private readonly pending = new Map<
     string,
     {
-      resolve: (msg: AMQPMessage) => void
+      resolve: (msg: AMQPMessage<C>) => void
       reject: (err: Error) => void
       timer: ReturnType<typeof setTimeout> | undefined
     }
@@ -33,7 +33,7 @@ export class AMQPRPCClient {
   private closed = false
 
   /** @internal Use {@link AMQPSession.rpcClient} instead. */
-  constructor(session: AMQPSession) {
+  constructor(session: AMQPSession<C>) {
     this.session = session
   }
 
@@ -47,14 +47,20 @@ export class AMQPRPCClient {
       // for this client arrive here.  Messages with an unknown correlationId
       // (e.g. late replies after a timeout) are intentionally dropped — with
       // noAck: true they are acknowledged on delivery and cannot be requeued.
-      await ch.basicConsume(DIRECT_REPLY_TO, { noAck: true }, (msg) => {
+      const codecs = this.session.codecs
+      await ch.basicConsume(DIRECT_REPLY_TO, { noAck: true }, async (msg) => {
         const id = msg.properties.correlationId
         if (id === undefined) return
         const entry = this.pending.get(id)
         if (!entry) return
         this.pending.delete(id)
         if (entry.timer) clearTimeout(entry.timer)
-        entry.resolve(msg)
+        try {
+          if (codecs) await codecs.decodeMessage(msg)
+          entry.resolve(msg as AMQPMessage<C>)
+        } catch (err) {
+          entry.reject(err instanceof Error ? err : new Error(String(err)))
+        }
       })
       this.ch = ch
       return this
@@ -74,17 +80,19 @@ export class AMQPRPCClient {
    *                          no response is received within this time.
    * @returns The reply {@link AMQPMessage}
    */
-  call(
+  async call(
     queue: string,
-    body: Body,
+    body: Body<C>,
     { timeout, ...properties }: AMQPProperties & { timeout?: number } = {},
-  ): Promise<AMQPMessage> {
+  ): Promise<AMQPMessage<C>> {
     if (this.closed) throw new Error("RPC client is closed")
     if (!this.ch || this.ch.closed) throw new Error("RPC client not started, call start() first")
     const ch = this.ch
     const correlationId = (++this.correlationId).toString(36)
 
-    return new Promise<AMQPMessage>((resolve, reject) => {
+    const encoded = await this.session.encodeBody(body, properties)
+
+    return new Promise<AMQPMessage<C>>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined
       if (timeout !== undefined && timeout > 0) {
         timer = setTimeout(() => {
@@ -95,8 +103,8 @@ export class AMQPRPCClient {
 
       this.pending.set(correlationId, { resolve, reject, timer })
 
-      ch.basicPublish("", queue, body, {
-        ...properties,
+      ch.basicPublish("", queue, encoded.body, {
+        ...encoded.properties,
         replyTo: DIRECT_REPLY_TO,
         correlationId,
       }).catch((err) => {
