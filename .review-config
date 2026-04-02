@@ -1,0 +1,3 @@
+REVIEWER=copilot
+CRITERIA=.github/copilot-instructions.md
+MODEL=gpt-4.1

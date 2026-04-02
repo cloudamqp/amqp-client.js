@@ -5,7 +5,9 @@ import { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription.js"
 import type { ConsumerDefinition } from "./amqp-subscription.js"
 import type { AMQPSession } from "./amqp-session.js"
-import { publishConfirmed, publishNoConfirm, type Body } from "./amqp-publisher.js"
+import { publishConfirmed, publishNoConfirm } from "./amqp-publisher.js"
+import type { Body, CodecMode } from "./amqp-publisher.js"
+import type { AMQPCodecRegistry } from "./amqp-codec-registry.js"
 
 /**
  * Options for {@link AMQPQueue#subscribe}.
@@ -35,23 +37,29 @@ export type QueuePublishOptions = AMQPProperties & {
  * automatic consumer recovery. `publish` waits for a broker confirm; use
  * Pass `{ confirm: false }` to skip the wait.
  */
-export class AMQPQueue {
+export class AMQPQueue<C extends CodecMode = "plain"> {
+  /** Queue name. */
   readonly name: string
-  private readonly session: AMQPSession
+  private readonly session: AMQPSession<C>
   private readonly subscriptions = new Set<AMQPSubscription>()
 
   /** @internal */
-  constructor(session: AMQPSession, name: string) {
+  constructor(session: AMQPSession<C>, name: string) {
     this.session = session
     this.name = name
   }
 
   /**
    * Publish a message directly to this queue (via the default exchange).
+   *
+   * When the session has a codec registry configured, `body` can be any value
+   * (objects, arrays, etc.) and will be serialized according to `contentType`.
+   * Without codecs, `body` must be a string, Buffer, Uint8Array, or null.
+   *
    * @param options - publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
-  async publish(body: Body, options: QueuePublishOptions = {}): Promise<AMQPQueue> {
+  async publish(body: Body<C>, options: QueuePublishOptions = {}): Promise<AMQPQueue<C>> {
     const { confirm = true, ...properties } = options
     if (confirm) {
       await publishConfirmed(this.session, "", this.name, body, properties)
@@ -62,11 +70,11 @@ export class AMQPQueue {
   }
 
   /** Subscribe with a callback. Messages are acked after the callback returns, nacked on error. */
-  subscribe(callback: (msg: AMQPMessage) => void | Promise<void>): Promise<AMQPSubscription>
+  subscribe(callback: (msg: AMQPMessage<C>) => void | Promise<void>): Promise<AMQPSubscription>
   /** Subscribe with a callback and custom params. */
   subscribe(
     params: QueueSubscribeParams,
-    callback: (msg: AMQPMessage) => void | Promise<void>,
+    callback: (msg: AMQPMessage<C>) => void | Promise<void>,
   ): Promise<AMQPSubscription>
   /**
    * Subscribe via an async iterator. Messages continue yielding across reconnections.
@@ -78,36 +86,30 @@ export class AMQPQueue {
    * }
    * ```
    */
-  subscribe(params?: QueueSubscribeParams): Promise<AMQPGeneratorSubscription>
+  subscribe(params?: QueueSubscribeParams): Promise<AMQPGeneratorSubscription<C>>
   async subscribe(
-    params?: QueueSubscribeParams | ((msg: AMQPMessage) => void | Promise<void>),
-    callback?: (msg: AMQPMessage) => void | Promise<void>,
-  ): Promise<AMQPSubscription | AMQPGeneratorSubscription> {
+    params?: QueueSubscribeParams | ((msg: AMQPMessage<C>) => void | Promise<void>),
+    callback?: (msg: AMQPMessage<C>) => void | Promise<void>,
+  ): Promise<AMQPSubscription | AMQPGeneratorSubscription<C>> {
     if (typeof params === "function") [callback, params] = [params, undefined]
     const { prefetch, requeueOnNack = true, ...consumeParams } = params ?? {}
     // Force noAck: false when auto-acking so the server tracks delivery tags.
     // basicConsume defaults noAck to true, so we must be explicit.
     const autoAck = !consumeParams.noAck
     if (autoAck) consumeParams.noAck = false
-    if (autoAck && callback !== undefined) {
-      const userCallback = callback
-      callback = async (msg: AMQPMessage) => {
-        try {
-          await userCallback(msg)
-          await msg.ack()
-        } catch {
-          await msg.nack(requeueOnNack)
-        }
-      }
-    }
+
+    const codecs = this.session.codecs
+    const wrappedCallback = wrapCallbackWithAutoDecodeAndAck(callback, { codecs, autoAck, requeueOnNack })
     const def: ConsumerDefinition = {
       queueName: this.name,
       consumeParams,
-      ...(callback !== undefined && { callback }),
+      requeueOnNack,
+      ...(wrappedCallback !== undefined && { callback: wrappedCallback }),
       ...(prefetch !== undefined && { prefetch }),
+      ...(codecs && { codecs }),
     }
     const consumer = await this.openConsumer(def)
-    const sub = callback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription(consumer, def)
+    const sub = wrappedCallback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription<C>(consumer, def)
     this.subscriptions.add(sub)
     sub.onCancel = () => {
       this.subscriptions.delete(sub)
@@ -119,16 +121,19 @@ export class AMQPQueue {
    * Poll the queue for a single message.
    * @param [params.noAck=true] - automatically acknowledge on delivery
    */
-  async get(params?: { noAck?: boolean }): Promise<AMQPMessage | null> {
+  async get(params?: { noAck?: boolean }): Promise<AMQPMessage<C> | null> {
     const ch = await this.session.getOpsChannel()
-    return ch.basicGet(this.name, params)
+    const msg = await ch.basicGet(this.name, params)
+    if (!msg) return null
+    if (this.session.codecs) await this.session.codecs.decodeMessage(msg)
+    return msg as AMQPMessage<C>
   }
 
   /**
    * Bind this queue to an exchange.
    * @returns `this` for chaining
    */
-  async bind(exchange: string, routingKey = "", args: Record<string, unknown> = {}): Promise<AMQPQueue> {
+  async bind(exchange: string, routingKey = "", args: Record<string, unknown> = {}): Promise<AMQPQueue<C>> {
     const ch = await this.session.getOpsChannel()
     await ch.queueBind(this.name, exchange, routingKey, args)
     return this
@@ -138,7 +143,7 @@ export class AMQPQueue {
    * Remove a binding between this queue and an exchange.
    * @returns `this` for chaining
    */
-  async unbind(exchange: string, routingKey = "", args: Record<string, unknown> = {}): Promise<AMQPQueue> {
+  async unbind(exchange: string, routingKey = "", args: Record<string, unknown> = {}): Promise<AMQPQueue<C>> {
     const ch = await this.session.getOpsChannel()
     await ch.queueUnbind(this.name, exchange, routingKey, args)
     return this
@@ -196,5 +201,29 @@ export class AMQPQueue {
     return def.callback
       ? ch.basicConsume(def.queueName, def.consumeParams, def.callback)
       : ch.basicConsume(def.queueName, def.consumeParams)
+  }
+}
+
+type InternalCallback = (msg: AMQPMessage) => void | Promise<void>
+
+function wrapCallbackWithAutoDecodeAndAck<C extends CodecMode>(
+  callback: ((msg: AMQPMessage<C>) => void | Promise<void>) | undefined,
+  opts: { codecs: AMQPCodecRegistry | undefined; autoAck: boolean; requeueOnNack: boolean },
+): InternalCallback | undefined {
+  if (!callback) return undefined
+  if (!opts.autoAck) {
+    return async (msg: AMQPMessage) => {
+      if (opts.codecs) await opts.codecs.decodeMessage(msg)
+      await callback(msg as AMQPMessage<C>)
+    }
+  }
+  return async (msg: AMQPMessage) => {
+    try {
+      if (opts.codecs) await opts.codecs.decodeMessage(msg)
+      await callback(msg as AMQPMessage<C>)
+      await msg.ack()
+    } catch {
+      await msg.nack(opts.requeueOnNack)
+    }
   }
 }
