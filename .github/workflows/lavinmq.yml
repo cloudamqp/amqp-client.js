@@ -1,0 +1,79 @@
+name: CI - LavinMQ
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20.x, 22.x, 23.x, 24.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+      - name: Install LavinMQ
+        uses: cloudamqp/lavinmq-action@v1
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+      - name: Install github.com/FiloSottile/mkcert
+        run: brew install mkcert
+      - uses: actions/checkout@v4
+      - name: Create local CA and certificate
+        run: |
+          sudo CAROOT=/etc/lavinmq $(brew --prefix)/bin/mkcert -install
+          sudo $(brew --prefix)/bin/mkcert -key-file /etc/lavinmq/localhost-key.pem -cert-file /etc/lavinmq/localhost.pem localhost
+          sudo chmod +r /etc/lavinmq/localhost-key.pem
+      - name: Configure LavinMQ for TLS
+        run: |
+          sudo tee /etc/lavinmq/lavinmq.ini <<'EOF'
+          [main]
+          data_dir = /var/lib/lavinmq
+
+          tls_cert = /etc/lavinmq/localhost.pem
+          tls_key = /etc/lavinmq/localhost-key.pem
+
+          [amqp]
+          tls_port = 5671
+          EOF
+          sudo systemctl restart lavinmq
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      - run: npm test
+        env:
+          AMQPS_URL: amqps://localhost?insecure
+
+  test-browser:
+    runs-on: ubuntu-latest
+    env:
+      NODE_VERSION: 22.x
+
+    steps:
+      - name: Install LavinMQ
+        uses: cloudamqp/lavinmq-action@v1
+      - name: Bind LavinMQ to IPv4 (workaround for cloudamqp/lavinmq#1838)
+        run: |
+          sudo sed -i 's/bind = ::/bind = 127.0.0.1/' /etc/lavinmq/lavinmq.ini
+          sudo systemctl restart lavinmq
+      - uses: actions/checkout@v6
+      - name: Use Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: npm install
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test-browser -- run --browser.headless
+        env:
+          VITE_WS_URL: ws://127.0.0.1:15672/
