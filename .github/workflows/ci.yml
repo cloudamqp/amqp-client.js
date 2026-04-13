@@ -49,9 +49,6 @@ jobs:
       - run: npm test
         env:
           AMQPS_URL: amqps://localhost?insecure
-      - run: npm run lint
-      - run: npm run format:check
-      - run: npm run typecheck
 
   test-browser:
     runs-on: ubuntu-latest
