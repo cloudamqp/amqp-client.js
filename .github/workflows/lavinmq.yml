@@ -23,7 +23,7 @@ jobs:
         uses: Homebrew/actions/setup-homebrew@master
       - name: Install github.com/FiloSottile/mkcert
         run: brew install mkcert
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Create local CA and certificate
         run: |
           sudo CAROOT=/etc/lavinmq $(brew --prefix)/bin/mkcert -install
