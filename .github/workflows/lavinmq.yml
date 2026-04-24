@@ -61,10 +61,6 @@ jobs:
     steps:
       - name: Install LavinMQ
         uses: cloudamqp/lavinmq-action@v1
-      - name: Bind LavinMQ to IPv4 (workaround for cloudamqp/lavinmq#1838)
-        run: |
-          sudo sed -i 's/bind = ::/bind = 127.0.0.1/' /etc/lavinmq/lavinmq.ini
-          sudo systemctl restart lavinmq
       - uses: actions/checkout@v6
       - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v6
