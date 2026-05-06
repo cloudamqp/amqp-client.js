@@ -1,18 +1,17 @@
 import type { AMQPChannel } from "./amqp-channel.js"
 import type { AMQPProperties } from "./amqp-properties.js"
-import type { CodecMode } from "./amqp-publisher.js"
-
-/** The body type exposed on a message, narrowed by {@link CodecMode}. */
-export type MessageBody<C extends CodecMode> = C extends "codec" ? unknown : Uint8Array | null
+import type { ParserMap } from "./amqp-codec-registry.js"
+import type { ResolveMessageBody } from "./amqp-publisher.js"
 
 /**
  * AMQP message.
  *
- * The generic parameter `C` controls the type of `body`:
- * - `"plain"` (default): `Uint8Array | null` (raw wire bytes)
- * - `"codec"`: `unknown` (decoded by the configured codec registry)
+ * The generic parameter `P` is the parser map type. When no parsers are
+ * configured (`P = {}`), `body` is `Uint8Array | null` (raw wire bytes).
+ * When parsers are configured, `body` is the union of all parser output
+ * types plus `Uint8Array | null`.
  */
-export class AMQPMessage<C extends CodecMode = "plain"> {
+export class AMQPMessage<P extends ParserMap = {}> {
   /** Channel this message was delivered on. */
   channel: AMQPChannel
   /** Exchange the message was published to. */
@@ -24,11 +23,11 @@ export class AMQPMessage<C extends CodecMode = "plain"> {
   /** Byte size of the body. */
   bodySize = 0
   /** @internal Raw bytes buffer used by the frame parser. */
-  rawBody: Uint8Array | null = null
+  _rawBytes: Uint8Array | null = null
   /** @internal */
   bodyPos = 0
   /** Message body. Raw `Uint8Array` bytes in plain mode; decoded value in codec mode. */
-  body: MessageBody<C> = null as MessageBody<C>
+  body: ResolveMessageBody<P> = null as ResolveMessageBody<P>
   /** Server-assigned delivery tag for ack/nack/reject. */
   deliveryTag = 0
   /** Consumer tag, if delivered to a consumer. */
@@ -57,9 +56,9 @@ export class AMQPMessage<C extends CodecMode = "plain"> {
 
   /** Converts the raw message body to a string. */
   bodyToString(): string | null {
-    if (this.rawBody) {
-      if (typeof Buffer !== "undefined") return Buffer.from(this.rawBody).toString()
-      else return new TextDecoder().decode(this.rawBody)
+    if (this._rawBytes) {
+      if (typeof Buffer !== "undefined") return Buffer.from(this._rawBytes).toString()
+      else return new TextDecoder().decode(this._rawBytes)
     } else {
       return null
     }
