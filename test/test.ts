@@ -810,7 +810,11 @@ test("can republish in consume block without race condition", async () => {
   await ch.basicPublish("", q.name, "x".repeat(500))
   const consumer = await ch.basicConsume(q.name, { noAck: false }, async (msg) => {
     if (msg.deliveryTag < 10000) {
-      await Promise.all([ch.basicPublish("", q.name, msg._rawBytes), ch.basicPublish("", q.name, msg._rawBytes), msg.ack()])
+      await Promise.all([
+        ch.basicPublish("", q.name, msg._rawBytes),
+        ch.basicPublish("", q.name, msg._rawBytes),
+        msg.ack(),
+      ])
     } else if (msg.deliveryTag === 10000) {
       await msg.ack()
       await consumer.cancel()

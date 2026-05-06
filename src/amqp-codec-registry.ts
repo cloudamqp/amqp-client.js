@@ -4,7 +4,7 @@ import { isPlainBody } from "./amqp-publisher.js"
 
 // 1. Define a type that represents a map of different Parsers
 export type ParserMap = {
-  [K: string]: AMQPParser<any, any>
+  [K: string]: AMQPParser<unknown, unknown>
 }
 
 // 2. The ParserRegistry type uses a Mapped Type to preserve the unique In/Out of each key
@@ -41,8 +41,8 @@ export function createParserRegistry<T extends ParserMap>(
   return parsers
 }
 
-export type InferParserInput<P> = P extends AMQPParser<infer TInput, any> ? TInput : never
-export type InferParserOutput<P> = P extends AMQPParser<any, infer Out> ? Out : never
+export type InferParserInput<P> = P extends AMQPParser<infer TInput, unknown> ? TInput : never
+export type InferParserOutput<P> = P extends AMQPParser<never, infer Out> ? Out : never
 
 export type CoderMap = { [K: string]: AMQPCoder }
 export type CoderRegistry<T extends CoderMap> = { readonly [K in keyof T & string]: T[K] }
@@ -213,4 +213,3 @@ export async function decodeMessage(msg: AMQPMessage, parsers: ParserMap, coders
     ;(msg as { body: unknown }).body = await decodeAndParse(parsers, coders, msg._rawBytes, msg.properties)
   }
 }
-
