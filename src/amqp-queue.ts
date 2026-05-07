@@ -5,6 +5,7 @@ import { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription.js"
 import type { ConsumerDefinition } from "./amqp-subscription.js"
 import type { AMQPSession } from "./amqp-session.js"
+import type { AMQPExchange } from "./amqp-exchange.js"
 import type { ResolveBody } from "./amqp-publisher.js"
 import { serializeAndEncode, decodeMessage } from "./amqp-codec-registry.js"
 import type { ParserMap, CoderMap } from "./amqp-codec-registry.js"
@@ -62,6 +63,9 @@ export class AMQPQueue<
    * by the matching parser's `serialize` method. Without parsers, `body` must
    * be a string, Buffer, Uint8Array, or null.
    *
+   * Defaults: `confirm: true`, `deliveryMode: 2` (persistent). Pass
+   * `deliveryMode: 1` to send a transient message.
+   *
    * @param options - publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
@@ -80,6 +84,7 @@ export class AMQPQueue<
       properties,
       defaults,
     )
+    if (encoded.properties.deliveryMode === undefined) encoded.properties.deliveryMode = 2
     const ch = confirm ? await this.session.getConfirmChannel() : await this.session.getOpsChannel()
     await ch.basicPublish("", this.name, encoded.body, encoded.properties)
     return this
@@ -153,9 +158,14 @@ export class AMQPQueue<
    * Bind this queue to an exchange.
    * @returns `this` for chaining
    */
-  async bind(exchange: string, routingKey = "", args: Record<string, unknown> = {}): Promise<AMQPQueue<P, C, KP, KC>> {
+  async bind(
+    exchange: string | AMQPExchange<P, C, KP, KC>,
+    routingKey = "",
+    args: Record<string, unknown> = {},
+  ): Promise<AMQPQueue<P, C, KP, KC>> {
+    const exchangeName = typeof exchange === "string" ? exchange : exchange.name
     const ch = await this.session.getOpsChannel()
-    await ch.queueBind(this.name, exchange, routingKey, args)
+    await ch.queueBind(this.name, exchangeName, routingKey, args)
     return this
   }
 
@@ -164,12 +174,13 @@ export class AMQPQueue<
    * @returns `this` for chaining
    */
   async unbind(
-    exchange: string,
+    exchange: string | AMQPExchange<P, C, KP, KC>,
     routingKey = "",
     args: Record<string, unknown> = {},
   ): Promise<AMQPQueue<P, C, KP, KC>> {
+    const exchangeName = typeof exchange === "string" ? exchange : exchange.name
     const ch = await this.session.getOpsChannel()
-    await ch.queueUnbind(this.name, exchange, routingKey, args)
+    await ch.queueUnbind(this.name, exchangeName, routingKey, args)
     return this
   }
 
