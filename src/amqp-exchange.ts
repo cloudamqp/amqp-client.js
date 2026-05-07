@@ -43,6 +43,9 @@ export class AMQPExchange<
    * by the matching parser's `serialize` method. Without parsers, `body` must
    * be a string, Buffer, Uint8Array, or null.
    *
+   * Defaults: `confirm: true`, `deliveryMode: 2` (persistent). Pass
+   * `deliveryMode: 1` to send a transient message.
+   *
    * @param options - routing key, publish properties; set `confirm: false` to skip broker confirmation
    * @returns `this` for chaining
    */
@@ -61,6 +64,7 @@ export class AMQPExchange<
       properties,
       defaults,
     )
+    if (encoded.properties.deliveryMode === undefined) encoded.properties.deliveryMode = 2
     const ch = confirm ? await this.session.getConfirmChannel() : await this.session.getOpsChannel()
     await ch.basicPublish(this.name, routingKey, encoded.body, encoded.properties)
     return this
