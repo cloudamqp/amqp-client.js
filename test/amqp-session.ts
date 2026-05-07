@@ -430,6 +430,15 @@ test("AMQPQueue.bind() and unbind()", () =>
     await expect(q.unbind("amq.topic", "test.key")).resolves.toBeInstanceOf(AMQPQueue)
   }))
 
+test("AMQPQueue.bind() and unbind() accept an AMQPExchange handle", () =>
+  withSession(async (session) => {
+    const x = await session.topicExchange("amq.topic")
+    const q = await session.queue("test-q-bind-handle-" + Math.random(), { durable: false, autoDelete: true })
+
+    await expect(q.bind(x, "test.key")).resolves.toBeInstanceOf(AMQPQueue)
+    await expect(q.unbind(x, "test.key")).resolves.toBeInstanceOf(AMQPQueue)
+  }))
+
 test("AMQPQueue.purge() empties the queue", () =>
   withSession(async (session) => {
     const q = await session.queue("test-q-purge-" + Math.random(), { durable: false, autoDelete: true })
