@@ -4,7 +4,8 @@ import { AMQPSession } from "../src/amqp-session.js"
 import { AMQPQueue } from "../src/amqp-queue.js"
 import { AMQPExchange } from "../src/amqp-exchange.js"
 import { AMQPMessage } from "../src/amqp-message.js"
-import { createParserRegistry, createCoderRegistry } from "../src/amqp-codec-registry.js"
+import { builtinParsers, builtinCoders } from "../src/amqp-codec-registry.js"
+import type { AMQPParser } from "../src/amqp-codec-registry.js"
 import type { AMQPBaseClient } from "../src/amqp-base-client.js"
 
 beforeEach(() => {
@@ -686,25 +687,21 @@ test("session.rpcClient() close rejects pending calls", () =>
   }))
 
 // --- Codec registry integration tests ---
-const parsers = createParserRegistry(
-  {
-    "csv/simple": {
-      serialize: (body: string): Uint8Array => {
-        return new TextEncoder().encode(
-          body
-            .split(",")
-            .map((s) => s.trim())
-            .join(","),
-        )
-      },
-      parse: (body: Uint8Array): string => {
-        return new TextDecoder().decode(body)
-      },
-    },
+const csvSimpleParser: AMQPParser<string, string> = {
+  serialize: (body: string): Uint8Array => {
+    return new TextEncoder().encode(
+      body
+        .split(",")
+        .map((s) => s.trim())
+        .join(","),
+    )
   },
-  true,
-)
-const coders = createCoderRegistry({}, true)
+  parse: (body: Uint8Array): string => {
+    return new TextDecoder().decode(body)
+  },
+}
+const parsers = { ...builtinParsers, "csv/simple": csvSimpleParser }
+const coders = builtinCoders
 
 async function withCodecSession(
   fn: (

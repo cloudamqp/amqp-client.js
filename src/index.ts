@@ -22,8 +22,8 @@ export { AMQPBaseClient } from "./amqp-base-client.js"
 export type { Logger } from "./types.js"
 export type { AMQPWebSocketInit } from "./amqp-websocket-client.js"
 export {
-  createParserRegistry,
-  createCoderRegistry,
+  builtinParsers,
+  builtinCoders,
   serializeAndEncode,
   decodeAndParse,
   decodeMessage,

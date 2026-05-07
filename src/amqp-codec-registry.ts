@@ -2,12 +2,12 @@ import type { AMQPMessage } from "./amqp-message.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import { isPlainBody } from "./amqp-publisher.js"
 
-// 1. Define a type that represents a map of different Parsers
+/** Map of content-type → parser. */
 export type ParserMap = {
   [K: string]: AMQPParser<unknown, unknown>
 }
 
-// 2. The ParserRegistry type uses a Mapped Type to preserve the unique In/Out of each key
+/** Readonly view of a {@link ParserMap}; returned by helpers. */
 export type ParserRegistry<T extends ParserMap> = {
   readonly [K in keyof T & string]: T[K]
 }
@@ -25,52 +25,15 @@ type BuiltinParsers = {
   "application/json": AMQPParser<JsonSerializable, unknown>
 }
 
-// 3. The factory function
-export function createParserRegistry<T extends ParserMap>(parsers: T, useDefaultParsers?: false): ParserRegistry<T>
-export function createParserRegistry<T extends ParserMap>(
-  parsers: T,
-  useDefaultParsers: true,
-): ParserRegistry<T & BuiltinParsers>
-export function createParserRegistry<T extends ParserMap>(
-  parsers: T,
-  useDefaultParsers?: boolean,
-): ParserRegistry<T & BuiltinParsers> | ParserRegistry<T> {
-  if (useDefaultParsers) {
-    return { "text/plain": PlainParser, "application/json": JSONParser, ...parsers }
-  }
-  return parsers
-}
-
 export type InferParserInput<P> = P extends AMQPParser<infer TInput, unknown> ? TInput : never
 export type InferParserOutput<P> = P extends AMQPParser<never, infer Out> ? Out : never
 
+/** Map of content-encoding → coder. */
 export type CoderMap = { [K: string]: AMQPCoder }
+/** Readonly view of a {@link CoderMap}. */
 export type CoderRegistry<T extends CoderMap> = { readonly [K in keyof T & string]: T[K] }
 
 type BuiltinCoders = { gzip: AMQPCoder; deflate: AMQPCoder }
-
-export function createCoderRegistry<T extends CoderMap>(coders: T, useDefaults?: false): CoderRegistry<T>
-export function createCoderRegistry<T extends CoderMap>(coders: T, useDefaults: true): CoderRegistry<T & BuiltinCoders>
-export function createCoderRegistry<T extends CoderMap>(
-  coders: T,
-  useDefaults?: boolean,
-): CoderRegistry<T & BuiltinCoders> | CoderRegistry<T> {
-  if (useDefaults) {
-    if (
-      typeof CompressionStream === "undefined" ||
-      typeof DecompressionStream === "undefined" ||
-      typeof Blob === "undefined" ||
-      typeof Response === "undefined"
-    ) {
-      throw new Error(
-        "Built-in coders require CompressionStream, DecompressionStream, Blob, and Response " +
-          "(Node 18+, modern browsers). Register custom coders via createCoderRegistry() instead.",
-      )
-    }
-    return { gzip: GzipCoder, deflate: DeflateCoder, ...coders }
-  }
-  return coders
-}
 
 /** Handles serialization/deserialization based on content-type. */
 export interface AMQPParser<In = unknown, Out = unknown> {
@@ -136,6 +99,25 @@ const DeflateCoder: AMQPCoder = {
   decode(body: Uint8Array): Promise<Uint8Array> {
     return decompressWithStream(body, "deflate")
   },
+}
+
+/**
+ * Built-in parsers for `text/plain` and `application/json`.
+ * Use directly, or merge with custom parsers via spread:
+ * `{ ...builtinParsers, "text/csv": csvParser }`.
+ */
+export const builtinParsers: ParserRegistry<BuiltinParsers> = {
+  "text/plain": PlainParser,
+  "application/json": JSONParser,
+}
+
+/**
+ * Built-in coders for `gzip` and `deflate`.
+ * Uses `CompressionStream`/`DecompressionStream` — requires Node 18+ or a modern browser.
+ */
+export const builtinCoders: CoderRegistry<BuiltinCoders> = {
+  gzip: GzipCoder,
+  deflate: DeflateCoder,
 }
 
 export function serializeAndEncode(
