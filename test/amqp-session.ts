@@ -251,6 +251,54 @@ test("AMQPQueue (session-backed).publish() and get() round-trip", () =>
     expect(msg?.bodyString()).toBe("round-trip")
   }))
 
+test("AMQPQueue.publish() defaults deliveryMode to 2 (persistent)", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-sq-persist-" + Math.random(), { durable: false, autoDelete: true })
+    await q.publish("default")
+
+    const msg = await q.get({ noAck: true })
+    expect(msg?.properties.deliveryMode).toBe(2)
+  }))
+
+test("AMQPQueue.publish() honors explicit deliveryMode: 1 (transient)", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-sq-transient-" + Math.random(), { durable: false, autoDelete: true })
+    await q.publish("transient", { deliveryMode: 1 })
+
+    const msg = await q.get({ noAck: true })
+    expect(msg?.properties.deliveryMode).toBe(1)
+  }))
+
+test("AMQPExchange.publish() defaults deliveryMode to 2 (persistent)", () =>
+  withSession(async (session) => {
+    const xName = "test-x-persist-" + Math.random()
+    const qName = "test-xq-persist-" + Math.random()
+    const x = await session.fanoutExchange(xName, { durable: false, autoDelete: true })
+    const q = await session.queue(qName, { durable: false, autoDelete: true })
+    await q.bind(x)
+
+    await x.publish("default")
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    const msg = await q.get({ noAck: true })
+    expect(msg?.properties.deliveryMode).toBe(2)
+  }))
+
+test("AMQPExchange.publish() honors explicit deliveryMode: 1 (transient)", () =>
+  withSession(async (session) => {
+    const xName = "test-x-transient-" + Math.random()
+    const qName = "test-xq-transient-" + Math.random()
+    const x = await session.fanoutExchange(xName, { durable: false, autoDelete: true })
+    const q = await session.queue(qName, { durable: false, autoDelete: true })
+    await q.bind(x)
+
+    await x.publish("transient", { deliveryMode: 1 })
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    const msg = await q.get({ noAck: true })
+    expect(msg?.properties.deliveryMode).toBe(1)
+  }))
+
 test("AMQPQueue (session-backed).subscribe() recovers after reconnect", () =>
   withSession(
     async (session) => {
