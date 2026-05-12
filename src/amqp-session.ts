@@ -232,13 +232,22 @@ export class AMQPSession<
    * @param [args] - optional queue arguments (e.g. `x-message-ttl`)
    */
   async queue(name: string, params?: QueueParams, args?: Record<string, unknown>): Promise<AMQPQueue<P, C, KP, KC>> {
-    const ch = await this.getOpsChannel()
-    const res = await ch.queueDeclare(name, params, args)
-    const existing = this.queues.get(res.name)
-    if (existing) return existing
-    const q = new AMQPQueue<P, C, KP, KC>(this, res.name)
-    this.queues.set(res.name, q)
-    return q
+    // Passive declares throw NOT_FOUND when the queue is missing, which the
+    // broker signals by closing the channel. Routing passive declares to a
+    // dedicated short-lived channel keeps that side effect from tearing down
+    // the session's shared ops channel and disrupting unrelated work.
+    const passive = params?.passive === true
+    const ch = passive ? await this.openChannel() : await this.getOpsChannel()
+    try {
+      const res = await ch.queueDeclare(name, params, args)
+      const existing = this.queues.get(res.name)
+      if (existing) return existing
+      const q = new AMQPQueue<P, C, KP, KC>(this, res.name)
+      this.queues.set(res.name, q)
+      return q
+    } finally {
+      if (passive && !ch.closed) await ch.close().catch(() => {})
+    }
   }
 
   /**
@@ -254,9 +263,17 @@ export class AMQPSession<
     params?: ExchangeParams,
     args?: Record<string, unknown>,
   ): Promise<AMQPExchange<P, C, KP, KC>> {
-    const ch = await this.getOpsChannel()
-    await ch.exchangeDeclare(name, type, params, args)
-    return new AMQPExchange<P, C, KP, KC>(this, name)
+    // Passive declares throw NOT_FOUND when the exchange is missing, which
+    // the broker signals by closing the channel. Use a dedicated short-lived
+    // channel so the session's shared ops channel survives.
+    const passive = params?.passive === true
+    const ch = passive ? await this.openChannel() : await this.getOpsChannel()
+    try {
+      await ch.exchangeDeclare(name, type, params, args)
+      return new AMQPExchange<P, C, KP, KC>(this, name)
+    } finally {
+      if (passive && !ch.closed) await ch.close().catch(() => {})
+    }
   }
 
   /**

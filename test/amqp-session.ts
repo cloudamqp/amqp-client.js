@@ -961,3 +961,34 @@ test("get() returns AMQPMessage with body", () =>
     expect(msg).toBeInstanceOf(AMQPMessage)
     expect(msg!.body).toBeInstanceOf(Uint8Array)
   }))
+
+test("session.queue passive NOT_FOUND doesn't break concurrent ops on ops channel", () =>
+  withSession(async (session) => {
+    // Fire a passive-against-missing and a normal declare concurrently. They
+    // both go through getOpsChannel() — without dedicated routing for passive,
+    // the broker's NOT_FOUND close on the passive RPC also fails the
+    // concurrent normal declare with "channel closed".
+    const okName = "test-passive-concurrent-" + Math.random()
+    const results = await Promise.allSettled([
+      session.queue("nope-" + Math.random(), { passive: true }),
+      session.queue(okName, { durable: false, autoDelete: true }),
+    ])
+
+    expect(results[0]?.status).toBe("rejected")
+    if (results[0]?.status === "rejected") {
+      expect(String(results[0].reason)).toMatch(/NOT[_-]?FOUND/i)
+    }
+    expect(results[1]?.status).toBe("fulfilled")
+  }))
+
+test("session.exchange passive NOT_FOUND doesn't break concurrent ops on ops channel", () =>
+  withSession(async (session) => {
+    const okName = "test-passive-ex-concurrent-" + Math.random()
+    const results = await Promise.allSettled([
+      session.exchange("nope-ex-" + Math.random(), "direct", { passive: true }),
+      session.directExchange(okName, { durable: false, autoDelete: true }),
+    ])
+
+    expect(results[0]?.status).toBe("rejected")
+    expect(results[1]?.status).toBe("fulfilled")
+  }))
