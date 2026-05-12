@@ -1036,3 +1036,12 @@ test("queue options: arguments bundle alongside declaration parameters, no posit
       arguments: { "x-message-ttl": 30_000 },
     })
   }))
+
+test("AMQPSession is structurally assignable to AMQPSessionLike (compile-time)", () => {
+  // Pure type assertion — the import must compile, and the assignment
+  // must satisfy AMQPSessionLike. No runtime broker calls.
+  const checkAssignable = (
+    session: AMQPSession,
+  ): import("../src/amqp-mockable.js").AMQPSessionLike => session
+  expect(typeof checkAssignable).toBe("function")
+})
