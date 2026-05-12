@@ -65,8 +65,14 @@ export class AMQPExchange<
       defaults,
     )
     if (encoded.properties.deliveryMode === undefined) encoded.properties.deliveryMode = 2
-    const ch = confirm ? await this.session.getConfirmChannel() : await this.session.getOpsChannel()
-    await ch.basicPublish(this.name, routingKey, encoded.body, encoded.properties)
+    if (confirm) {
+      const ch = await this.session.getConfirmChannel()
+      await ch.basicPublish(this.name, routingKey, encoded.body, encoded.properties)
+    } else {
+      await this.session.withOpsChannel(async (ch) => {
+        await ch.basicPublish(this.name, routingKey, encoded.body, encoded.properties)
+      })
+    }
     return this
   }
 
@@ -81,8 +87,7 @@ export class AMQPExchange<
     args: Record<string, unknown> = {},
   ): Promise<AMQPExchange<P, C, KP, KC>> {
     const sourceName = typeof source === "string" ? source : source.name
-    const ch = await this.session.getOpsChannel()
-    await ch.exchangeBind(this.name, sourceName, routingKey, args)
+    await this.session.withOpsChannel((ch) => ch.exchangeBind(this.name, sourceName, routingKey, args))
     return this
   }
 
@@ -97,8 +102,7 @@ export class AMQPExchange<
     args: Record<string, unknown> = {},
   ): Promise<AMQPExchange<P, C, KP, KC>> {
     const sourceName = typeof source === "string" ? source : source.name
-    const ch = await this.session.getOpsChannel()
-    await ch.exchangeUnbind(this.name, sourceName, routingKey, args)
+    await this.session.withOpsChannel((ch) => ch.exchangeUnbind(this.name, sourceName, routingKey, args))
     return this
   }
 
@@ -107,7 +111,6 @@ export class AMQPExchange<
    * @param [params.ifUnused=false] - only delete if the exchange has no bindings
    */
   async delete(params?: { ifUnused?: boolean }): Promise<void> {
-    const ch = await this.session.getOpsChannel()
-    await ch.exchangeDelete(this.name, params)
+    await this.session.withOpsChannel((ch) => ch.exchangeDelete(this.name, params))
   }
 }
