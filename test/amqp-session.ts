@@ -998,3 +998,23 @@ test("ops channel: PRECONDITION_FAILED on mismatched declare doesn't disrupt sib
     expect(results[0]?.status).toBe("rejected")
     expect(results[1]?.status).toBe("fulfilled")
   }))
+
+test("subscription.cancel() swallows underlying consumer errors", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-cancel-throws-" + Math.random(), {
+      durable: false,
+      autoDelete: true,
+    })
+    const sub = await q.subscribe({ noAck: true }, () => {})
+
+    // Simulate the broker/channel dropping mid-cancel: stub the consumer's
+    // cancel to reject. Real-world equivalents include channel close
+    // racing with the basic.cancel RPC, broker errors during cancel, or
+    // the connection going away between the closed-check and the wire.
+    // Without the best-effort guard in AMQPSubscription.cancel, the
+    // rejection bubbles up and forces every caller to `.catch(() => {})`.
+    const internal = sub as unknown as { consumer: { cancel(): Promise<unknown> } }
+    internal.consumer.cancel = () => Promise.reject(new Error("simulated cancel failure"))
+
+    await expect(sub.cancel()).resolves.toBeUndefined()
+  }))
