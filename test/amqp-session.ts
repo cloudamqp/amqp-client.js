@@ -961,3 +961,40 @@ test("get() returns AMQPMessage with body", () =>
     expect(msg).toBeInstanceOf(AMQPMessage)
     expect(msg!.body).toBeInstanceOf(Uint8Array)
   }))
+
+test("ops channel: passive NOT_FOUND doesn't disrupt concurrent declares", () =>
+  withSession(async (session) => {
+    // Without the ops-channel mutex, the broker's NOT_FOUND close on the
+    // passive RPC would also fail concurrent declares in flight on the
+    // shared ops channel with a generic "channel closed" error.
+    const okName = "test-passive-concurrent-" + Math.random()
+    const results = await Promise.allSettled([
+      session.queue("nope-" + Math.random(), { passive: true }),
+      session.queue(okName, { durable: false, autoDelete: true }),
+    ])
+
+    expect(results[0]?.status).toBe("rejected")
+    if (results[0]?.status === "rejected") {
+      expect(String(results[0].reason)).toMatch(/NOT[_-]?FOUND/i)
+    }
+    expect(results[1]?.status).toBe("fulfilled")
+  }))
+
+test("ops channel: PRECONDITION_FAILED on mismatched declare doesn't disrupt siblings", () =>
+  withSession(async (session) => {
+    // Declare with one set of args, then attempt a conflicting declare
+    // concurrently with an unrelated declare. The conflict closes the
+    // channel — without the mutex the sibling declare fails too.
+    const name = "test-precondition-" + Math.random()
+    await session.queue(name, { durable: false, autoDelete: true })
+
+    const okName = "test-precondition-sibling-" + Math.random()
+    const results = await Promise.allSettled([
+      // Re-declare with conflicting args → PRECONDITION_FAILED → channel close.
+      session.queue(name, { durable: true }),
+      session.queue(okName, { durable: false, autoDelete: true }),
+    ])
+
+    expect(results[0]?.status).toBe("rejected")
+    expect(results[1]?.status).toBe("fulfilled")
+  }))

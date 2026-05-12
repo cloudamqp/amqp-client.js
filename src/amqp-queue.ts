@@ -85,8 +85,14 @@ export class AMQPQueue<
       defaults,
     )
     if (encoded.properties.deliveryMode === undefined) encoded.properties.deliveryMode = 2
-    const ch = confirm ? await this.session.getConfirmChannel() : await this.session.getOpsChannel()
-    await ch.basicPublish("", this.name, encoded.body, encoded.properties)
+    if (confirm) {
+      const ch = await this.session.getConfirmChannel()
+      await ch.basicPublish("", this.name, encoded.body, encoded.properties)
+    } else {
+      await this.session.withOpsChannel(async (ch) => {
+        await ch.basicPublish("", this.name, encoded.body, encoded.properties)
+      })
+    }
     return this
   }
 
@@ -145,8 +151,10 @@ export class AMQPQueue<
    * @param [params.noAck=true] - automatically acknowledge on delivery
    */
   async get(params?: { noAck?: boolean }): Promise<AMQPMessage<P> | null> {
-    const ch = await this.session.getOpsChannel()
-    const msg = await ch.basicGet(this.name, params)
+    // Hold the mutex only for the RPC. Decoding/decompression doesn't touch
+    // the channel and can be expensive (gzip etc.), so let other ops-channel
+    // work proceed in parallel with it.
+    const msg = await this.session.withOpsChannel((ch) => ch.basicGet(this.name, params))
     if (!msg) return null
     if (this.session.parsers || this.session.coders) {
       await decodeMessage(msg, this.session.parsers ?? {}, this.session.coders ?? {})
@@ -164,8 +172,7 @@ export class AMQPQueue<
     args: Record<string, unknown> = {},
   ): Promise<AMQPQueue<P, C, KP, KC>> {
     const exchangeName = typeof exchange === "string" ? exchange : exchange.name
-    const ch = await this.session.getOpsChannel()
-    await ch.queueBind(this.name, exchangeName, routingKey, args)
+    await this.session.withOpsChannel((ch) => ch.queueBind(this.name, exchangeName, routingKey, args))
     return this
   }
 
@@ -179,15 +186,13 @@ export class AMQPQueue<
     args: Record<string, unknown> = {},
   ): Promise<AMQPQueue<P, C, KP, KC>> {
     const exchangeName = typeof exchange === "string" ? exchange : exchange.name
-    const ch = await this.session.getOpsChannel()
-    await ch.queueUnbind(this.name, exchangeName, routingKey, args)
+    await this.session.withOpsChannel((ch) => ch.queueUnbind(this.name, exchangeName, routingKey, args))
     return this
   }
 
   /** Purge all messages from this queue. */
   async purge(): Promise<MessageCount> {
-    const ch = await this.session.getOpsChannel()
-    return ch.queuePurge(this.name)
+    return this.session.withOpsChannel((ch) => ch.queuePurge(this.name))
   }
 
   /**
@@ -196,8 +201,7 @@ export class AMQPQueue<
    * @param [params.ifEmpty=false] - only delete if the queue is empty
    */
   async delete(params?: { ifUnused?: boolean; ifEmpty?: boolean }): Promise<MessageCount> {
-    const ch = await this.session.getOpsChannel()
-    return ch.queueDelete(this.name, params)
+    return this.session.withOpsChannel((ch) => ch.queueDelete(this.name, params))
   }
 
   /**
