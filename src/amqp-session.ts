@@ -195,6 +195,34 @@ export class AMQPSession<
     return this.opsChannelPromise
   }
 
+  // Serializes operations on the shared ops channel. AMQP channel-level
+  // errors (NOT_FOUND on a passive declare, PRECONDITION_FAILED on
+  // mismatched declare args, exclusive conflicts, etc.) close the channel.
+  // Without a mutex, a concurrent RPC in flight on the same channel fails
+  // with a generic "channel closed" error that has nothing to do with what
+  // it was doing. Mirrors the Ruby client's single-connection invariant —
+  // throughput-wise this serializes declares + bind/unbind/purge/delete +
+  // basicGet + unconfirmed publishes; confirmed publishes (confirm channel)
+  // and consumers (dedicated channels via openChannel) are unaffected.
+  private opsLock: Promise<unknown> = Promise.resolve()
+
+  /**
+   * Run `fn` with exclusive access to the shared ops channel. Each caller
+   * waits for the previous one to settle, so a channel-closing RPC error
+   * never disrupts an unrelated op in flight.
+   * @internal
+   */
+  withOpsChannel<T>(fn: (ch: AMQPChannel) => Promise<T>): Promise<T> {
+    const result = this.opsLock.then(async () => {
+      const ch = await this.getOpsChannel()
+      return fn(ch)
+    })
+    // Chain even on rejection so a failing op doesn't deadlock subsequent
+    // callers. Errors propagate to the caller via the returned promise.
+    this.opsLock = result.catch(() => {})
+    return result
+  }
+
   /**
    * Return the shared confirm channel, opening and enabling publish confirms if needed.
    * Used by queue/exchange handles for confirmed publishes.
@@ -232,22 +260,14 @@ export class AMQPSession<
    * @param [args] - optional queue arguments (e.g. `x-message-ttl`)
    */
   async queue(name: string, params?: QueueParams, args?: Record<string, unknown>): Promise<AMQPQueue<P, C, KP, KC>> {
-    // Passive declares throw NOT_FOUND when the queue is missing, which the
-    // broker signals by closing the channel. Routing passive declares to a
-    // dedicated short-lived channel keeps that side effect from tearing down
-    // the session's shared ops channel and disrupting unrelated work.
-    const passive = params?.passive === true
-    const ch = passive ? await this.openChannel() : await this.getOpsChannel()
-    try {
+    return this.withOpsChannel(async (ch) => {
       const res = await ch.queueDeclare(name, params, args)
       const existing = this.queues.get(res.name)
       if (existing) return existing
       const q = new AMQPQueue<P, C, KP, KC>(this, res.name)
       this.queues.set(res.name, q)
       return q
-    } finally {
-      if (passive && !ch.closed) await ch.close().catch(() => {})
-    }
+    })
   }
 
   /**
@@ -263,17 +283,10 @@ export class AMQPSession<
     params?: ExchangeParams,
     args?: Record<string, unknown>,
   ): Promise<AMQPExchange<P, C, KP, KC>> {
-    // Passive declares throw NOT_FOUND when the exchange is missing, which
-    // the broker signals by closing the channel. Use a dedicated short-lived
-    // channel so the session's shared ops channel survives.
-    const passive = params?.passive === true
-    const ch = passive ? await this.openChannel() : await this.getOpsChannel()
-    try {
+    return this.withOpsChannel(async (ch) => {
       await ch.exchangeDeclare(name, type, params, args)
       return new AMQPExchange<P, C, KP, KC>(this, name)
-    } finally {
-      if (passive && !ch.closed) await ch.close().catch(() => {})
-    }
+    })
   }
 
   /**

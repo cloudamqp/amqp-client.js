@@ -962,12 +962,11 @@ test("get() returns AMQPMessage with body", () =>
     expect(msg!.body).toBeInstanceOf(Uint8Array)
   }))
 
-test("session.queue passive NOT_FOUND doesn't break concurrent ops on ops channel", () =>
+test("ops channel: passive NOT_FOUND doesn't disrupt concurrent declares", () =>
   withSession(async (session) => {
-    // Fire a passive-against-missing and a normal declare concurrently. They
-    // both go through getOpsChannel() — without dedicated routing for passive,
-    // the broker's NOT_FOUND close on the passive RPC also fails the
-    // concurrent normal declare with "channel closed".
+    // Without the ops-channel mutex, the broker's NOT_FOUND close on the
+    // passive RPC would also fail concurrent declares in flight on the
+    // shared ops channel with a generic "channel closed" error.
     const okName = "test-passive-concurrent-" + Math.random()
     const results = await Promise.allSettled([
       session.queue("nope-" + Math.random(), { passive: true }),
@@ -981,12 +980,19 @@ test("session.queue passive NOT_FOUND doesn't break concurrent ops on ops channe
     expect(results[1]?.status).toBe("fulfilled")
   }))
 
-test("session.exchange passive NOT_FOUND doesn't break concurrent ops on ops channel", () =>
+test("ops channel: PRECONDITION_FAILED on mismatched declare doesn't disrupt siblings", () =>
   withSession(async (session) => {
-    const okName = "test-passive-ex-concurrent-" + Math.random()
+    // Declare with one set of args, then attempt a conflicting declare
+    // concurrently with an unrelated declare. The conflict closes the
+    // channel — without the mutex the sibling declare fails too.
+    const name = "test-precondition-" + Math.random()
+    await session.queue(name, { durable: false, autoDelete: true })
+
+    const okName = "test-precondition-sibling-" + Math.random()
     const results = await Promise.allSettled([
-      session.exchange("nope-ex-" + Math.random(), "direct", { passive: true }),
-      session.directExchange(okName, { durable: false, autoDelete: true }),
+      // Re-declare with conflicting args → PRECONDITION_FAILED → channel close.
+      session.queue(name, { durable: true }),
+      session.queue(okName, { durable: false, autoDelete: true }),
     ])
 
     expect(results[0]?.status).toBe("rejected")
