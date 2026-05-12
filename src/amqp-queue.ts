@@ -151,14 +151,15 @@ export class AMQPQueue<
    * @param [params.noAck=true] - automatically acknowledge on delivery
    */
   async get(params?: { noAck?: boolean }): Promise<AMQPMessage<P> | null> {
-    return this.session.withOpsChannel(async (ch) => {
-      const msg = await ch.basicGet(this.name, params)
-      if (!msg) return null
-      if (this.session.parsers || this.session.coders) {
-        await decodeMessage(msg, this.session.parsers ?? {}, this.session.coders ?? {})
-      }
-      return msg as AMQPMessage<P>
-    })
+    // Hold the mutex only for the RPC. Decoding/decompression doesn't touch
+    // the channel and can be expensive (gzip etc.), so let other ops-channel
+    // work proceed in parallel with it.
+    const msg = await this.session.withOpsChannel((ch) => ch.basicGet(this.name, params))
+    if (!msg) return null
+    if (this.session.parsers || this.session.coders) {
+      await decodeMessage(msg, this.session.parsers ?? {}, this.session.coders ?? {})
+    }
+    return msg as AMQPMessage<P>
   }
 
   /**
