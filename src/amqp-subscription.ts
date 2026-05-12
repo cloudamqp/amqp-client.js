@@ -50,11 +50,21 @@ export class AMQPSubscription {
 
   /**
    * Cancel the subscription and remove it from session auto-recovery.
-   * Safe to call on a closed channel.
+   *
+   * Best-effort: never throws on wire-level failures. If the channel
+   * dropped mid-cancel or the broker is gone, the consumer is already
+   * effectively dead — there's nothing for the caller to recover from,
+   * so swallowing the error means call sites don't need `.catch(() => {})`
+   * boilerplate around every cancel.
    */
   async cancel(): Promise<void> {
     this.onCancel?.()
-    await this.consumer.cancel()
+    try {
+      await this.consumer.cancel()
+    } catch {
+      // Channel/connection closed before basic.cancel could complete —
+      // the consumer is gone either way.
+    }
   }
 
   /**
