@@ -188,6 +188,10 @@ export class AMQPQueue<
     return new Promise<AMQPMessage<P>>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined
       let settled = false
+      // Tracks whether a message was actually handed to the caller. Only the
+      // happy-path manual-ack flow needs the channel kept open; everything
+      // else (timeout, pre-delivery error, decode failure) should close it.
+      let delivered = false
       let consumer: AMQPConsumer | undefined
 
       const cleanup = async () => {
@@ -198,11 +202,10 @@ export class AMQPQueue<
           // Consumer cancel can fail if the channel/connection dropped; the
           // consumer is already effectively dead either way.
         }
-        // When the caller is responsible for acking (noAck:false), keep the
-        // channel open — `msg.ack()` is bound to this channel and closing it
-        // here would force the ack to fail. The channel goes away on
-        // session.stop(); the leak is per-call, bounded by caller behavior.
-        if (noAck && !ch.closed) await ch.close().catch(() => {})
+        // Keep the channel open only when the caller still needs it to ack
+        // a delivered message. Otherwise close it so we don't leak.
+        const keepOpenForCallerAck = !noAck && delivered
+        if (!keepOpenForCallerAck && !ch.closed) await ch.close().catch(() => {})
       }
 
       // Await cleanup before settling so callers can immediately call get()
@@ -216,30 +219,41 @@ export class AMQPQueue<
       }
 
       ch.basicConsume(this.name, { noAck: false }, async (msg) => {
-        if (settled) {
-          // Race: timeout fired between the broker dispatching the message
-          // and our callback running. Nack-requeue so the next consumer
-          // gets it.
-          await msg.nack(true).catch(() => {})
-          return
-        }
-        if (this.session.parsers || this.session.coders) {
-          await decodeMessage(msg, this.session.parsers ?? {}, this.session.coders ?? {})
-        }
-        if (noAck) {
-          try {
-            await msg.ack()
-          } catch (err) {
-            await finish(() => reject(err))
+        // The async callback's rejection would become unhandled and leave
+        // consumeOne pending forever — wrap the whole body so any throw
+        // (decode failure, ack error, etc.) settles the outer promise.
+        try {
+          if (settled) {
+            // Race: timeout/close fired between the broker dispatching the
+            // message and our callback running. Nack-requeue so the next
+            // consumer gets it.
+            await msg.nack(true).catch(() => {})
             return
           }
+          if (this.session.parsers || this.session.coders) {
+            await decodeMessage(msg, this.session.parsers ?? {}, this.session.coders ?? {})
+          }
+          if (noAck) await msg.ack()
+          delivered = true
+          await finish(() => resolve(msg as AMQPMessage<P>))
+        } catch (err) {
+          await finish(() => reject(err))
         }
-        await finish(() => resolve(msg as AMQPMessage<P>))
       })
         .then((c) => {
           consumer = c
-          if (settled) void cleanup()
-          else if (timeout !== undefined) {
+          if (settled) {
+            void cleanup()
+            return
+          }
+          // Reject if the consumer/channel/connection closes before we get
+          // a message — covers session.stop(), broker-driven cancel, and
+          // network drop. Without this, a no-timeout call hangs forever
+          // after disconnect.
+          c.wait()
+            .then(() => void finish(() => reject(new Error("consumeOne: consumer closed before delivery"))))
+            .catch((err) => void finish(() => reject(err)))
+          if (timeout !== undefined) {
             timer = setTimeout(
               () => void finish(() => reject(new Error(`consumeOne timed out after ${timeout}ms`))),
               timeout,

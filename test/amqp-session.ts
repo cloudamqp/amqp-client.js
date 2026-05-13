@@ -1100,3 +1100,33 @@ test("consumeOne with noAck:false delivers a message the caller must ack", () =>
     expect(msg.bodyString()).toBe("manual")
     await msg.ack()
   }))
+
+test("consumeOne timeout in noAck:false mode closes the channel (no leak)", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-consumeone-noleak-" + Math.random(), {
+      durable: false,
+      autoDelete: true,
+    })
+    const before = Object.keys(testClient(session).channels).length
+    await expect(q.consumeOne({ timeout: 50, noAck: false })).rejects.toThrow(/timed out/)
+    // Wait a tick for cleanup's channel-close to finalize.
+    await new Promise((r) => setTimeout(r, 20))
+    const after = Object.keys(testClient(session).channels).length
+    expect(after).toBe(before)
+  }))
+
+test("consumeOne rejects when the connection drops before delivery", () =>
+  withSession(
+    async (session) => {
+      const q = await session.queue("test-consumeone-drop-" + Math.random(), {
+        durable: false,
+        autoDelete: true,
+      })
+      const pending = q.consumeOne() // no timeout — would hang forever without close-detection
+      // Yield once so the consumer registers before we kill the socket.
+      await new Promise((r) => setTimeout(r, 50))
+      ;(testClient(session) as AMQPClient).socket?.destroy()
+      await expect(pending).rejects.toThrow()
+    },
+    { reconnectInterval: 50, maxRetries: 1 },
+  ))
