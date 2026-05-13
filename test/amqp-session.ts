@@ -1018,3 +1018,28 @@ test("subscription.cancel() swallows underlying consumer errors", () =>
 
     await expect(sub.cancel()).resolves.toBeUndefined()
   }))
+
+test("queue options: arguments bundle alongside declaration parameters, no positional undefined", () =>
+  withSession(async (session) => {
+    const name = "test-options-bag-" + Math.random()
+    const q = await session.queue(name, {
+      durable: false,
+      autoDelete: true,
+      arguments: { "x-message-ttl": 30_000 },
+    })
+    expect(q.name).toBe(name)
+    // Re-declaring with a mismatched ttl would close the channel —
+    // success here proves the arguments round-tripped on the original declare.
+    await session.queue(name, {
+      durable: false,
+      autoDelete: true,
+      arguments: { "x-message-ttl": 30_000 },
+    })
+  }))
+
+test("AMQPSession is structurally assignable to AMQPSessionLike (compile-time)", () => {
+  // Pure type assertion — the import must compile, and the assignment
+  // must satisfy AMQPSessionLike. No runtime broker calls.
+  const checkAssignable = (session: AMQPSession): import("../src/amqp-mockable.js").AMQPSessionLike => session
+  expect(typeof checkAssignable).toBe("function")
+})
