@@ -41,6 +41,7 @@ export interface AMQPQueueLike {
   ): Promise<AMQPSubscriptionLike>
   bind(exchange: string, routingKey?: string, args?: Record<string, unknown>): Promise<unknown>
   get(params?: { noAck?: boolean }): Promise<AMQPMessage | null>
+  consumeOne(options?: { timeout?: number }): Promise<AMQPMessage>
 }
 
 /** Minimum surface a mock exchange handle must expose. */

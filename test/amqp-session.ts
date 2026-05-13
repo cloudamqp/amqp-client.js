@@ -1043,3 +1043,75 @@ test("AMQPSession is structurally assignable to AMQPSessionLike (compile-time)",
   const checkAssignable = (session: AMQPSession): import("../src/amqp-mockable.js").AMQPSessionLike => session
   expect(typeof checkAssignable).toBe("function")
 })
+
+test("consumeOne resolves with the next delivered message and cancels the consumer", () =>
+  withSession(async (session) => {
+    // autoDelete:false so the queue survives the cancel inside consumeOne
+    // — otherwise the second-message assertion races queue teardown.
+    const q = await session.queue("test-consumeone-" + Math.random(), { durable: false, autoDelete: false })
+    try {
+      await q.publish("first")
+      await q.publish("second")
+
+      const msg = await q.consumeOne({ timeout: 1_000 })
+      expect(msg.bodyString()).toBe("first")
+
+      // consumeOne cancels its consumer after resolving, so the second
+      // message stays in the queue and basic.get can fetch it.
+      const remaining = await q.get({ noAck: true })
+      expect(remaining?.bodyString()).toBe("second")
+    } finally {
+      await q.delete()
+    }
+  }))
+
+test("consumeOne throws on timeout", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-consumeone-timeout-" + Math.random(), {
+      durable: false,
+      autoDelete: true,
+    })
+    await expect(q.consumeOne({ timeout: 100 })).rejects.toThrow(/consumeOne timed out after 100ms/)
+  }))
+
+test("consumeOne with no timeout waits forever (cancelled via timer)", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-consumeone-notimeout-" + Math.random(), {
+      durable: false,
+      autoDelete: true,
+    })
+    // Race the indefinite wait against a sentinel that publishes after a delay.
+    setTimeout(() => void q.publish("delivered"), 50)
+    const msg = await q.consumeOne()
+    expect(msg.bodyString()).toBe("delivered")
+  }))
+
+test("consumeOne closes its dedicated channel on timeout (no leak)", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-consumeone-noleak-" + Math.random(), {
+      durable: false,
+      autoDelete: true,
+    })
+    const before = Object.keys(testClient(session).channels).length
+    await expect(q.consumeOne({ timeout: 50 })).rejects.toThrow(/timed out/)
+    // Wait a tick for cleanup's channel-close to finalize.
+    await new Promise((r) => setTimeout(r, 20))
+    const after = Object.keys(testClient(session).channels).length
+    expect(after).toBe(before)
+  }))
+
+test("consumeOne rejects when the connection drops before delivery", () =>
+  withSession(
+    async (session) => {
+      const q = await session.queue("test-consumeone-drop-" + Math.random(), {
+        durable: false,
+        autoDelete: true,
+      })
+      const pending = q.consumeOne() // no timeout — would hang forever without close-detection
+      // Yield once so the consumer registers before we kill the socket.
+      await new Promise((r) => setTimeout(r, 50))
+      ;(testClient(session) as AMQPClient).socket?.destroy()
+      await expect(pending).rejects.toThrow()
+    },
+    { reconnectInterval: 50, maxRetries: 1 },
+  ))
