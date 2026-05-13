@@ -347,12 +347,14 @@ test("can handle nacks on confirm channel", async () => {
   await expect(ch.basicPublish("", q.name, "body")).rejects.toThrow("Message rejected")
 })
 
-test("throws on invalid exchange type", async () => {
+test("throws on unknown exchange type", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
   const ch = await conn.channel()
   const name = "test" + Math.random()
-  await expect(ch.exchangeDeclare(name, "none")).rejects.toThrow(/invalid exchange type/)
+  const unknownType = "unknowntype" + Math.random().toString(36).slice(2)
+  // LavinMQ < 2.8.0 reports "invalid exchange type"; newer LavinMQ and RabbitMQ report "unknown exchange type"
+  await expect(ch.exchangeDeclare(name, unknownType)).rejects.toThrow(/(unknown|invalid) exchange type/)
 })
 
 test("can declare an exchange", async () => {
@@ -683,9 +685,11 @@ test("has an onerror callback", async () => {
   const ch = await conn.channel()
   let errMessage: string | null = null
   ch.onerror = vi.fn((reason) => (errMessage = reason))
-  await expect(ch.exchangeDeclare("none", "none")).rejects.toThrow()
+  const unknownType = "unknowntype" + Math.random().toString(36).slice(2)
+  await expect(ch.exchangeDeclare("name" + Math.random(), unknownType)).rejects.toThrow()
   expect(ch.onerror).toBeCalled()
-  expect(errMessage).toMatch(/invalid exchange type/)
+  // LavinMQ < 2.8.0 reports "invalid exchange type"; newer LavinMQ and RabbitMQ report "unknown exchange type"
+  expect(errMessage).toMatch(/(unknown|invalid) exchange type/)
 })
 
 test("onerror is not called when conn is closed by client", async () => {
