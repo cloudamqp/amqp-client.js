@@ -1045,3 +1045,58 @@ test("AMQPSession is structurally assignable to AMQPSessionLike (compile-time)",
   ): import("../src/amqp-mockable.js").AMQPSessionLike => session
   expect(typeof checkAssignable).toBe("function")
 })
+
+test("consumeOne resolves with the next delivered message and cancels the consumer", () =>
+  withSession(async (session) => {
+    // autoDelete:false so the queue survives the cancel inside consumeOne
+    // — otherwise the second-message assertion races queue teardown.
+    const q = await session.queue("test-consumeone-" + Math.random(), { durable: false, autoDelete: false })
+    try {
+      await q.publish("first")
+      await q.publish("second")
+
+      const msg = await q.consumeOne({ timeout: 1_000 })
+      expect(msg.bodyString()).toBe("first")
+
+      // consumeOne cancels its consumer after resolving, so the second
+      // message stays in the queue and basic.get can fetch it.
+      const remaining = await q.get({ noAck: true })
+      expect(remaining?.bodyString()).toBe("second")
+    } finally {
+      await q.delete()
+    }
+  }))
+
+test("consumeOne throws on timeout", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-consumeone-timeout-" + Math.random(), {
+      durable: false,
+      autoDelete: true,
+    })
+    await expect(q.consumeOne({ timeout: 100 })).rejects.toThrow(/consumeOne timed out after 100ms/)
+  }))
+
+test("consumeOne with no timeout waits forever (cancelled via timer)", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-consumeone-notimeout-" + Math.random(), {
+      durable: false,
+      autoDelete: true,
+    })
+    // Race the indefinite wait against a sentinel that publishes after a delay.
+    setTimeout(() => void q.publish("delivered"), 50)
+    const msg = await q.consumeOne()
+    expect(msg.bodyString()).toBe("delivered")
+  }))
+
+test("consumeOne with noAck:false delivers a message the caller must ack", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-consumeone-manualack-" + Math.random(), {
+      durable: false,
+      autoDelete: true,
+    })
+    await q.publish("manual")
+
+    const msg = await q.consumeOne({ timeout: 1_000, noAck: false })
+    expect(msg.bodyString()).toBe("manual")
+    await msg.ack()
+  }))
