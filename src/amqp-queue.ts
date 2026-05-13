@@ -172,26 +172,21 @@ export class AMQPQueue<
    * Throws when `timeout` elapses with no delivery — distinct from `get()`'s
    * `null` return, so callers can't conflate "nothing" with "deadline missed".
    *
-   * Always uses wire-level `noAck: false` with `prefetch: 1` so the broker
-   * holds the queue at a single in-flight delivery; messages beyond the one
-   * returned stay in the queue for the next consumer.
+   * The library acks the delivered message before resolving and uses
+   * wire-level `noAck: false` with `prefetch: 1` so the broker holds the
+   * queue at a single in-flight delivery; messages beyond the one returned
+   * stay in the queue for the next consumer.
    *
    * @param [options.timeout] - max wait in milliseconds (omit to wait forever)
-   * @param [options.noAck=true] - if true (default), the library acks the
-   *   message before returning; if false, the caller must call `msg.ack()`.
    */
-  async consumeOne(options: { timeout?: number; noAck?: boolean } = {}): Promise<AMQPMessage<P>> {
-    const { timeout, noAck = true } = options
+  async consumeOne(options: { timeout?: number } = {}): Promise<AMQPMessage<P>> {
+    const { timeout } = options
     const ch = await this.session.openChannel()
     await ch.basicQos(1)
 
     return new Promise<AMQPMessage<P>>((resolve, reject) => {
       let timer: ReturnType<typeof setTimeout> | undefined
       let settled = false
-      // Tracks whether a message was actually handed to the caller. Only the
-      // happy-path manual-ack flow needs the channel kept open; everything
-      // else (timeout, pre-delivery error, decode failure) should close it.
-      let delivered = false
       let consumer: AMQPConsumer | undefined
 
       const cleanup = async () => {
@@ -202,10 +197,7 @@ export class AMQPQueue<
           // Consumer cancel can fail if the channel/connection dropped; the
           // consumer is already effectively dead either way.
         }
-        // Keep the channel open only when the caller still needs it to ack
-        // a delivered message. Otherwise close it so we don't leak.
-        const keepOpenForCallerAck = !noAck && delivered
-        if (!keepOpenForCallerAck && !ch.closed) await ch.close().catch(() => {})
+        if (!ch.closed) await ch.close().catch(() => {})
       }
 
       // Await cleanup before settling so callers can immediately call get()
@@ -233,8 +225,7 @@ export class AMQPQueue<
           if (this.session.parsers || this.session.coders) {
             await decodeMessage(msg, this.session.parsers ?? {}, this.session.coders ?? {})
           }
-          if (noAck) await msg.ack()
-          delivered = true
+          await msg.ack()
           await finish(() => resolve(msg as AMQPMessage<P>))
         } catch (err) {
           await finish(() => reject(err))

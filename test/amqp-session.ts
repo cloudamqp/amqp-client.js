@@ -1088,27 +1088,14 @@ test("consumeOne with no timeout waits forever (cancelled via timer)", () =>
     expect(msg.bodyString()).toBe("delivered")
   }))
 
-test("consumeOne with noAck:false delivers a message the caller must ack", () =>
-  withSession(async (session) => {
-    const q = await session.queue("test-consumeone-manualack-" + Math.random(), {
-      durable: false,
-      autoDelete: true,
-    })
-    await q.publish("manual")
-
-    const msg = await q.consumeOne({ timeout: 1_000, noAck: false })
-    expect(msg.bodyString()).toBe("manual")
-    await msg.ack()
-  }))
-
-test("consumeOne timeout in noAck:false mode closes the channel (no leak)", () =>
+test("consumeOne closes its dedicated channel on timeout (no leak)", () =>
   withSession(async (session) => {
     const q = await session.queue("test-consumeone-noleak-" + Math.random(), {
       durable: false,
       autoDelete: true,
     })
     const before = Object.keys(testClient(session).channels).length
-    await expect(q.consumeOne({ timeout: 50, noAck: false })).rejects.toThrow(/timed out/)
+    await expect(q.consumeOne({ timeout: 50 })).rejects.toThrow(/timed out/)
     // Wait a tick for cleanup's channel-close to finalize.
     await new Promise((r) => setTimeout(r, 20))
     const after = Object.keys(testClient(session).channels).length
