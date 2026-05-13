@@ -10,7 +10,13 @@ export type { ResolveMessageBody } from "./amqp-publisher.js"
 export { AMQPProperties, Field } from "./amqp-properties.js"
 export { AMQPTlsOptions } from "./amqp-tls-options.js"
 export { AMQPSession } from "./amqp-session.js"
-export type { AMQPSessionOptions } from "./amqp-session.js"
+export type { AMQPSessionOptions, ExchangeOptions, QueueOptions } from "./amqp-session.js"
+export type {
+  AMQPExchangeLike,
+  AMQPQueueLike,
+  AMQPSessionLike,
+  AMQPSubscriptionLike,
+} from "./amqp-mockable.js"
 export { AMQPExchange } from "./amqp-exchange.js"
 export type { ExchangePublishOptions } from "./amqp-exchange.js"
 export { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription.js"

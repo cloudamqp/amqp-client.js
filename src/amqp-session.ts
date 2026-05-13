@@ -1,5 +1,28 @@
 import type { AMQPBaseClient } from "./amqp-base-client.js"
 import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./amqp-channel.js"
+
+/**
+ * Options for {@link AMQPSession#queue}. Combines queue declaration
+ * parameters (`passive`, `durable`, `autoDelete`, `exclusive`) with the
+ * queue arguments table (`x-message-ttl`, `x-delivery-limit`, ...) so
+ * callers don't have to pass `undefined` placeholders to reach the
+ * arguments table.
+ */
+export type QueueOptions = QueueParams & {
+  /** Queue arguments table (e.g. `{ "x-delivery-limit": 3 }`). */
+  arguments?: Record<string, unknown>
+}
+
+/**
+ * Options for {@link AMQPSession#exchange} and the typed-exchange
+ * shortcuts. Combines exchange declaration parameters (`passive`,
+ * `durable`, `autoDelete`, `internal`) with the exchange arguments table
+ * (`x-delayed-type`, `alternate-exchange`, ...).
+ */
+export type ExchangeOptions = ExchangeParams & {
+  /** Exchange arguments table (e.g. `{ "x-delayed-type": "direct" }`). */
+  arguments?: Record<string, unknown>
+}
 import type { ParserMap, CoderMap, ParserRegistry, CoderRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { ResolveBody } from "./amqp-publisher.js"
@@ -256,12 +279,12 @@ export class AMQPSession<
    * The returned queue's `subscribe` uses auto-recovery and `publish` waits for
    * a broker confirm.
    * @param name - queue name (use "" to let the broker generate a name)
-   * @param [params] - queue declaration parameters
-   * @param [args] - optional queue arguments (e.g. `x-message-ttl`)
+   * @param [options] - queue declaration parameters and queue arguments
    */
-  async queue(name: string, params?: QueueParams, args?: Record<string, unknown>): Promise<AMQPQueue<P, C, KP, KC>> {
+  async queue(name: string, options?: QueueOptions): Promise<AMQPQueue<P, C, KP, KC>> {
+    const { arguments: queueArguments, ...declarationParams } = options ?? {}
     return this.withOpsChannel(async (ch) => {
-      const res = await ch.queueDeclare(name, params, args)
+      const res = await ch.queueDeclare(name, declarationParams, queueArguments)
       const existing = this.queues.get(res.name)
       if (existing) return existing
       const q = new AMQPQueue<P, C, KP, KC>(this, res.name)
@@ -274,17 +297,16 @@ export class AMQPSession<
    * Declare an exchange and return a session-bound {@link AMQPExchange} handle.
    * @param name - exchange name
    * @param type - exchange type: `"direct"`, `"fanout"`, `"topic"`, `"headers"`, or a custom type
-   * @param [params] - exchange declaration parameters
-   * @param [args] - optional exchange arguments
+   * @param [options] - exchange declaration parameters and exchange arguments
    */
   async exchange(
     name: string,
     type: ExchangeType,
-    params?: ExchangeParams,
-    args?: Record<string, unknown>,
+    options?: ExchangeOptions,
   ): Promise<AMQPExchange<P, C, KP, KC>> {
+    const { arguments: exchangeArguments, ...declarationParams } = options ?? {}
     return this.withOpsChannel(async (ch) => {
-      await ch.exchangeDeclare(name, type, params, args)
+      await ch.exchangeDeclare(name, type, declarationParams, exchangeArguments)
       return new AMQPExchange<P, C, KP, KC>(this, name)
     })
   }
@@ -293,49 +315,33 @@ export class AMQPSession<
    * Declare a direct exchange and return a session-bound {@link AMQPExchange} handle.
    * @param [name="amq.direct"] - exchange name
    */
-  async directExchange(
-    name = "amq.direct",
-    params?: ExchangeParams,
-    args?: Record<string, unknown>,
-  ): Promise<AMQPExchange<P, C, KP, KC>> {
+  async directExchange(name = "amq.direct", options?: ExchangeOptions): Promise<AMQPExchange<P, C, KP, KC>> {
     if (name === "") return new AMQPExchange<P, C, KP, KC>(this, "") // default exchange — no declare needed
-    return this.exchange(name, "direct", params, args)
+    return this.exchange(name, "direct", options)
   }
 
   /**
    * Declare a fanout exchange and return a session-bound {@link AMQPExchange} handle.
    * @param [name="amq.fanout"] - exchange name
    */
-  fanoutExchange(
-    name = "amq.fanout",
-    params?: ExchangeParams,
-    args?: Record<string, unknown>,
-  ): Promise<AMQPExchange<P, C, KP, KC>> {
-    return this.exchange(name, "fanout", params, args)
+  fanoutExchange(name = "amq.fanout", options?: ExchangeOptions): Promise<AMQPExchange<P, C, KP, KC>> {
+    return this.exchange(name, "fanout", options)
   }
 
   /**
    * Declare a topic exchange and return a session-bound {@link AMQPExchange} handle.
    * @param [name="amq.topic"] - exchange name
    */
-  topicExchange(
-    name = "amq.topic",
-    params?: ExchangeParams,
-    args?: Record<string, unknown>,
-  ): Promise<AMQPExchange<P, C, KP, KC>> {
-    return this.exchange(name, "topic", params, args)
+  topicExchange(name = "amq.topic", options?: ExchangeOptions): Promise<AMQPExchange<P, C, KP, KC>> {
+    return this.exchange(name, "topic", options)
   }
 
   /**
    * Declare a headers exchange and return a session-bound {@link AMQPExchange} handle.
    * @param [name="amq.headers"] - exchange name
    */
-  headersExchange(
-    name = "amq.headers",
-    params?: ExchangeParams,
-    args?: Record<string, unknown>,
-  ): Promise<AMQPExchange<P, C, KP, KC>> {
-    return this.exchange(name, "headers", params, args)
+  headersExchange(name = "amq.headers", options?: ExchangeOptions): Promise<AMQPExchange<P, C, KP, KC>> {
+    return this.exchange(name, "headers", options)
   }
 
   /**
