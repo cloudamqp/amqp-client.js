@@ -77,6 +77,37 @@ test("subscription.cancel() removes it from session recovery", () =>
     await expect(sub.cancel()).resolves.toBeUndefined()
   }))
 
+test("subscription.cancel() closes the dedicated channel", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-cancel-channel-" + Math.random(), { durable: false, autoDelete: true })
+    const sub = await q.subscribe({ noAck: true }, () => {})
+    const ch = sub.channel
+
+    expect(ch.closed).toBe(false)
+    await sub.cancel()
+    expect(ch.closed).toBe(true)
+  }))
+
+test("repeated subscribe/cancel does not leak channels", () =>
+  withSession(async (session) => {
+    // autoDelete: false so the queue survives between subscribe/cancel cycles.
+    const q = await session.queue("test-cancel-leak-" + Math.random(), { durable: false, autoDelete: false })
+    try {
+      const client = testClient(session)
+      const openCount = () => client.channels.filter(Boolean).length
+      const before = openCount()
+
+      for (let i = 0; i < 5; i++) {
+        const sub = await q.subscribe({ noAck: true }, () => {})
+        await sub.cancel()
+      }
+
+      expect(openCount()).toBe(before)
+    } finally {
+      await q.delete()
+    }
+  }))
+
 test("session.subscribe supports prefetch option", () =>
   withSession(async (session) => {
     const q = await session.queue("test-prefetch-queue-" + Math.random(), { durable: false, autoDelete: true })

@@ -49,7 +49,13 @@ export class AMQPSubscription {
   }
 
   /**
-   * Cancel the subscription and remove it from session auto-recovery.
+   * Cancel the subscription, close its dedicated channel, and remove it
+   * from session auto-recovery.
+   *
+   * The subscription owns the channel that `queue.subscribe()` opened
+   * for it, so cancelling here also closes that channel — otherwise
+   * each cancelled subscription leaks a channel until the connection
+   * drops.
    *
    * Best-effort: never throws on wire-level failures. If the channel
    * dropped mid-cancel or the broker is gone, the consumer is already
@@ -59,11 +65,19 @@ export class AMQPSubscription {
    */
   async cancel(): Promise<void> {
     this.onCancel?.()
+    const ch = this.consumer.channel
     try {
       await this.consumer.cancel()
     } catch {
       // Channel/connection closed before basic.cancel could complete —
       // the consumer is gone either way.
+    }
+    if (!ch.closed) {
+      try {
+        await ch.close()
+      } catch {
+        // Channel/connection dropped before close could complete.
+      }
     }
   }
 
