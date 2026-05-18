@@ -147,52 +147,88 @@ test("session.subscribe yields messages via async generator", () =>
     await sub.cancel()
   }))
 
-test("session.onfailed fires when maxRetries exhausted", () =>
-  withSession(
-    async (session) => {
-      const onfailed = vi.fn()
-      session.onfailed = onfailed
+test("onfailed fires when maxRetries exhausted", async () => {
+  const onfailed = vi.fn()
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    reconnectInterval: 50,
+    maxRetries: 2,
+    onfailed,
+  })
+  try {
+    const client = testClient(session)
+    const connectSpy = vi.spyOn(client, "connect").mockRejectedValue(new Error("forced failure"))
 
-      const client = testClient(session)
-      const connectSpy = vi.spyOn(client, "connect").mockRejectedValue(new Error("forced failure"))
+    ;(client as AMQPClient).socket?.destroy()
 
-      ;(client as AMQPClient).socket?.destroy()
+    // Wait long enough for 2 retries + backoff (50ms + 100ms) with buffer
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
-      // Wait long enough for 2 retries + backoff (50ms + 100ms) with buffer
-      await new Promise((resolve) => setTimeout(resolve, 500))
+    expect(onfailed).toHaveBeenCalledTimes(1)
+    expect(onfailed.mock.calls[0]?.[0]).toBeInstanceOf(Error)
+    expect(connectSpy).toHaveBeenCalledTimes(2)
 
-      expect(onfailed).toHaveBeenCalledTimes(1)
-      expect(onfailed.mock.calls[0]?.[0]).toBeInstanceOf(Error)
-      expect(connectSpy).toHaveBeenCalledTimes(2)
+    connectSpy.mockRestore()
+  } finally {
+    await session.stop()
+  }
+})
 
-      connectSpy.mockRestore()
-    },
-    { reconnectInterval: 50, maxRetries: 2 },
-  ))
+test("onconnect fires on the initial connect", async () => {
+  const onconnect = vi.fn()
+  const session = await AMQPSession.connect("amqp://127.0.0.1", { onconnect })
+  try {
+    expect(onconnect).toHaveBeenCalledTimes(1)
+  } finally {
+    await session.stop()
+  }
+})
 
-test("session.onconnect fires after successful reconnection", () =>
-  withSession(
-    async (session) => {
-      let reconnectCount = 0
-      const reconnected = new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error("onconnect did not fire within 5s")), 5_000)
-        session.onconnect = () => {
+test("onconnect fires after successful reconnection", async () => {
+  let count = 0
+  const reconnected = new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("onconnect did not fire within 5s")), 5_000)
+    const session = AMQPSession.connect("amqp://127.0.0.1", {
+      reconnectInterval: 50,
+      maxRetries: 5,
+      onconnect: () => {
+        count++
+        if (count === 2) {
           clearTimeout(timeout)
-          reconnectCount++
           resolve()
         }
-      })
+      },
+    })
+    session.then((s) => (testClient(s) as AMQPClient).socket?.destroy()).catch(reject)
+  })
+  await reconnected
+  expect(count).toBe(2)
+})
 
-      ;(testClient(session) as AMQPClient).socket?.destroy()
+test("ondisconnect fires when the connection drops", async () => {
+  const ondisconnect = vi.fn()
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    reconnectInterval: 50,
+    maxRetries: 5,
+    ondisconnect,
+  })
+  try {
+    ;(testClient(session) as AMQPClient).socket?.destroy()
+    // Give the disconnect callback time to fire before the reconnect kicks in.
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(ondisconnect).toHaveBeenCalledTimes(1)
+  } finally {
+    await session.stop()
+  }
+})
 
-      await reconnected
-      expect(reconnectCount).toBe(1)
-    },
-    { reconnectInterval: 50, maxRetries: 5 },
-  ))
-
-test("subscription recovers and receives messages after reconnection", () =>
-  withSession(
+test("subscription recovers and receives messages after reconnection", async () => {
+  let connectCount = 0
+  let resolveReconnected!: () => void
+  const reconnected = new Promise<void>((resolve, reject) => {
+    resolveReconnected = resolve
+    setTimeout(() => reject(new Error("Reconnection timed out")), 10_000)
+  })
+  await withSession(
     async (session) => {
       const q = await session.queue("test-recovery-" + Math.random(), { durable: false, autoDelete: false })
 
@@ -204,15 +240,6 @@ test("subscription recovers and receives messages after reconnection", () =>
       // Publish a message before disconnect
       await q.publish("before-disconnect", { confirm: false })
       await new Promise((resolve) => setTimeout(resolve, 100))
-
-      const reconnected = new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error("Reconnection timed out")), 10_000)
-        session.onconnect = () => {
-          clearTimeout(timeout)
-          resolve()
-        }
-      })
-
       ;(testClient(session) as AMQPClient).socket?.destroy()
 
       await reconnected
@@ -230,8 +257,16 @@ test("subscription recovers and receives messages after reconnection", () =>
       await sub.cancel()
       await q.delete()
     },
-    { reconnectInterval: 50, maxRetries: 5 },
-  ))
+    {
+      reconnectInterval: 50,
+      maxRetries: 5,
+      onconnect: () => {
+        connectCount++
+        if (connectCount === 2) resolveReconnected()
+      },
+    },
+  )
+})
 
 test("session.stop() during reconnection stops the loop", () =>
   withSession(
@@ -330,8 +365,14 @@ test("AMQPExchange.publish() honors explicit deliveryMode: 1 (transient)", () =>
     expect(msg?.properties.deliveryMode).toBe(1)
   }))
 
-test("AMQPQueue (session-backed).subscribe() recovers after reconnect", () =>
-  withSession(
+test("AMQPQueue (session-backed).subscribe() recovers after reconnect", async () => {
+  let connectCount = 0
+  let resolveReconnected!: () => void
+  const reconnected = new Promise<void>((resolve, reject) => {
+    resolveReconnected = resolve
+    setTimeout(() => reject(new Error("reconnect timed out")), 10_000)
+  })
+  await withSession(
     async (session) => {
       const qName = "test-sq-recovery-" + Math.random()
 
@@ -344,14 +385,6 @@ test("AMQPQueue (session-backed).subscribe() recovers after reconnect", () =>
 
       await q.publish("before-disconnect")
       await new Promise((resolve) => setTimeout(resolve, 100))
-
-      const reconnected = new Promise<void>((resolve, reject) => {
-        const t = setTimeout(() => reject(new Error("reconnect timed out")), 10_000)
-        session.onconnect = () => {
-          clearTimeout(t)
-          resolve()
-        }
-      })
       ;(testClient(session) as AMQPClient).socket?.destroy()
       await reconnected
 
@@ -364,8 +397,16 @@ test("AMQPQueue (session-backed).subscribe() recovers after reconnect", () =>
       await sub.cancel()
       await q.delete()
     },
-    { reconnectInterval: 50, maxRetries: 5 },
-  ))
+    {
+      reconnectInterval: 50,
+      maxRetries: 5,
+      onconnect: () => {
+        connectCount++
+        if (connectCount === 2) resolveReconnected()
+      },
+    },
+  )
+})
 
 test("session.exchange() declares an exchange and returns AMQPExchange", () =>
   withSession(async (session) => {

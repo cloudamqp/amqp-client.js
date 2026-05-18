@@ -70,6 +70,20 @@ export interface AMQPSessionOptions<
    * Defaults to `"/"` for WebSocket connections and to the URL path for TCP connections.
    */
   vhost?: string
+  /**
+   * Fires after a successful connection — both the initial connect and every
+   * reconnect after consumer recovery completes. Registering here rather than
+   * after `connect()` resolves means a single handler covers both code paths.
+   */
+  onconnect?: () => void
+  /**
+   * Fires when the underlying connection drops, before the reconnect loop
+   * starts. Useful for visibility into the gap between disconnect and
+   * reconnect.
+   */
+  ondisconnect?: (error?: Error) => void
+  /** Fires when max reconnect retries are exhausted. */
+  onfailed?: (error?: Error) => void
 }
 
 /**
@@ -88,10 +102,9 @@ export class AMQPSession<
   KP extends keyof P & string = never,
   KC extends keyof C & string = never,
 > {
-  /** Fires after a successful (re)connection and consumer recovery */
-  onconnect?: () => void
-  /** Fires when max retries are exhausted */
-  onfailed?: (error?: Error) => void
+  private readonly onconnect?: () => void
+  private readonly ondisconnect?: (error?: Error) => void
+  private readonly onfailed?: (error?: Error) => void
 
   private readonly client: AMQPBaseClient
 
@@ -142,17 +155,21 @@ export class AMQPSession<
     if (options?.coders) this.coders = options.coders
     if (options?.defaultContentType) this.defaultContentType = options.defaultContentType
     if (options?.defaultContentEncoding) this.defaultContentEncoding = options.defaultContentEncoding
+    if (options?.onconnect) this.onconnect = options.onconnect
+    if (options?.ondisconnect) this.ondisconnect = options.ondisconnect
+    if (options?.onfailed) this.onfailed = options.onfailed
     this.options = {
       reconnectInterval: options?.reconnectInterval ?? 1000,
       maxReconnectInterval: options?.maxReconnectInterval ?? 30000,
       backoffMultiplier: options?.backoffMultiplier ?? 2,
       maxRetries: options?.maxRetries ?? 0,
     }
-    this.client.ondisconnect = () => {
+    this.client.ondisconnect = (err) => {
       this.opsChannel = null
       this.confirmChannel = null
       this.opsChannelPromise = null
       this.confirmChannelPromise = null
+      this.ondisconnect?.(err)
       if (!this.stopped && !this.reconnecting) {
         void this.reconnectLoop()
       }
@@ -196,7 +213,9 @@ export class AMQPSession<
       client = new AMQPClient(url, options?.tlsOptions, options?.logger)
     }
     await client.connect()
-    return new AMQPSession(client, options)
+    const session = new AMQPSession(client, options)
+    options?.onconnect?.()
+    return session
   }
 
   /**
