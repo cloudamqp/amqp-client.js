@@ -70,10 +70,10 @@ const session = await AMQPSession.connect("amqp://localhost", {
   maxReconnectInterval: 30000, // maximum delay between attempts (ms)
   backoffMultiplier: 2, // exponential backoff multiplier
   maxRetries: 0, // 0 = infinite retries
+  onconnect: () => console.log("Connected"), // fires on initial connect + each reconnect
+  ondisconnect: (err) => console.warn("Disconnected:", err?.message),
+  onfailed: (err) => console.error("Gave up:", err?.message),
 })
-
-session.onconnect = () => console.log("Reconnected!")
-session.onfailed = (err) => console.error("Gave up:", err?.message)
 ```
 
 #### Consumer recovery
