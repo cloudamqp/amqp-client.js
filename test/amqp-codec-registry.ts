@@ -166,6 +166,27 @@ describe("builtin parsers and coders", () => {
       ).toThrow(/No coder registered/)
     })
 
+    test("contentEncoding 'identity' is a no-op even with no coders", async () => {
+      const { body, properties } = await serializeAndEncode(builtinParsers, noCoders, "hello", {
+        contentType: "text/plain",
+        contentEncoding: "identity",
+      })
+      expect(properties.contentEncoding).toBe("identity")
+      expect(new TextDecoder().decode(body)).toBe("hello")
+
+      const parsed = await decodeAndParse(builtinParsers, noCoders, body, properties)
+      expect(parsed).toBe("hello")
+    })
+
+    test("contentEncoding 'identity' is case-insensitive", async () => {
+      const { body, properties } = await serializeAndEncode(builtinParsers, noCoders, "hi", {
+        contentType: "text/plain",
+        contentEncoding: "Identity",
+      })
+      const parsed = await decodeAndParse(builtinParsers, noCoders, body, properties)
+      expect(parsed).toBe("hi")
+    })
+
     test("throws for non-bytes body without contentType", () => {
       expect(() => serializeAndEncode(noParsers, noCoders, { foo: "bar" }, {})).toThrow(/no contentType specified/)
     })

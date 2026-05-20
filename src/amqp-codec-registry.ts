@@ -152,7 +152,7 @@ export function serializeAndEncode(
     )
   }
 
-  if (props.contentEncoding) {
+  if (props.contentEncoding && props.contentEncoding.toLowerCase() !== "identity") {
     const coder = coders[props.contentEncoding]
     if (!coder) {
       throw new Error(`No coder registered for content-encoding "${props.contentEncoding}".`)
@@ -169,7 +169,7 @@ export function decodeAndParse(
   body: Uint8Array,
   properties: AMQPProperties,
 ): Promise<unknown> | unknown {
-  if (properties.contentEncoding) {
+  if (properties.contentEncoding && properties.contentEncoding.toLowerCase() !== "identity") {
     const coder = coders[properties.contentEncoding]
     if (!coder) {
       throw new Error(`No coder registered for content-encoding "${properties.contentEncoding}".`)
