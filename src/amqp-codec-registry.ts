@@ -102,6 +102,30 @@ const DeflateCoder: AMQPCoder = {
 }
 
 /**
+ * Raw DEFLATE coder (RFC 1951 — no zlib header, no Adler-32 checksum).
+ * Not registered by default. Use to interoperate with producers that emit
+ * raw DEFLATE under `content-encoding: deflate`, the same ambiguity HTTP
+ * has carried for decades and that Node's `zlib.deflateRawSync` exists for.
+ *
+ * @example
+ * ```ts
+ * import { AMQPSession, builtinCoders, deflateRawCoder } from "@cloudamqp/amqp-client"
+ *
+ * const session = await AMQPSession.connect(url, {
+ *   coders: { ...builtinCoders, deflate: deflateRawCoder },
+ * })
+ * ```
+ */
+export const deflateRawCoder: AMQPCoder = {
+  encode(body: Uint8Array): Promise<Uint8Array> {
+    return compressWithStream(body, "deflate-raw")
+  },
+  decode(body: Uint8Array): Promise<Uint8Array> {
+    return decompressWithStream(body, "deflate-raw")
+  },
+}
+
+/**
  * Built-in parsers for `text/plain` and `application/json`.
  * Use directly, or merge with custom parsers via spread:
  * `{ ...builtinParsers, "text/csv": csvParser }`.
