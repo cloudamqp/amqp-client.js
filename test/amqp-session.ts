@@ -221,6 +221,56 @@ test("ondisconnect fires when the connection drops", async () => {
   }
 })
 
+test("logger: logs initial connect, disconnect, reconnect with name prefix", async () => {
+  const info = vi.fn()
+  const warn = vi.fn()
+  const logger = { debug: vi.fn(), info, warn, error: vi.fn() }
+  let count = 0
+  let resolveReconnected!: () => void
+  const reconnected = new Promise<void>((resolve, reject) => {
+    resolveReconnected = resolve
+    setTimeout(() => reject(new Error("Reconnection timed out")), 10_000)
+  })
+  const session = await AMQPSession.connect("amqp://127.0.0.1?name=my-app", {
+    logger,
+    reconnectInterval: 50,
+    maxRetries: 5,
+    onconnect: () => {
+      count++
+      if (count === 2) resolveReconnected()
+    },
+  })
+  try {
+    expect(info).toHaveBeenCalledWith("AMQPSession[my-app]: connected")
+    ;(testClient(session) as AMQPClient).socket?.destroy()
+    await reconnected
+    expect(warn).toHaveBeenCalledWith("AMQPSession[my-app]: disconnected")
+    expect(info).toHaveBeenCalledWith("AMQPSession[my-app]: reconnected")
+  } finally {
+    await session.stop()
+  }
+})
+
+test("logger: logs reconnect gave up when maxRetries exhausted", async () => {
+  const error = vi.fn()
+  const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error }
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    logger,
+    reconnectInterval: 50,
+    maxRetries: 2,
+  })
+  try {
+    const client = testClient(session)
+    const connectSpy = vi.spyOn(client, "connect").mockRejectedValue(new Error("forced failure"))
+    ;(client as AMQPClient).socket?.destroy()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    expect(error).toHaveBeenCalledWith("AMQPSession: reconnect gave up")
+    connectSpy.mockRestore()
+  } finally {
+    await session.stop()
+  }
+})
+
 test("subscription recovers and receives messages after reconnection", async () => {
   let connectCount = 0
   let resolveReconnected!: () => void
