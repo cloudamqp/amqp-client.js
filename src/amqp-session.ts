@@ -301,6 +301,10 @@ export class AMQPSession<
    * @param [options] - queue declaration parameters and queue arguments
    */
   async queue(name: string, options?: QueueOptions): Promise<AMQPQueue<P, C, KP, KC>> {
+    if (options === undefined && name !== "") {
+      const cached = this.queues.get(name)
+      if (cached) return cached
+    }
     const { arguments: queueArguments, ...declarationParams } = options ?? {}
     return this.withOpsChannel(async (ch) => {
       const res = await ch.queueDeclare(name, declarationParams, queueArguments)
