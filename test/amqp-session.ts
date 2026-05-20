@@ -1067,22 +1067,28 @@ test("ops channel: passive NOT_FOUND doesn't disrupt concurrent declares", () =>
   }))
 
 test("ops channel: PRECONDITION_FAILED on mismatched declare doesn't disrupt siblings", () =>
-  withSession(async (session) => {
-    // Declare with one set of args, then attempt a conflicting declare
-    // concurrently with an unrelated declare. The conflict closes the
-    // channel — without the mutex the sibling declare fails too.
+  withSession(async (owner) => {
+    // Declare the queue from one session, then from a second session declare
+    // it with conflicting args concurrently with an unrelated declare. The
+    // conflict closes the second session's ops channel — without the mutex
+    // the sibling declare would fail too. Two sessions because cache-wins
+    // makes a same-session re-declare a no-op.
     const name = "test-precondition-" + Math.random()
-    await session.queue(name, { durable: false, autoDelete: true })
+    const queue = await owner.queue(name, { durable: false, autoDelete: true })
+    try {
+      await withSession(async (session) => {
+        const okName = "test-precondition-sibling-" + Math.random()
+        const results = await Promise.allSettled([
+          session.queue(name, { durable: true }),
+          session.queue(okName, { durable: false, autoDelete: true }),
+        ])
 
-    const okName = "test-precondition-sibling-" + Math.random()
-    const results = await Promise.allSettled([
-      // Re-declare with conflicting args → PRECONDITION_FAILED → channel close.
-      session.queue(name, { durable: true }),
-      session.queue(okName, { durable: false, autoDelete: true }),
-    ])
-
-    expect(results[0]?.status).toBe("rejected")
-    expect(results[1]?.status).toBe("fulfilled")
+        expect(results[0]?.status).toBe("rejected")
+        expect(results[1]?.status).toBe("fulfilled")
+      })
+    } finally {
+      await queue.delete()
+    }
   }))
 
 test("subscription.cancel() swallows underlying consumer errors", () =>
