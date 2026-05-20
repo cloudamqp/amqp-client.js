@@ -307,6 +307,17 @@ test("session.queue() declares a queue and returns AMQPQueue", () =>
     expect(q.name).toMatch(/^test-sq-/)
   }))
 
+test("session.queue(name) with no options reuses cached handle without redeclaring", () =>
+  withSession(async (session) => {
+    const name = "test-sq-redecl-" + Math.random()
+    const first = await session.queue(name, { durable: false, autoDelete: true })
+    // Bare re-call would otherwise default durable: true (since name !== "")
+    // and trip PRECONDITION_FAILED against the durable: false original.
+    const second = await session.queue(name)
+    expect(second).toBe(first)
+    await first.delete()
+  }))
+
 test("AMQPQueue (session-backed).publish() and get() round-trip", () =>
   withSession(async (session) => {
     const q = await session.queue("test-sq-rtt-" + Math.random(), { durable: false, autoDelete: true })
