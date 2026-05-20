@@ -165,6 +165,7 @@ export class AMQPSession<
       maxRetries: options?.maxRetries ?? 0,
     }
     this.client.ondisconnect = (err) => {
+      this.client.logger?.warn(`${this.logTag()}: disconnected`)
       this.opsChannel = null
       this.confirmChannel = null
       this.opsChannelPromise = null
@@ -174,6 +175,10 @@ export class AMQPSession<
         void this.reconnectLoop()
       }
     }
+  }
+
+  private logTag(): string {
+    return this.client.name ? `AMQPSession[${this.client.name}]` : "AMQPSession"
   }
 
   /**
@@ -206,14 +211,24 @@ export class AMQPSession<
       const vhost = options?.vhost ?? "/"
       const username = decodeURIComponent(u.username) || "guest"
       const password = decodeURIComponent(u.password) || "guest"
+      const name = u.searchParams.get("name") ?? undefined
       const wsUrl = `${u.protocol}//${u.host}${u.pathname}${u.search}`
-      client = new AMQPWebSocketClient({ url: wsUrl, vhost, username, password, logger: options?.logger ?? null })
+      const init: ConstructorParameters<typeof AMQPWebSocketClient>[0] = {
+        url: wsUrl,
+        vhost,
+        username,
+        password,
+        logger: options?.logger ?? null,
+      }
+      if (name) init.name = name
+      client = new AMQPWebSocketClient(init)
     } else {
       const { AMQPClient } = await import("./amqp-socket-client.js")
       client = new AMQPClient(url, options?.tlsOptions, options?.logger)
     }
     await client.connect()
     const session = new AMQPSession(client, options)
+    client.logger?.info(`${session.logTag()}: connected`)
     options?.onconnect?.()
     return session
   }
@@ -452,6 +467,7 @@ export class AMQPSession<
       // Give up after maxRetries
       if (this.options.maxRetries > 0 && this.reconnectAttempts > this.options.maxRetries) {
         this.stopped = true
+        this.client.logger?.error(`${this.logTag()}: reconnect gave up`)
         this.onfailed?.(new Error(`Max reconnection attempts (${this.options.maxRetries}) reached`))
         continue
       }
@@ -479,6 +495,7 @@ export class AMQPSession<
       await this.recoverQueues()
       if (this.stopped || this.client.closed) continue // stop() called, or connection dropped during recovery
 
+      this.client.logger?.info(`${this.logTag()}: reconnected`)
       this.onconnect?.()
       break
     }

@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `session.onconnect` / `session.onfailed` lifecycle hooks
   - `session.closed` — `true` when the underlying connection is closed
   - `session.stop()` — cancels reconnection, clears all subscriptions, and closes the connection
+  - Lifecycle transitions log automatically via the configured logger: `info` on connect/reconnect, `warn` on disconnect, `error` when reconnect gives up. Messages are prefixed with `AMQPSession[${name}]:` when the URL carries `?name=` ([#219](https://github.com/cloudamqp/amqp-client.js/issues/219))
 - `AMQPQueue` — reconnect-safe queue handle returned by `session.queue()`, with `publish()`, `subscribe()`, `get()`, `bind()`, `unbind()`, `purge()`, `delete()` ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
   - `subscribe(callback)` / `subscribe(params, callback)` — auto-acks after the callback returns; nacks and requeues on throw; call `msg.ack()` / `msg.nack()` inside the callback to override; pass `{ noAck: true }` to skip acking entirely; `requeueOnNack` controls requeue behaviour on error ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
   - `subscribe()` / `subscribe(params)` — async-iterator form; auto-acks the previous message when the loop advances; the last message (after `break`) is left unacked; call `msg.ack()` / `msg.nack()` before advancing to override; pass `{ noAck: true }` to skip acking ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
