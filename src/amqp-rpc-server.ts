@@ -79,8 +79,6 @@ export class AMQPRPCServer<
     const sub = this.subscription
     if (!sub) return
     this.subscription = null
-    const ch = sub.channel
     await sub.cancel()
-    if (!ch.closed) await ch.close()
   }
 }
