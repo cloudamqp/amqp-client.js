@@ -1,11 +1,5 @@
 import { expect, test, describe, beforeEach } from "vitest"
-import {
-  builtinCoders,
-  builtinParsers,
-  deflateRawCoder,
-  serializeAndEncode,
-  decodeAndParse,
-} from "../src/amqp-codec-registry.js"
+import { builtinCoders, builtinParsers, serializeAndEncode, decodeAndParse } from "../src/amqp-codec-registry.js"
 import type { AMQPParser, AMQPCoder, CoderMap, ParserMap } from "../src/amqp-codec-registry.js"
 
 const noCoders: CoderMap = {}
@@ -78,7 +72,7 @@ describe("builtin parsers and coders", () => {
     })
   })
 
-  describe("builtin deflate coder", () => {
+  describe("builtin deflate coder (RFC 1951 raw)", () => {
     test("encode and decode round-trips", async () => {
       const original = { data: "deflate test" }
 
@@ -90,34 +84,11 @@ describe("builtin parsers and coders", () => {
       const parsed = await decodeAndParse(builtinParsers, builtinCoders, body, properties)
       expect(parsed).toEqual(original)
     })
-  })
 
-  describe("deflateRawCoder (RFC 1951)", () => {
-    test("encode and decode round-trips when registered as deflate override", async () => {
-      const rawCoders = { ...builtinCoders, deflate: deflateRawCoder }
-      const original = { data: "raw deflate test" }
-
-      const { body, properties } = await serializeAndEncode(builtinParsers, rawCoders, original, {
-        contentType: "application/json",
-        contentEncoding: "deflate",
-      })
-
-      const parsed = await decodeAndParse(builtinParsers, rawCoders, body, properties)
-      expect(parsed).toEqual(original)
-    })
-
-    test("output is not zlib-wrapped (no 0x78 magic byte)", async () => {
+    test("output is raw (no 0x78 zlib magic byte)", async () => {
       // RFC 1950 (zlib-wrapped) output begins with 0x78. Raw DEFLATE doesn't.
-      // Empirically, "hello" zlib-wrapped starts 0x78 0x9c, while raw starts 0xcb.
-      const wrapped = await builtinCoders["deflate"]!.encode(new TextEncoder().encode("hello"), {})
-      const raw = await deflateRawCoder.encode(new TextEncoder().encode("hello"), {})
-      expect(wrapped[0]).toBe(0x78)
-      expect(raw[0]).not.toBe(0x78)
-    })
-
-    test("raw output is not decodable by the zlib-wrapped coder", async () => {
-      const raw = await deflateRawCoder.encode(new TextEncoder().encode("hello"), {})
-      await expect(builtinCoders["deflate"]!.decode(raw, {})).rejects.toThrow()
+      const out = await builtinCoders["deflate"]!.encode(new TextEncoder().encode("hello"), {})
+      expect(out[0]).not.toBe(0x78)
     })
   })
 
