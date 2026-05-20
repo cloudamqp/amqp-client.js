@@ -307,14 +307,17 @@ test("session.queue() declares a queue and returns AMQPQueue", () =>
     expect(q.name).toMatch(/^test-sq-/)
   }))
 
-test("session.queue(name) with no options reuses cached handle without redeclaring", () =>
+test("session.queue(name) re-call returns cached handle without redeclaring", () =>
   withSession(async (session) => {
     const name = "test-sq-redecl-" + Math.random()
     const first = await session.queue(name, { durable: false, autoDelete: true })
-    // Bare re-call would otherwise default durable: true (since name !== "")
-    // and trip PRECONDITION_FAILED against the durable: false original.
+    // Without the cache, a bare re-call would default durable: true (since
+    // name !== "") and trip PRECONDITION_FAILED against the durable: false
+    // original. The same applies to a re-call with {}.
     const second = await session.queue(name)
+    const third = await session.queue(name, {})
     expect(second).toBe(first)
+    expect(third).toBe(first)
     await first.delete()
   }))
 

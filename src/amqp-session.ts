@@ -297,11 +297,14 @@ export class AMQPSession<
    * Declare a queue and return a session-bound {@link AMQPQueue} handle.
    * The returned queue's `subscribe` uses auto-recovery and `publish` waits for
    * a broker confirm.
+   *
+   * Subsequent calls with the same name return the cached handle without
+   * redeclaring, and `options` on those calls are ignored.
    * @param name - queue name (use "" to let the broker generate a name)
    * @param [options] - queue declaration parameters and queue arguments
    */
   async queue(name: string, options?: QueueOptions): Promise<AMQPQueue<P, C, KP, KC>> {
-    if (options === undefined && name !== "") {
+    if (name !== "") {
       const cached = this.queues.get(name)
       if (cached) return cached
     }
