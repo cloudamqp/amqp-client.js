@@ -92,11 +92,31 @@ const GzipCoder: AMQPCoder = {
   },
 }
 
-// RFC 1951 raw DEFLATE (no zlib header, no Adler-32). The HTTP spec calls
-// for RFC 1950 here, but in practice producers labelling messages with
-// `content-encoding: deflate` overwhelmingly emit raw — same ambiguity HTTP
-// has carried for two decades. Match what's actually on the wire.
 const DeflateCoder: AMQPCoder = {
+  encode(body: Uint8Array): Promise<Uint8Array> {
+    return compressWithStream(body, "deflate")
+  },
+  decode(body: Uint8Array): Promise<Uint8Array> {
+    return decompressWithStream(body, "deflate")
+  },
+}
+
+/**
+ * Raw DEFLATE coder (RFC 1951 — no zlib header, no Adler-32 checksum).
+ * Not registered by default. Use to interoperate with producers that emit
+ * raw DEFLATE under `content-encoding: deflate`, the same ambiguity HTTP
+ * has carried for decades and that Node's `zlib.deflateRawSync` exists for.
+ *
+ * @example
+ * ```ts
+ * import { AMQPSession, builtinCoders, deflateRawCoder } from "@cloudamqp/amqp-client"
+ *
+ * const session = await AMQPSession.connect(url, {
+ *   coders: { ...builtinCoders, deflate: deflateRawCoder },
+ * })
+ * ```
+ */
+export const deflateRawCoder: AMQPCoder = {
   encode(body: Uint8Array): Promise<Uint8Array> {
     return compressWithStream(body, "deflate-raw")
   },
