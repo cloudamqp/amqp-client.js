@@ -25,6 +25,7 @@ export type { AMQPWebSocketInit } from "./amqp-websocket-client.js"
 export {
   builtinParsers,
   builtinCoders,
+  deflateRawCoder,
   serializeAndEncode,
   decodeAndParse,
   decodeMessage,
