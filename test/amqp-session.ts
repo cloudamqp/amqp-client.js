@@ -429,6 +429,78 @@ test("AMQPExchange.publish() honors explicit deliveryMode: 1 (transient)", () =>
     expect(msg?.properties.deliveryMode).toBe(1)
   }))
 
+test("server-named queue: handle survives reconnect, bindings replayed, onName fires", async () => {
+  let connectCount = 0
+  let resolveReconnected!: () => void
+  const reconnected = new Promise<void>((resolve, reject) => {
+    resolveReconnected = resolve
+    setTimeout(() => reject(new Error("reconnect timed out")), 10_000)
+  })
+  const renames: { from: string; to: string }[] = []
+  await withSession(
+    async (session) => {
+      // durable + non-autoDelete so the exchange survives the disconnect — the
+      // exclusive queue's binding goes away with it, which would otherwise
+      // autoDelete the exchange and break the post-reconnect bind replay.
+      const exchange = await session.fanoutExchange("test-sn-fanout-" + Math.random(), {
+        durable: false,
+        autoDelete: false,
+      })
+
+      let onNameLatest = ""
+      const q = await session.queue("", {
+        exclusive: true,
+        autoDelete: true,
+        onName: (name) => {
+          onNameLatest = name
+        },
+      })
+      const initialName = q.name
+      expect(initialName).not.toBe("")
+
+      await q.bind(exchange)
+      const received: string[] = []
+      const sub = await q.subscribe({ noAck: true }, (msg) => {
+        received.push(msg.bodyString() ?? "")
+      })
+
+      await exchange.publish("before-disconnect")
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      ;(testClient(session) as AMQPClient).socket?.destroy()
+      await reconnected
+
+      // Exclusive queue died with the previous connection — broker hands out a new name.
+      expect(q.name).not.toBe(initialName)
+      expect(onNameLatest).toBe(q.name)
+      renames.push({ from: initialName, to: q.name })
+
+      await exchange.publish("after-reconnect")
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
+      expect(received).toContain("after-reconnect")
+
+      await sub.cancel()
+      await exchange.delete()
+    },
+    {
+      reconnectInterval: 50,
+      maxRetries: 5,
+      onconnect: () => {
+        connectCount++
+        if (connectCount === 2) resolveReconnected()
+      },
+    },
+  )
+  expect(renames).toHaveLength(1)
+})
+
+test("server-named queue: AMQPQueue.name reflects broker-assigned name", () =>
+  withSession(async (session) => {
+    const q = await session.queue("", { exclusive: true, autoDelete: true })
+    expect(q.name).not.toBe("")
+    expect(q.name.length).toBeGreaterThan(0)
+  }))
+
 test("AMQPQueue (session-backed).subscribe() recovers after reconnect", async () => {
   let connectCount = 0
   let resolveReconnected!: () => void

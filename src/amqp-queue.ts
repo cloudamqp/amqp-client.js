@@ -1,5 +1,5 @@
 import type { AMQPMessage } from "./amqp-message.js"
-import type { ConsumeParams, MessageCount } from "./amqp-channel.js"
+import type { ConsumeParams, MessageCount, QueueParams } from "./amqp-channel.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription.js"
@@ -9,6 +9,33 @@ import type { AMQPExchange } from "./amqp-exchange.js"
 import type { ResolveBody } from "./amqp-publisher.js"
 import { serializeAndEncode, decodeMessage } from "./amqp-codec-registry.js"
 import type { ParserMap, CoderMap } from "./amqp-codec-registry.js"
+
+/**
+ * Recovery metadata captured at declare time so the session can replay the
+ * declare on reconnect.
+ * @internal
+ */
+export interface QueueRecovery {
+  /**
+   * `true` when the broker generated the queue name (declared with `""`).
+   * Recovery tries a passive declare with the captured name; if the queue is
+   * gone (broker restart, exclusive queue dropped with the old connection)
+   * we redeclare anonymously and adopt the new broker-assigned name.
+   */
+  serverNamed: boolean
+  /** Declaration params used at initial declare — replayed on rename. */
+  params: QueueParams
+  /** Arguments table from initial declare — replayed on rename. */
+  args?: Record<string, unknown>
+  /** Fires after a reconnect-driven rename with the new broker-assigned name. */
+  onName?: (newName: string) => void
+}
+
+type Binding = {
+  exchange: string
+  routingKey: string
+  args: Record<string, unknown>
+}
 
 /**
  * Options for {@link AMQPQueue#subscribe}.
@@ -45,15 +72,27 @@ export class AMQPQueue<
   KP extends keyof P & string = never,
   KC extends keyof C & string = never,
 > {
-  /** Queue name. */
-  readonly name: string
+  // Mutable so server-named queues can be re-declared with a new broker-assigned
+  // name after a reconnect without forcing callers to re-fetch the handle.
+  private currentName: string
   private readonly session: AMQPSession<P, C, KP, KC>
   private readonly subscriptions = new Set<AMQPSubscription>()
+  private readonly recovery: QueueRecovery
+  // Bindings registered through this handle. Replayed only on the rename path
+  // (server-named queue lost across reconnect) — bindings on a queue that
+  // survived already exist on the broker side.
+  private readonly bindings: Binding[] = []
+
+  /** Queue name. For server-named queues this reflects the most recent broker-assigned name. */
+  get name(): string {
+    return this.currentName
+  }
 
   /** @internal */
-  constructor(session: AMQPSession<P, C, KP, KC>, name: string) {
+  constructor(session: AMQPSession<P, C, KP, KC>, name: string, recovery?: QueueRecovery) {
     this.session = session
-    this.name = name
+    this.currentName = name
+    this.recovery = recovery ?? { serverNamed: false, params: {} }
   }
 
   /**
@@ -257,6 +296,10 @@ export class AMQPQueue<
 
   /**
    * Bind this queue to an exchange.
+   *
+   * For server-named queues, the binding is tracked so it can be re-established
+   * on the new queue if the broker hands out a fresh name after reconnect.
+   *
    * @returns `this` for chaining
    */
   async bind(
@@ -266,6 +309,7 @@ export class AMQPQueue<
   ): Promise<AMQPQueue<P, C, KP, KC>> {
     const exchangeName = typeof exchange === "string" ? exchange : exchange.name
     await this.session.withOpsChannel((ch) => ch.queueBind(this.name, exchangeName, routingKey, args))
+    if (this.recovery.serverNamed) this.bindings.push({ exchange: exchangeName, routingKey, args })
     return this
   }
 
@@ -280,7 +324,16 @@ export class AMQPQueue<
   ): Promise<AMQPQueue<P, C, KP, KC>> {
     const exchangeName = typeof exchange === "string" ? exchange : exchange.name
     await this.session.withOpsChannel((ch) => ch.queueUnbind(this.name, exchangeName, routingKey, args))
+    if (this.recovery.serverNamed) this.removeTrackedBinding(exchangeName, routingKey, args)
     return this
+  }
+
+  private removeTrackedBinding(exchange: string, routingKey: string, args: Record<string, unknown>): void {
+    const argsKey = JSON.stringify(args)
+    const idx = this.bindings.findIndex(
+      (b) => b.exchange === exchange && b.routingKey === routingKey && JSON.stringify(b.args) === argsKey,
+    )
+    if (idx >= 0) this.bindings.splice(idx, 1)
   }
 
   /** Purge all messages from this queue. */
@@ -298,12 +351,19 @@ export class AMQPQueue<
   }
 
   /**
-   * Re-establish all subscriptions after a reconnection.
+   * Re-establish the queue and all its subscriptions after a reconnection.
+   * For server-named queues, this also handles re-declaring under a new
+   * broker-assigned name and replaying tracked bindings.
    * @internal Called by the session's reconnect loop.
    */
   async recover(): Promise<void> {
+    if (this.recovery.serverNamed) {
+      const renamed = await this.recoverServerNamedQueue()
+      if (renamed === null) return // both passive and fresh declare failed; skip consumer recovery
+    }
     for (const sub of this.subscriptions) {
       try {
+        sub.def.queueName = this.name
         const consumer = await this.openConsumer(sub.def)
         sub.setConsumer(consumer)
         this.session.logger?.debug(`Recovered consumer for queue: ${this.name}`)
@@ -312,6 +372,50 @@ export class AMQPQueue<
         this.session.logger?.warn(`Failed to recover consumer for queue ${this.name}:`, error.message)
       }
     }
+  }
+
+  // Returns the (possibly new) queue name on success, null on declare failure.
+  // Carl on #210: "you're not allowed to declare a queue starting with 'amq.'"
+  // (the broker reserves that prefix for itself), so the broker-assigned name
+  // can never be reused — we always pass "" when redeclaring.
+  private async recoverServerNamedQueue(): Promise<string | null> {
+    const oldName = this.currentName
+    try {
+      await this.session.withOpsChannel((ch) => ch.queueDeclare(oldName, { passive: true }))
+      return oldName
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      this.session.logger?.debug(`Server-named queue ${oldName} gone after reconnect (${error.message}); redeclaring`)
+    }
+    let newName: string
+    try {
+      newName = await this.session.withOpsChannel(async (ch) => {
+        const res = await ch.queueDeclare("", this.recovery.params, this.recovery.args)
+        return res.name
+      })
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      this.session.logger?.warn(`Failed to redeclare server-named queue (was ${oldName}):`, error.message)
+      return null
+    }
+    this.currentName = newName
+    this.session.renameQueue(oldName, newName, this)
+    this.session.logger?.info(`Server-named queue renamed across reconnect: ${oldName} -> ${newName}`)
+    this.recovery.onName?.(newName)
+    // Best-effort bind replay — losing one binding (e.g., the exchange went
+    // away) shouldn't block consumer recovery on the new queue.
+    for (const b of this.bindings) {
+      try {
+        await this.session.withOpsChannel((ch) => ch.queueBind(newName, b.exchange, b.routingKey, b.args))
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        this.session.logger?.warn(
+          `Failed to replay binding ${newName} -> ${b.exchange} (${b.routingKey || "<no key>"}):`,
+          error.message,
+        )
+      }
+    }
+    return newName
   }
 
   /**

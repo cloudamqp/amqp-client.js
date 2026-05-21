@@ -11,6 +11,13 @@ import type { AMQPChannel, ExchangeParams, ExchangeType, QueueParams } from "./a
 export type QueueOptions = QueueParams & {
   /** Queue arguments table (e.g. `{ "x-delivery-limit": 3 }`). */
   arguments?: Record<string, unknown>
+  /**
+   * Fires for server-named queues (declared with `""`) when the broker hands
+   * out a new name after a reconnect. Most consumers just keep reading from
+   * the handle, which auto-updates — register this only when something
+   * outside the handle has cached the name.
+   */
+  onName?: (newName: string) => void
 }
 
 /**
@@ -27,6 +34,7 @@ import type { ParserMap, CoderMap, ParserRegistry, CoderRegistry } from "./amqp-
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { ResolveBody } from "./amqp-publisher.js"
 import { AMQPQueue } from "./amqp-queue.js"
+import type { QueueRecovery } from "./amqp-queue.js"
 import type { AMQPTlsOptions } from "./amqp-tls-options.js"
 import type { Logger } from "./types.js"
 import { AMQPExchange } from "./amqp-exchange.js"
@@ -315,6 +323,13 @@ export class AMQPSession<
    *
    * Subsequent calls with the same name return the cached handle without
    * redeclaring, and `options` on those calls are ignored.
+   *
+   * Pass `""` for `name` to get a server-named queue. The returned handle's
+   * `.name` reflects the broker-assigned name and is updated in place if the
+   * broker hands out a new name after a reconnect; tracked `bind()` calls are
+   * replayed against the new name. Register `options.onName` to be notified
+   * when this happens.
+   *
    * @param name - queue name (use "" to let the broker generate a name)
    * @param [options] - queue declaration parameters and queue arguments
    */
@@ -323,15 +338,27 @@ export class AMQPSession<
       const cached = this.queues.get(name)
       if (cached) return cached
     }
-    const { arguments: queueArguments, ...declarationParams } = options ?? {}
+    const { arguments: queueArguments, onName, ...declarationParams } = options ?? {}
     return this.withOpsChannel(async (ch) => {
       const res = await ch.queueDeclare(name, declarationParams, queueArguments)
       const existing = this.queues.get(res.name)
       if (existing) return existing
-      const q = new AMQPQueue<P, C, KP, KC>(this, res.name)
+      const recovery: QueueRecovery = {
+        serverNamed: name === "",
+        params: declarationParams,
+        ...(queueArguments && { args: queueArguments }),
+        ...(onName && { onName }),
+      }
+      const q = new AMQPQueue<P, C, KP, KC>(this, res.name, recovery)
       this.queues.set(res.name, q)
       return q
     })
+  }
+
+  /** @internal Update the session's queue map after a server-named queue is renamed. */
+  renameQueue(oldName: string, newName: string, queue: AMQPQueue<P, C, KP, KC>): void {
+    if (this.queues.get(oldName) === queue) this.queues.delete(oldName)
+    this.queues.set(newName, queue)
   }
 
   /**
@@ -526,7 +553,9 @@ export class AMQPSession<
 
   private async recoverQueues(): Promise<void> {
     if (this.client.closed) return
-    for (const queue of this.queues.values()) {
+    // Snapshot before iterating — recover() can mutate the map for renamed
+    // server-named queues (renameQueue updates the key).
+    for (const queue of Array.from(this.queues.values())) {
       await queue.recover()
     }
     for (const rpc of this.rpcClients) {
