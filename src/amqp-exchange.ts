@@ -10,6 +10,12 @@ export type ExchangePublishOptions<O extends string = string> = Omit<AMQPPropert
   routingKey?: string
   /** Wait for broker confirmation. Defaults to `true`. */
   confirm?: boolean
+  /**
+   * Ask the broker to return the message if it can't be routed to a queue.
+   * Returned messages are delivered to the session-level `onreturn` handler.
+   * Defaults to `false`.
+   */
+  mandatory?: boolean
   contentType?: O
 }
 
@@ -53,7 +59,7 @@ export class AMQPExchange<
     body: ResolveBody<P, O>,
     options: ExchangePublishOptions<O> = {},
   ): Promise<AMQPExchange<P, C, KP, KC>> {
-    const { confirm = true, routingKey = "", ...properties } = options
+    const { confirm = true, routingKey = "", mandatory = false, ...properties } = options
     const defaults: { contentType?: string; contentEncoding?: string } = {}
     if (this.session.defaultContentType) defaults.contentType = this.session.defaultContentType
     if (this.session.defaultContentEncoding) defaults.contentEncoding = this.session.defaultContentEncoding
@@ -67,10 +73,10 @@ export class AMQPExchange<
     if (encoded.properties.deliveryMode === undefined) encoded.properties.deliveryMode = 2
     if (confirm) {
       const ch = await this.session.getConfirmChannel()
-      await ch.basicPublish(this.name, routingKey, encoded.body, encoded.properties)
+      await ch.basicPublish(this.name, routingKey, encoded.body, encoded.properties, mandatory)
     } else {
       await this.session.withOpsChannel(async (ch) => {
-        await ch.basicPublish(this.name, routingKey, encoded.body, encoded.properties)
+        await ch.basicPublish(this.name, routingKey, encoded.body, encoded.properties, mandatory)
       })
     }
     return this

@@ -71,6 +71,26 @@ export interface AMQPSessionOptions<
    */
   vhost?: string
   /**
+   * Connection name, shown in the RabbitMQ management UI. Overrides any
+   * `?name=` in the URL.
+   */
+  name?: string
+  /**
+   * Heartbeat interval in seconds (0 disables). Overrides any `?heartbeat=` in
+   * the URL.
+   */
+  heartbeat?: number
+  /**
+   * Max AMQP frame size in bytes (minimum 8192). Overrides any `?frameMax=` in
+   * the URL.
+   */
+  frameMax?: number
+  /**
+   * Max channels the session may open on this connection (0 = unlimited).
+   * Overrides any `?channelMax=` in the URL.
+   */
+  channelMax?: number
+  /**
    * Fires after a successful (re)connection — both the initial connect and
    * every reconnect after consumer recovery completes. Registering here
    * rather than after `connect()` resolves means a single handler covers
@@ -95,6 +115,21 @@ export interface AMQPSessionOptions<
   ondisconnect?: (error?: Error) => void
   /** Fires when max reconnect retries are exhausted. */
   onfailed?: (error?: Error) => void
+  /**
+   * Fires when the broker blocks the connection from publishing — usually
+   * triggered by a resource alarm (memory or disk) on the server. Subsequent
+   * publishes reject with `Connection blocked by server` until the broker
+   * unblocks. Use this to apply backpressure upstream.
+   */
+  onblocked?: (reason: string) => void
+  /** Fires when the broker lifts a previous block on the connection. */
+  onunblocked?: () => void
+  /**
+   * Fires when a `mandatory: true` publish is returned by the broker because
+   * it had no route to a queue. The session wires this onto every channel it
+   * opens for publishing, so a single handler covers all session publishes.
+   */
+  onreturn?: (msg: AMQPMessage<P>) => void
 }
 
 /**
@@ -116,6 +151,7 @@ export class AMQPSession<
   private readonly onconnect?: (session: AMQPSession<P, C, KP, KC>) => void
   private readonly ondisconnect?: (error?: Error) => void
   private readonly onfailed?: (error?: Error) => void
+  private readonly onreturn?: (msg: AMQPMessage<P>) => void
 
   private readonly client: AMQPBaseClient
 
@@ -169,6 +205,9 @@ export class AMQPSession<
     if (options?.onconnect) this.onconnect = options.onconnect
     if (options?.ondisconnect) this.ondisconnect = options.ondisconnect
     if (options?.onfailed) this.onfailed = options.onfailed
+    if (options?.onreturn) this.onreturn = options.onreturn
+    if (options?.onblocked) this.client.onblocked = options.onblocked
+    if (options?.onunblocked) this.client.onunblocked = options.onunblocked
     this.options = {
       reconnectInterval: options?.reconnectInterval ?? 1000,
       maxReconnectInterval: options?.maxReconnectInterval ?? 30000,
@@ -212,7 +251,10 @@ export class AMQPSession<
       const vhost = options?.vhost ?? "/"
       const username = decodeURIComponent(u.username) || "guest"
       const password = decodeURIComponent(u.password) || "guest"
-      const name = u.searchParams.get("name") ?? undefined
+      const name = options?.name ?? u.searchParams.get("name") ?? undefined
+      const heartbeat = options?.heartbeat ?? numericParam(u.searchParams.get("heartbeat"))
+      const frameMax = options?.frameMax ?? numericParam(u.searchParams.get("frameMax"))
+      const channelMax = options?.channelMax ?? numericParam(u.searchParams.get("channelMax"))
       const wsUrl = `${u.protocol}//${u.host}${u.pathname}${u.search}`
       const init: ConstructorParameters<typeof AMQPWebSocketClient>[0] = {
         url: wsUrl,
@@ -222,10 +264,25 @@ export class AMQPSession<
         logger: options?.logger ?? null,
       }
       if (name) init.name = name
+      if (heartbeat !== undefined) init.heartbeat = heartbeat
+      if (frameMax !== undefined) init.frameMax = frameMax
+      if (channelMax !== undefined) init.channelMax = channelMax
       client = new AMQPWebSocketClient(init)
     } else {
       const { AMQPClient } = await import("./amqp-socket-client.js")
-      client = new AMQPClient(url, options?.tlsOptions, options?.logger)
+      // AMQPClient reads name/heartbeat/frameMax/channelMax from URL query
+      // params, so route options through the URL rather than touching the
+      // low-level constructor signature.
+      const overrides: Record<string, string | undefined> = {
+        name: options?.name,
+        heartbeat: options?.heartbeat?.toString(),
+        frameMax: options?.frameMax?.toString(),
+        channelMax: options?.channelMax?.toString(),
+      }
+      for (const [key, val] of Object.entries(overrides)) {
+        if (val !== undefined) u.searchParams.set(key, val)
+      }
+      client = new AMQPClient(u.toString(), options?.tlsOptions, options?.logger)
     }
     await client.connect()
     const session = new AMQPSession(client, options)
@@ -243,6 +300,7 @@ export class AMQPSession<
     if (this.opsChannel && !this.opsChannel.closed) return Promise.resolve(this.opsChannel)
     if (this.opsChannelPromise) return this.opsChannelPromise
     this.opsChannelPromise = this.client.channel().then((ch) => {
+      this.wireReturnHandler(ch)
       this.opsChannel = ch
       this.opsChannelPromise = null
       return ch
@@ -251,6 +309,14 @@ export class AMQPSession<
       this.opsChannelPromise = null
     })
     return this.opsChannelPromise
+  }
+
+  // Forward returned (unroutable mandatory) messages from a channel to the
+  // session-level onreturn handler so callers register a single hook
+  // regardless of which channel published.
+  private wireReturnHandler(ch: AMQPChannel): void {
+    if (!this.onreturn) return
+    ch.onReturn = (msg) => this.onreturn?.(msg as AMQPMessage<P>)
   }
 
   // Serializes operations on the shared ops channel. AMQP channel-level
@@ -291,6 +357,7 @@ export class AMQPSession<
     if (this.confirmChannelPromise) return this.confirmChannelPromise
     this.confirmChannelPromise = this.client.channel().then(async (ch) => {
       await ch.confirmSelect()
+      this.wireReturnHandler(ch)
       this.confirmChannel = ch
       this.confirmChannelPromise = null
       return ch
@@ -551,4 +618,10 @@ export class AMQPSession<
       }
     }
   }
+}
+
+function numericParam(value: string | null): number | undefined {
+  if (value === null) return undefined
+  const n = Number(value)
+  return Number.isFinite(n) ? n : undefined
 }
