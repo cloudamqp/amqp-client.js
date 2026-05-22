@@ -71,11 +71,22 @@ export interface AMQPSessionOptions<
    */
   vhost?: string
   /**
-   * Fires after a successful connection — both the initial connect and every
-   * reconnect after consumer recovery completes. Registering here rather than
-   * after `connect()` resolves means a single handler covers both code paths.
+   * Fires after a successful (re)connection — both the initial connect and
+   * every reconnect after consumer recovery completes. Registering here
+   * rather than after `connect()` resolves means a single handler covers
+   * both code paths.
+   *
+   * The session is passed in because on the initial connect this fires
+   * before the `connect()` call returns, so closures over the outer
+   * `session` variable would still see `undefined`. Use the argument —
+   * it's the same instance either way.
+   *
+   * Fire-and-forget. If your handler does async setup that the rest of
+   * your code depends on, drive it yourself (e.g. `await setup(session)`
+   * after `connect()` resolves) and use `onconnect` to re-run it on
+   * reconnects.
    */
-  onconnect?: () => void
+  onconnect?(session: AMQPSession<P, C, KP, KC>): void
   /**
    * Fires when the underlying connection drops, before the reconnect loop
    * starts. Useful for visibility into the gap between disconnect and
@@ -102,7 +113,7 @@ export class AMQPSession<
   KP extends keyof P & string = never,
   KC extends keyof C & string = never,
 > {
-  private readonly onconnect?: () => void
+  private readonly onconnect?: (session: AMQPSession<P, C, KP, KC>) => void
   private readonly ondisconnect?: (error?: Error) => void
   private readonly onfailed?: (error?: Error) => void
 
@@ -189,16 +200,6 @@ export class AMQPSession<
    * - `ws://` / `wss://` → WebSocket (`AMQPWebSocketClient`)
    */
   static async connect<
-    P extends ParserMap,
-    C extends CoderMap,
-    KP extends keyof P & string = never,
-    KC extends keyof C & string = never,
-  >(
-    url: string,
-    options: AMQPSessionOptions<P, C, KP, KC> & { parsers: ParserRegistry<P> },
-  ): Promise<AMQPSession<P, C, KP, KC>>
-  static async connect(url: string, options?: AMQPSessionOptions): Promise<AMQPSession>
-  static async connect<
     P extends ParserMap = {},
     C extends CoderMap = {},
     KP extends keyof P & string = never,
@@ -229,7 +230,7 @@ export class AMQPSession<
     await client.connect()
     const session = new AMQPSession(client, options)
     client.logger?.info(`${session.logTag()}: connected`)
-    options?.onconnect?.()
+    options?.onconnect?.(session)
     return session
   }
 
@@ -514,7 +515,7 @@ export class AMQPSession<
       if (this.stopped || this.client.closed) continue // stop() called, or connection dropped during recovery
 
       this.client.logger?.info(`${this.logTag()}: reconnected`)
-      this.onconnect?.()
+      this.onconnect?.(this)
       break
     }
 
