@@ -294,7 +294,10 @@ export class AMQPQueue<
    * @param [params.ifEmpty=false] - only delete if the queue is empty
    */
   async delete(params?: { ifUnused?: boolean; ifEmpty?: boolean }): Promise<MessageCount> {
-    return this.session.withOpsChannel((ch) => ch.queueDelete(this.name, params))
+    const result = await this.session.withOpsChannel((ch) => ch.queueDelete(this.name, params))
+    this.cancelAll()
+    this.session.removeQueue(this.name)
+    return result
   }
 
   /**
