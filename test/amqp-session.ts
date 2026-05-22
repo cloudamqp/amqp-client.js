@@ -1,6 +1,7 @@
 import { expect, test, vi, beforeEach } from "vitest"
 import { AMQPClient } from "../src/amqp-socket-client.js"
 import { AMQPSession } from "../src/amqp-session.js"
+import type { AMQPSessionOptions } from "../src/amqp-session.js"
 import { AMQPQueue } from "../src/amqp-queue.js"
 import { AMQPExchange } from "../src/amqp-exchange.js"
 import { AMQPMessage } from "../src/amqp-message.js"
@@ -17,10 +18,7 @@ function testClient(session: AMQPSession): AMQPBaseClient {
   return (session as unknown as { client: AMQPBaseClient }).client
 }
 
-async function withSession(
-  fn: (session: AMQPSession) => Promise<void>,
-  options?: Parameters<typeof AMQPSession.connect>[1],
-): Promise<void> {
+async function withSession(fn: (session: AMQPSession) => Promise<void>, options?: AMQPSessionOptions): Promise<void> {
   const session = await AMQPSession.connect("amqp://127.0.0.1", options)
   try {
     await fn(session)
@@ -183,6 +181,38 @@ test("onconnect fires on the initial connect", async () => {
   }
 })
 
+test("onconnect receives the session — usable on initial connect before AMQPSession.connect() returns", async () => {
+  // The pattern this enables: declare a server-named queue once inside
+  // `onconnect` and trust the same handler will re-run on every reconnect.
+  // No chicken-and-egg with the outer `session` variable.
+  const names: string[] = []
+  let resolveFirst!: () => void
+  let resolveSecond!: () => void
+  const firstReady = new Promise<void>((r) => (resolveFirst = r))
+  const secondReady = new Promise<void>((r) => (resolveSecond = r))
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    reconnectInterval: 50,
+    maxRetries: 5,
+    onconnect: (s) => {
+      void (async () => {
+        const q = await s.queue("", { exclusive: true, autoDelete: true })
+        names.push(q.name)
+        ;(names.length === 1 ? resolveFirst : resolveSecond)()
+      })()
+    },
+  })
+  try {
+    await firstReady
+    expect(names).toHaveLength(1)
+    ;(testClient(session) as AMQPClient).socket?.destroy()
+    await secondReady
+    expect(names).toHaveLength(2)
+    expect(names[0]).not.toBe(names[1])
+  } finally {
+    await session.stop()
+  }
+})
+
 test("onconnect fires after successful reconnection", async () => {
   let count = 0
   const reconnected = new Promise<void>((resolve, reject) => {
@@ -222,23 +252,20 @@ test("ondisconnect fires when the connection drops", async () => {
 })
 
 test("logger: logs initial connect, disconnect, reconnect with name prefix", async () => {
-  const info = vi.fn()
-  const warn = vi.fn()
-  const logger = { debug: vi.fn(), info, warn, error: vi.fn() }
-  let count = 0
   let resolveReconnected!: () => void
   const reconnected = new Promise<void>((resolve, reject) => {
     resolveReconnected = resolve
     setTimeout(() => reject(new Error("Reconnection timed out")), 10_000)
   })
+  const info = vi.fn((msg: string) => {
+    if (msg === "AMQPSession[my-app]: reconnected") resolveReconnected()
+  })
+  const warn = vi.fn()
+  const logger = { debug: vi.fn(), info, warn, error: vi.fn() }
   const session = await AMQPSession.connect("amqp://127.0.0.1?name=my-app", {
     logger,
     reconnectInterval: 50,
     maxRetries: 5,
-    onconnect: () => {
-      count++
-      if (count === 2) resolveReconnected()
-    },
   })
   try {
     expect(info).toHaveBeenCalledWith("AMQPSession[my-app]: connected")
