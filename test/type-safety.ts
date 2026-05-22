@@ -7,7 +7,7 @@
  * types change in a way that breaks the contract, tsc will flag them.
  */
 import { test, expectTypeOf } from "vitest"
-import type { AMQPSession } from "../src/amqp-session.js"
+import { AMQPSession } from "../src/amqp-session.js"
 import type { AMQPQueue } from "../src/amqp-queue.js"
 import type { AMQPExchange } from "../src/amqp-exchange.js"
 import type { AMQPRPCClient } from "../src/amqp-rpc-client.js"
@@ -227,4 +227,63 @@ test("CoderRegistry preserves keys in type", () => {
   type R = CoderRegistry<{ custom: AMQPCoder } & { gzip: AMQPCoder }>
   expectTypeOf<R["gzip"]>().toEqualTypeOf<AMQPCoder>()
   expectTypeOf<R["custom"]>().toEqualTypeOf<AMQPCoder>()
+})
+
+// --- AMQPSession.connect() inference ---
+//
+// Regression guard against the static-connect overloads collapsing into a
+// single generic signature (see #210 / PR #227). We need to keep parser
+// type inference working through `parsers?: ParserRegistry<P>` on the impl,
+// since the old "parsers required" overload no longer exists.
+//
+// These are type-only probes: the functions are never invoked at runtime,
+// they only exist so TypeScript can type-check the call and we can extract
+// the resolved session type via `Awaited<ReturnType<typeof probe>>`. No
+// real broker connection happens.
+
+type SampleParsers = {
+  "text/plain": AMQPParser<string, string>
+  "application/json": AMQPParser<JsonSerializable, unknown>
+}
+declare const sampleParsers: SampleParsers
+
+// Type-only probes. Bodies never run — their job is to give TS a concrete
+// `connect()` call site so we can extract the inferred return type via
+// `Awaited<ReturnType<typeof probe>>`. Eslint flags them as unused since
+// they're only referenced at the type level; suppress per-line to keep
+// the noise local.
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+function probeNoOpts() {
+  return AMQPSession.connect("amqp://127.0.0.1")
+}
+function probeNoParsers() {
+  return AMQPSession.connect("amqp://127.0.0.1", { reconnectInterval: 500 })
+}
+function probeWithParsers() {
+  return AMQPSession.connect("amqp://127.0.0.1", { parsers: sampleParsers })
+}
+function probeWithDefaultContentType() {
+  return AMQPSession.connect("amqp://127.0.0.1", { parsers: sampleParsers, defaultContentType: "text/plain" })
+}
+/* eslint-enable @typescript-eslint/no-unused-vars */
+
+test("AMQPSession.connect() with no options returns AMQPSession<{}, {}, never, never>", () => {
+  expectTypeOf<Awaited<ReturnType<typeof probeNoOpts>>>().toEqualTypeOf<AMQPSession<{}, {}, never, never>>()
+})
+
+test("AMQPSession.connect() with options but no parsers returns AMQPSession<{}, {}, never, never>", () => {
+  expectTypeOf<Awaited<ReturnType<typeof probeNoParsers>>>().toEqualTypeOf<AMQPSession<{}, {}, never, never>>()
+})
+
+test("AMQPSession.connect() infers P from parsers field", () => {
+  expectTypeOf<Awaited<ReturnType<typeof probeWithParsers>>>().toEqualTypeOf<
+    AMQPSession<SampleParsers, {}, never, never>
+  >()
+})
+
+test("AMQPSession.connect() narrows KP via defaultContentType", () => {
+  expectTypeOf<Awaited<ReturnType<typeof probeWithDefaultContentType>>>().toEqualTypeOf<
+    AMQPSession<SampleParsers, {}, "text/plain", never>
+  >()
 })
