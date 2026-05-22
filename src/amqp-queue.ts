@@ -28,6 +28,12 @@ export type QueueSubscribeParams = ConsumeParams & {
 export type QueuePublishOptions<T> = Omit<AMQPProperties, "contentType"> & {
   /** Wait for broker confirmation. Defaults to `true`. */
   confirm?: boolean
+  /**
+   * Ask the broker to return the message if it can't be routed to a queue.
+   * Returned messages are delivered to the session-level `onreturn` handler.
+   * Defaults to `false`.
+   */
+  mandatory?: boolean
   contentType?: T
 }
 
@@ -73,7 +79,7 @@ export class AMQPQueue<
     body: ResolveBody<P, O>,
     options: QueuePublishOptions<O> = {},
   ): Promise<AMQPQueue<P, C, KP, KC>> {
-    const { confirm = true, ...properties } = options
+    const { confirm = true, mandatory = false, ...properties } = options
     const defaults: { contentType?: string; contentEncoding?: string } = {}
     if (this.session.defaultContentType) defaults.contentType = this.session.defaultContentType
     if (this.session.defaultContentEncoding) defaults.contentEncoding = this.session.defaultContentEncoding
@@ -87,10 +93,10 @@ export class AMQPQueue<
     if (encoded.properties.deliveryMode === undefined) encoded.properties.deliveryMode = 2
     if (confirm) {
       const ch = await this.session.getConfirmChannel()
-      await ch.basicPublish("", this.name, encoded.body, encoded.properties)
+      await ch.basicPublish("", this.name, encoded.body, encoded.properties, mandatory)
     } else {
       await this.session.withOpsChannel(async (ch) => {
-        await ch.basicPublish("", this.name, encoded.body, encoded.properties)
+        await ch.basicPublish("", this.name, encoded.body, encoded.properties, mandatory)
       })
     }
     return this

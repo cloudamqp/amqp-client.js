@@ -54,6 +54,18 @@ export abstract class AMQPBaseClient {
   ondisconnect?: (error?: Error) => void
 
   /**
+   * Callback when the server blocks publishing on this connection
+   * (typically due to a resource alarm — memory or disk).
+   * @param reason - The broker-supplied reason string
+   */
+  onblocked?: (reason: string) => void
+
+  /**
+   * Callback when the server lifts a previous block on this connection.
+   */
+  onunblocked?: () => void
+
+  /**
    * @param name - name of the connection, set in client properties
    * @param platform - used in client properties
    * @param logger - optional logger instance, defaults to undefined (no logging)
@@ -366,11 +378,13 @@ export abstract class AMQPBaseClient {
                   i += len
                   this.logger?.warn("AMQP connection blocked:", reason)
                   this.blocked = reason
+                  this.onblocked?.(reason)
                   break
                 }
                 case AMQPFrame.ConnectionMethod.UNBLOCKED: {
                   this.logger?.info("AMQP connection unblocked")
                   delete this.blocked
+                  this.onunblocked?.()
                   break
                 }
                 case AMQPFrame.ConnectionMethod.UPDATE_SECRET_OK: {

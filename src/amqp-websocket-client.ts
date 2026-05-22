@@ -14,6 +14,7 @@ export interface AMQPWebSocketInit {
   name?: string
   frameMax?: number
   heartbeat?: number
+  channelMax?: number
   logger?: Logger | null
 }
 
@@ -53,6 +54,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     heartbeat = 0,
     logger?: Logger | null,
   ) {
+    let channelMax = 0
     if (typeof url === "object") {
       vhost = url.vhost ?? vhost
       username = url.username ?? username
@@ -60,10 +62,11 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       name = url.name ?? name
       frameMax = url.frameMax ?? frameMax
       heartbeat = url.heartbeat ?? heartbeat
+      channelMax = url.channelMax ?? channelMax
       logger = url.logger ?? logger
       url = url.url
     }
-    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat, 0, logger)
+    super(vhost, username, password, name, AMQPWebSocketClient.platform(), frameMax, heartbeat, channelMax, logger)
     this.url = url
     this.frameBuffer = new Uint8Array(frameMax)
   }

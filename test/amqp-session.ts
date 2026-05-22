@@ -1337,3 +1337,98 @@ test("consumeOne rejects when the connection drops before delivery", () =>
     },
     { reconnectInterval: 50, maxRetries: 1 },
   ))
+
+test("name option sets connection name (overrides URL query)", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1?name=from-url", { name: "from-option" })
+  try {
+    expect(testClient(session).name).toBe("from-option")
+  } finally {
+    await session.stop()
+  }
+})
+
+test("heartbeat option negotiates with broker", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1", { heartbeat: 30 })
+  try {
+    // The broker may negotiate down, but 30 is well within RabbitMQ defaults.
+    expect(testClient(session).heartbeat).toBe(30)
+  } finally {
+    await session.stop()
+  }
+})
+
+test("frameMax option negotiates with broker", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1", { frameMax: 16384 })
+  try {
+    expect(testClient(session).frameMax).toBe(16384)
+  } finally {
+    await session.stop()
+  }
+})
+
+test("channelMax option negotiates with broker", async () => {
+  const session = await AMQPSession.connect("amqp://127.0.0.1", { channelMax: 64 })
+  try {
+    expect(testClient(session).channelMax).toBe(64)
+  } finally {
+    await session.stop()
+  }
+})
+
+test("mandatory publish to unroutable address triggers onreturn", async () => {
+  let returned!: (msg: AMQPMessage) => void
+  const got = new Promise<AMQPMessage>((resolve) => {
+    returned = resolve
+  })
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    onreturn: (msg) => returned(msg),
+  })
+  try {
+    // Default exchange routes by queue name. No queue with this name exists, so
+    // mandatory:true makes the broker return the message.
+    const q = new AMQPQueue(session, "does-not-exist-" + Math.random())
+    await q.publish("hello", { mandatory: true, confirm: false })
+    const msg = await Promise.race([
+      got,
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("onreturn never fired")), 2000)),
+    ])
+    expect(msg.routingKey).toBe(q.name)
+  } finally {
+    await session.stop()
+  }
+})
+
+test("mandatory publish that routes does not trigger onreturn", async () => {
+  const onreturn = vi.fn()
+  const session = await AMQPSession.connect("amqp://127.0.0.1", { onreturn })
+  try {
+    const q = await session.queue("test-mandatory-routes-" + Math.random(), {
+      durable: false,
+      autoDelete: true,
+    })
+    await q.publish("hello", { mandatory: true })
+    await new Promise((r) => setTimeout(r, 100))
+    expect(onreturn).not.toHaveBeenCalled()
+  } finally {
+    await session.stop()
+  }
+})
+
+test("onblocked / onunblocked can be wired through options", async () => {
+  // Triggering connection.blocked requires hitting a broker resource alarm,
+  // which isn't safe to do in a shared test broker. Instead, verify the
+  // session forwards the handlers onto the underlying client and simulate
+  // the frame handler firing them.
+  const onblocked = vi.fn()
+  const onunblocked = vi.fn()
+  const session = await AMQPSession.connect("amqp://127.0.0.1", { onblocked, onunblocked })
+  try {
+    const client = testClient(session)
+    client.onblocked?.("low on memory")
+    client.onunblocked?.()
+    expect(onblocked).toHaveBeenCalledWith("low on memory")
+    expect(onunblocked).toHaveBeenCalledTimes(1)
+  } finally {
+    await session.stop()
+  }
+})
