@@ -30,8 +30,9 @@ export type QueuePublishOptions<T> = Omit<AMQPProperties, "contentType"> & {
   confirm?: boolean
   /**
    * Ask the broker to return the message if it can't be routed to a queue.
-   * Returned messages are delivered to the session-level `onreturn` handler.
-   * Defaults to `false`.
+   * Returned messages are delivered to the session-level `onreturn` handler
+   * when one is configured; otherwise the default channel handler just
+   * logs them. Defaults to `false`.
    */
   mandatory?: boolean
   contentType?: T

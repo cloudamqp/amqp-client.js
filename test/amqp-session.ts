@@ -1414,6 +1414,29 @@ test("mandatory publish that routes does not trigger onreturn", async () => {
   }
 })
 
+test("returned messages are decoded via session parsers before onreturn", async () => {
+  let returned!: (msg: AMQPMessage) => void
+  const got = new Promise<AMQPMessage>((resolve) => {
+    returned = resolve
+  })
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    parsers: builtinParsers,
+    defaultContentType: "application/json",
+    onreturn: (msg) => returned(msg),
+  })
+  try {
+    const q = new AMQPQueue(session, "does-not-exist-" + Math.random())
+    await q.publish({ hello: "world" }, { mandatory: true, confirm: false })
+    const msg = await Promise.race([
+      got,
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("onreturn never fired")), 2000)),
+    ])
+    expect(msg.body).toEqual({ hello: "world" })
+  } finally {
+    await session.stop()
+  }
+})
+
 test("onblocked / onunblocked can be wired through options", async () => {
   // Triggering connection.blocked requires hitting a broker resource alarm,
   // which isn't safe to do in a shared test broker. Instead, verify the
