@@ -309,6 +309,17 @@ export class AMQPSession<
   }
 
   /**
+   * Remove a queue handle from the session cache. Called by
+   * {@link AMQPQueue#delete} after the broker acks the delete so subsequent
+   * `session.queue(name)` calls don't hand back a handle to a queue that no
+   * longer exists.
+   * @internal
+   */
+  removeQueue(name: string): void {
+    this.queues.delete(name)
+  }
+
+  /**
    * Declare a queue and return a session-bound {@link AMQPQueue} handle.
    * The returned queue's `subscribe` uses auto-recovery and `publish` waits for
    * a broker confirm.

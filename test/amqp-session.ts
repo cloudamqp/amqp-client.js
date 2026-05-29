@@ -371,6 +371,59 @@ test("session.queue(name) re-call returns cached handle without redeclaring", ()
     await first.delete()
   }))
 
+test("queue.delete() invalidates the session cache so re-declare returns a fresh handle", () =>
+  withSession(async (session) => {
+    const name = "test-sq-delete-cache-" + Math.random()
+    const first = await session.queue(name, { durable: false, autoDelete: true })
+    await first.delete()
+    // After delete, the cache entry must be gone — re-declaring with
+    // different params would otherwise return the stale handle and skip
+    // the new declare entirely.
+    const second = await session.queue(name, { durable: false, autoDelete: true })
+    expect(second).not.toBe(first)
+    await second.delete()
+  }))
+
+test("queue.delete() lets a re-declare succeed with conflicting params (cache cleared)", () =>
+  withSession(async (session) => {
+    const name = "test-sq-delete-redecl-" + Math.random()
+    const first = await session.queue(name, { durable: false, autoDelete: true, exclusive: false })
+    await first.delete()
+    // If the cache were still populated, this call would hand back `first`
+    // without redeclaring; with the cache cleared the broker accepts the
+    // fresh declaration with a different `exclusive` value.
+    const second = await session.queue(name, { durable: false, autoDelete: true, exclusive: true })
+    expect(second).not.toBe(first)
+    await second.delete()
+  }))
+
+test("queue.delete() cancels active subscriptions", () =>
+  withSession(async (session) => {
+    const name = "test-sq-delete-cancel-" + Math.random()
+    const q = await session.queue(name, { durable: false, autoDelete: false })
+    const sub = await q.subscribe(() => {})
+    const ch = sub.channel
+    expect(ch.closed).toBe(false)
+    await q.delete()
+    // cancelAll runs synchronously but the consumer cancel + channel close
+    // are async; wait a tick for the broker round-trip.
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(ch.closed).toBe(true)
+  }))
+
+test("queue.delete() failure keeps the cache entry (handle still usable)", () =>
+  withSession(async (session) => {
+    const name = "test-sq-delete-fail-" + Math.random()
+    const q = await session.queue(name, { durable: false, autoDelete: true })
+    await q.publish("blocker")
+    // ifEmpty against a non-empty queue → PRECONDITION_FAILED. Cache must
+    // stay intact since the queue still exists broker-side.
+    await expect(q.delete({ ifEmpty: true })).rejects.toThrow()
+    const again = await session.queue(name)
+    expect(again).toBe(q)
+    await q.delete()
+  }))
+
 test("AMQPQueue (session-backed).publish() and get() round-trip", () =>
   withSession(async (session) => {
     const q = await session.queue("test-sq-rtt-" + Math.random(), { durable: false, autoDelete: true })
