@@ -23,6 +23,7 @@ export type ExchangeOptions = ExchangeParams & {
   /** Exchange arguments table (e.g. `{ "x-delayed-type": "direct" }`). */
   arguments?: Record<string, unknown>
 }
+import { decodeMessage } from "./amqp-codec-registry.js"
 import type { ParserMap, CoderMap, ParserRegistry, CoderRegistry } from "./amqp-codec-registry.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import type { ResolveBody } from "./amqp-publisher.js"
@@ -313,10 +314,25 @@ export class AMQPSession<
 
   // Forward returned (unroutable mandatory) messages from a channel to the
   // session-level onreturn handler so callers register a single hook
-  // regardless of which channel published.
+  // regardless of which channel published. Decoded through the session's
+  // parsers/coders so the body shape matches what publish() accepted.
   private wireReturnHandler(ch: AMQPChannel): void {
     if (!this.onreturn) return
-    ch.onReturn = (msg) => this.onreturn?.(msg as AMQPMessage<P>)
+    ch.onReturn = (msg) => {
+      const handler = this.onreturn
+      if (!handler) return
+      void (async () => {
+        try {
+          if (this.parsers || this.coders) {
+            await decodeMessage(msg, this.parsers ?? {}, this.coders ?? {})
+          }
+          handler(msg as AMQPMessage<P>)
+        } catch (err) {
+          const error = err instanceof Error ? err : new Error(String(err))
+          this.client.logger?.warn(`${this.logTag()}: onreturn handler failed:`, error.message)
+        }
+      })()
+    }
   }
 
   // Serializes operations on the shared ops channel. AMQP channel-level

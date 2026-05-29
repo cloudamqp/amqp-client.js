@@ -34,7 +34,7 @@ export interface AMQPSubscriptionLike {
 /** Minimum surface a mock queue handle must expose. */
 export interface AMQPQueueLike {
   readonly name: string
-  publish(body: unknown, options?: AMQPProperties & { confirm?: boolean }): Promise<unknown>
+  publish(body: unknown, options?: AMQPProperties & { confirm?: boolean; mandatory?: boolean }): Promise<unknown>
   subscribe(
     params: QueueSubscribeParams,
     callback: (msg: AMQPMessage) => void | Promise<void>,
@@ -46,7 +46,10 @@ export interface AMQPQueueLike {
 
 /** Minimum surface a mock exchange handle must expose. */
 export interface AMQPExchangeLike {
-  publish(body: unknown, options?: AMQPProperties & { routingKey?: string; confirm?: boolean }): Promise<unknown>
+  publish(
+    body: unknown,
+    options?: AMQPProperties & { routingKey?: string; confirm?: boolean; mandatory?: boolean },
+  ): Promise<unknown>
 }
 
 /** Minimum surface a mock session must expose. */
