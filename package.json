@@ -70,10 +70,10 @@
   "devDependencies": {
     "@types/node": "*",
     "@vitest/browser": "*",
+    "@vitest/browser-playwright": "*",
     "@vitest/coverage-v8": "*",
     "eslint": "*",
     "eslint-config-prettier": "*",
-    "typescript-eslint": "*",
     "playwright": "*",
     "prettier": "*",
     "rollup": "*",
@@ -81,6 +81,7 @@
     "ts-node": "*",
     "typedoc": "*",
     "typescript": "*",
+    "typescript-eslint": "*",
     "vitest": "*"
   }
 }
