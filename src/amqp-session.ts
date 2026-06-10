@@ -410,6 +410,12 @@ export class AMQPSession<
    *
    * Subsequent calls with the same name return the cached handle without
    * redeclaring, and `options` on those calls are ignored.
+   *
+   * Server-named queues (declared with `""`) are not tracked for auto-recovery:
+   * the broker assigns a fresh name on every connection, so the old name is
+   * dead after a reconnect and can't be recovered. Re-declare such a queue in
+   * an {@link AMQPSessionOptions.onconnect} handler — it runs again after every
+   * reconnect — and bind/subscribe there.
    * @param name - queue name (use "" to let the broker generate a name)
    * @param [options] - queue declaration parameters and queue arguments
    */
@@ -421,6 +427,10 @@ export class AMQPSession<
     const { arguments: queueArguments, ...declarationParams } = options ?? {}
     return this.withOpsChannel(async (ch) => {
       const res = await ch.queueDeclare(name, declarationParams, queueArguments)
+      // Server-named queues can't be recovered by name, so don't register them
+      // for auto-recovery — a cached handle would chase a dead name on every
+      // reconnect (and never get evicted). Callers re-declare in `onconnect`.
+      if (name === "") return new AMQPQueue<P, C, KP, KC>(this, res.name)
       const existing = this.queues.get(res.name)
       if (existing) return existing
       const q = new AMQPQueue<P, C, KP, KC>(this, res.name)

@@ -67,6 +67,26 @@ test("session.subscribe accepts a broker-named queue", () =>
     await sub.cancel()
   }))
 
+test("server-named queues are not tracked for recovery", () =>
+  withSession(async (session) => {
+    const queues = (session as unknown as { queues: Map<string, AMQPQueue> }).queues
+
+    // A server-named queue ("") gets a fresh broker-assigned name on every
+    // connection, so the old name can't be recovered after a reconnect.
+    // It must not be registered for auto-recovery — otherwise the dead
+    // amq.gen-* name would be chased (and never evicted) on each reconnect.
+    const sizeBefore = queues.size
+    const anon = await session.queue("", { exclusive: true, autoDelete: true })
+    expect(anon.name).not.toBe("")
+    expect(queues.size).toBe(sizeBefore)
+
+    // Named queues are still tracked so their consumers recover.
+    const named = "test-tracked-" + Math.random()
+    await session.queue(named, { durable: false, autoDelete: true })
+    expect(queues.has(named)).toBe(true)
+    await (await session.queue(named)).delete()
+  }))
+
 test("subscription.cancel() removes it from session recovery", () =>
   withSession(async (session) => {
     const q = await session.queue("test-cancel-" + Math.random(), { durable: false, autoDelete: true })
