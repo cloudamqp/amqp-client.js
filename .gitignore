@@ -8,3 +8,5 @@ coverage/
 premaster.txt
 .env
 .claude
+.vitest-attachments/
+test-browser/__screenshots__/
