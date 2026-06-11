@@ -302,6 +302,7 @@ export class AMQPSession<
     if (this.opsChannelPromise) return this.opsChannelPromise
     this.opsChannelPromise = this.client.channel().then((ch) => {
       this.wireReturnHandler(ch)
+      this.wireManagedChannelErrorHandler(ch)
       this.opsChannel = ch
       this.opsChannelPromise = null
       return ch
@@ -332,6 +333,15 @@ export class AMQPSession<
           this.client.logger?.warn(`${this.logTag()}: onreturn handler failed:`, error.message)
         }
       })()
+    }
+  }
+
+  // Ops/confirm channels reopen on next use, so an expected close (e.g. a
+  // passive declare of a missing queue) shouldn't hit the connection error
+  // log. The awaiting RPC still rejects via setClosed. Matches amqp-client.rb.
+  private wireManagedChannelErrorHandler(ch: AMQPChannel): void {
+    ch.onerror = (reason) => {
+      this.client.logger?.debug(`${this.logTag()}: channel ${ch.id} closed (${reason}); will reopen on next use`)
     }
   }
 
@@ -374,6 +384,7 @@ export class AMQPSession<
     this.confirmChannelPromise = this.client.channel().then(async (ch) => {
       await ch.confirmSelect()
       this.wireReturnHandler(ch)
+      this.wireManagedChannelErrorHandler(ch)
       this.confirmChannel = ch
       this.confirmChannelPromise = null
       return ch

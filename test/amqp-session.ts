@@ -1216,6 +1216,27 @@ test("ops channel: passive NOT_FOUND doesn't disrupt concurrent declares", () =>
     expect(results[1]?.status).toBe("fulfilled")
   }))
 
+test("ops channel: passive NOT_FOUND doesn't log a connection error and recovers", async () => {
+  // Passive declare of a missing queue closes the ops channel. The miss must
+  // not log a connection error, and the channel must recover.
+  const error = vi.fn()
+  const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error }
+  await withSession(
+    async (session) => {
+      await expect(session.queue("nope-" + Math.random(), { passive: true })).rejects.toThrow(/NOT[_-]?FOUND/i)
+      expect(error).not.toHaveBeenCalled()
+
+      // Ops channel recovered: a follow-up declare on the shared channel works.
+      const okName = "test-after-passive-miss-" + Math.random()
+      const q = await session.queue(okName, { durable: false, autoDelete: true })
+      expect(q).toBeInstanceOf(AMQPQueue)
+      await q.delete()
+      expect(error).not.toHaveBeenCalled()
+    },
+    { logger },
+  )
+})
+
 test("ops channel: PRECONDITION_FAILED on mismatched declare doesn't disrupt siblings", () =>
   withSession(async (owner) => {
     // Declare the queue from one session, then from a second session declare
