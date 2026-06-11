@@ -408,13 +408,15 @@ export class AMQPSession<
    * The returned queue's `subscribe` uses auto-recovery and `publish` waits for
    * a broker confirm.
    *
-   * Subsequent calls with the same name return the cached handle without
-   * redeclaring, and `options` on those calls are ignored.
+   * Subsequent calls with the same (non-empty) name return the cached handle
+   * without redeclaring, and `options` on those calls are ignored.
    *
-   * Server-named queues (declared with `""`) are not tracked for auto-recovery:
-   * the broker assigns a fresh name on every connection, so the old name is
-   * dead after a reconnect and can't be recovered. Re-declare such a queue in
-   * an {@link AMQPSessionOptions.onconnect} handler — it runs again after every
+   * Server-named queues (declared with `""`) are not cached or tracked for
+   * auto-recovery: every call declares a fresh queue, and the broker assigns a
+   * new name on every connection, so the old name is dead after a reconnect and
+   * can't be recovered. Neither the queue nor its consumers are auto-recovered —
+   * `AMQPQueue.subscribe()` recovery does not apply here. Re-declare such a queue
+   * in an {@link AMQPSessionOptions.onconnect} handler — it runs again after every
    * reconnect — and bind/subscribe there.
    * @param name - queue name (use "" to let the broker generate a name)
    * @param [options] - queue declaration parameters and queue arguments
