@@ -15,16 +15,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
+          node-version: "24"
           registry-url: https://registry.npmjs.org/
+      # Trusted Publishing (OIDC) needs npm >= 11.5.1; ensure it regardless of the bundled version
+      - run: npm install -g npm@latest
       - run: npm install
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
       - run: npm run build
+      # No NODE_AUTH_TOKEN: npm authenticates to the registry via OIDC trusted publishing
       - run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
         # create GitHub release
       - name: Extract release notes
