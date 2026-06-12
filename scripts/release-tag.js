@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import fs from "fs"
-import { execSync } from "child_process"
+import { execFileSync } from "child_process"
 
 function main() {
   // Read package.json to get current version
@@ -37,18 +37,17 @@ function main() {
 
   // Check if tag already exists
   try {
-    execSync(`git rev-parse ${tagName}`, { stdio: "pipe" })
+    execFileSync("git", ["rev-parse", tagName], { stdio: "pipe" })
     console.log(`⚠️  Tag ${tagName} already exists. Skipping tag creation.`)
     return
   } catch {
     // Tag doesn't exist, continue with creation
   }
 
-  // Escape backticks and other shell special characters in the content
-  const escapedContent = content.replace(/`/g, "\\`").replace(/\$/g, "\\$")
-
+  // Pass args directly to git (no shell) so changelog markup needs no escaping.
+  // --cleanup=verbatim keeps the Markdown "#" headers git would otherwise strip as comments.
   try {
-    execSync(`git tag -a ${tagName} -m ${JSON.stringify(escapedContent)}`, {
+    execFileSync("git", ["tag", "-a", "--cleanup=verbatim", tagName, "-m", content], {
       stdio: "inherit",
     })
     console.log(`✅ Created tag ${tagName} successfully`)
