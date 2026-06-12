@@ -5,58 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.0.0] - 2026-06-12
 
 ### Added
 
+- `AMQPSession` — high-level client with automatic reconnection and consumer recovery ([#185](https://github.com/cloudamqp/amqp-client.js/pull/185), [#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+  - `AMQPSession.connect(url, options?)` picks TCP or WebSocket transport from the URL scheme (`amqp://` / `amqps://` → TCP; `ws://` / `wss://` → WebSocket)
+  - Exponential backoff via `reconnectInterval`, `maxReconnectInterval`, `backoffMultiplier`, `maxRetries`
+  - `session.queue(name, options?)` and `session.exchange(name, type, options?)` declare and return reconnect-safe handles; pass broker arguments via `options.args` ([#209](https://github.com/cloudamqp/amqp-client.js/pull/209))
+  - Shorthand exchange factories: `directExchange()`, `fanoutExchange()`, `topicExchange()`, `headersExchange()`
+  - `session.onconnect` / `session.onfailed` lifecycle hooks; `session.closed`; `session.stop()` cancels reconnection, clears subscriptions, and closes the connection
+  - Lifecycle transitions log via the configured logger (`info` on connect, `warn` on disconnect, `error` when reconnect gives up), prefixed with `AMQPSession[${name}]:` when the URL carries `?name=` ([#219](https://github.com/cloudamqp/amqp-client.js/issues/219))
+  - Session ops (declare, bind/unbind, etc.) are serialized through a mutex so concurrent declarations on the shared ops channel can't interleave ([#207](https://github.com/cloudamqp/amqp-client.js/pull/207))
+- `AMQPQueue` — reconnect-safe queue handle from `session.queue()`, with `publish()`, `subscribe()`, `get()`, `bind()`, `unbind()`, `purge()`, `delete()` ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+  - `subscribe(callback)` / `subscribe(params, callback)` auto-acks after the callback returns, nacks and requeues on throw; call `msg.ack()` / `msg.nack()` to override, or pass `{ noAck: true }` to skip; `requeueOnNack` controls requeue on error ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
+  - `subscribe()` / `subscribe(params)` async-iterator form auto-acks the previous message as the loop advances; the last message (after `break`) is left unacked ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
+  - Subscriptions survive reconnection automatically
+  - `bind()` / `unbind()` accept an `AMQPExchange` handle or an exchange name
+  - `publish()` defaults `deliveryMode` to `2` (persistent) so messages survive a broker restart
+  - Server-named queues (declared with `""`) are not tracked for auto-recovery — re-declare them in an `onconnect` handler, which runs after each reconnect ([#230](https://github.com/cloudamqp/amqp-client.js/pull/230))
+- `AMQPExchange` — reconnect-safe exchange handle from `session.exchange()`, with `publish()`, `bind()`, `unbind()`, `delete()`; `publish()` defaults `deliveryMode` to `2` ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
+- `AMQPSubscription` — stable consumer handle across reconnections: exposes `channel`, `consumerTag`, and `cancel()`; `cancel()` is best-effort and never throws — closed channels and connections count as success ([#208](https://github.com/cloudamqp/amqp-client.js/pull/208))
+- `AMQPGeneratorSubscription` — extends `AMQPSubscription` with `AsyncIterable<AMQPMessage>` support
+- `AMQPQueue.consumeOne({ timeout })` — one-shot consume that resolves with a single message or rejects on timeout ([#212](https://github.com/cloudamqp/amqp-client.js/pull/212))
+  - Dedicated channel with `prefetch: 1` so the broker holds the queue at one in-flight delivery
+  - Acks the returned message before resolving; late deliveries are nacked with requeue; rejects when the consumer, channel, or connection closes first
+- `AMQPRPCClient` — reusable RPC client using direct reply-to for request-response ([#191](https://github.com/cloudamqp/amqp-client.js/pull/191))
+  - `start()` to listen for responses, `call(queue, body, options?)` to publish a request and await its response, `close()` to reject pending calls and clean up
+  - Per-call `timeout`, automatic correlation ID tracking; recovered by `AMQPSession` on reconnect when created via `session.rpcClient()`
+- `AMQPRPCServer` — RPC server that consumes from a queue and replies to each caller ([#191](https://github.com/cloudamqp/amqp-client.js/pull/191))
+  - Session-level subscribe for automatic consumer recovery; handler receives the full `AMQPMessage` and returns the response body
+- Session-level RPC convenience methods ([#191](https://github.com/cloudamqp/amqp-client.js/pull/191))
+  - `session.rpcCall(queue, body, options?)` — one-shot call (recommended for most uses)
+  - `session.rpcClient()` — reusable `AMQPRPCClient` for high throughput
+  - `session.rpcServer(queue, handler, prefetch?)` — create and start an `AMQPRPCServer`
 - `AMQPCodecRegistry` — opt-in automatic encoding/decoding of message bodies by content-type ([#192](https://github.com/cloudamqp/amqp-client.js/pull/192))
   - Builtin codec constants for JSON, text, and raw bytes; register your own for other content-types
   - `builtinParsers` (JSON, text) and `builtinCoders` (gzip, deflate) ship ready to spread into the registry; `BuiltinParsers` / `BuiltinCoders` describe their shape
-  - `defaultContentType` / `defaultContentEncoding` session options apply codecs to publishes that don't set them explicitly
+  - `defaultContentType` / `defaultContentEncoding` session options apply codecs to publishes that don't set them
   - Wired into `AMQPClient`, `AMQPSession`, `AMQPQueue`, `AMQPExchange`, `AMQPSubscription`, `AMQPRPCClient`, and `AMQPRPCServer`
   - `CodecMode` generic (`"plain" | "codec"`) threads through session, queue, exchange, RPC, and message types so the body type is inferred at compile time
   - `AMQPMessage<CodecMode>` exposes `msg.body` as `Uint8Array` in `"plain"` mode and the decoded value in `"codec"` mode
-  - Type-safe publish overloads use `PublishBody<C>` instead of `unknown`
-  - Decode errors surface as plain `Error` (not `AMQPError`); subscribe honors `requeueOnNack` for those errors
-  - Misconfigured publish fails fast at the call site
-- `AMQPQueue.consumeOne({ timeout })` — one-shot consume that resolves with a single message or rejects on timeout ([#212](https://github.com/cloudamqp/amqp-client.js/pull/212))
-  - Uses a dedicated channel with `prefetch: 1` so the broker holds the queue at one in-flight delivery
-  - Library acks the returned message before resolving; late-arriving deliveries are nacked with requeue
-  - Rejects when the consumer, channel, or connection closes before delivery
+  - Type-safe publish overloads use `PublishBody<C>` instead of `unknown`; misconfigured publishes fail fast at the call site
+  - Decode errors surface as plain `Error` (not `AMQPError`); subscribe honors `requeueOnNack` for them
 - `AMQPSessionLike`, `AMQPQueueLike`, `AMQPExchangeLike`, `AMQPSubscriptionLike` — minimum surface interfaces for mocking in tests ([#209](https://github.com/cloudamqp/amqp-client.js/pull/209))
-- `AMQPRPCClient` — reusable RPC client using direct reply-to for request-response patterns ([#191](https://github.com/cloudamqp/amqp-client.js/pull/191))
-  - `start()` to begin listening for responses on the direct reply-to pseudo-queue
-  - `call(queue, body, options?)` to publish an RPC request and await its response
-  - Configurable per-call `timeout`; automatic correlation ID tracking
-  - `close()` to reject pending calls and clean up the channel
-  - Automatically recovered by `AMQPSession` on reconnect when created via `session.rpcClient()`
-- `AMQPRPCServer` — RPC server that consumes from a queue and replies to each caller ([#191](https://github.com/cloudamqp/amqp-client.js/pull/191))
-  - Uses session-level queue subscribe for automatic consumer recovery on reconnect
-  - Handler receives the full `AMQPMessage` and returns the response body
-- Session-level RPC convenience methods ([#191](https://github.com/cloudamqp/amqp-client.js/pull/191))
-  - `session.rpcCall(queue, body, options?)` — simple one-shot RPC call (recommended for most use cases)
-  - `session.rpcClient()` — create a reusable `AMQPRPCClient` for high-throughput scenarios
-  - `session.rpcServer(queue, handler, prefetch?)` — create and start an `AMQPRPCServer`
-- `AMQPSession` — high-level client with automatic reconnection and consumer recovery ([#185](https://github.com/cloudamqp/amqp-client.js/pull/185), [#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
-  - `AMQPSession.connect(url, options?)` factory: picks TCP or WebSocket transport from the URL scheme (`amqp://` / `amqps://` → TCP; `ws://` / `wss://` → WebSocket)
-  - Exponential backoff with configurable `reconnectInterval`, `maxReconnectInterval`, `backoffMultiplier`, and `maxRetries`
-  - `session.queue(name, options?)` — declare and return an `AMQPQueue` handle; pass broker arguments via `options.args` ([#209](https://github.com/cloudamqp/amqp-client.js/pull/209))
-  - `session.exchange(name, type, options?)` — declare and return an `AMQPExchange` handle; pass broker arguments via `options.args` ([#209](https://github.com/cloudamqp/amqp-client.js/pull/209))
-  - Shorthand exchange factories: `directExchange()`, `fanoutExchange()`, `topicExchange()`, `headersExchange()`
-  - `session.onconnect` / `session.onfailed` lifecycle hooks
-  - `session.closed` — `true` when the underlying connection is closed
-  - `session.stop()` — cancels reconnection, clears all subscriptions, and closes the connection
-  - Lifecycle transitions log automatically via the configured logger: `info` on connect/reconnect, `warn` on disconnect, `error` when reconnect gives up. Messages are prefixed with `AMQPSession[${name}]:` when the URL carries `?name=` ([#219](https://github.com/cloudamqp/amqp-client.js/issues/219))
-- `AMQPQueue` — reconnect-safe queue handle returned by `session.queue()`, with `publish()`, `subscribe()`, `get()`, `bind()`, `unbind()`, `purge()`, `delete()` ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
-  - `subscribe(callback)` / `subscribe(params, callback)` — auto-acks after the callback returns; nacks and requeues on throw; call `msg.ack()` / `msg.nack()` inside the callback to override; pass `{ noAck: true }` to skip acking entirely; `requeueOnNack` controls requeue behaviour on error ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
-  - `subscribe()` / `subscribe(params)` — async-iterator form; auto-acks the previous message when the loop advances; the last message (after `break`) is left unacked; call `msg.ack()` / `msg.nack()` before advancing to override; pass `{ noAck: true }` to skip acking ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
-  - Subscriptions survive reconnection automatically; the async-iterator form continues yielding without any caller changes
-  - Server-named queues (declared with `""`) are not tracked for auto-recovery — the broker assigns a fresh name on every connection, so re-declare them (and re-bind/subscribe) in an `onconnect` handler, which runs again after each reconnect ([#230](https://github.com/cloudamqp/amqp-client.js/pull/230))
-- `AMQPExchange` — reconnect-safe exchange handle returned by `session.exchange()`, with `publish()`, `bind()`, `unbind()`, `delete()` ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
-- `AMQPSubscription` — stable consumer handle across reconnections: exposes `channel`, `consumerTag`, and `cancel()`
-- `AMQPGeneratorSubscription` — extends `AMQPSubscription` with `AsyncIterable<AMQPMessage>` support
-- `QueueSubscribeParams` — exported type combining `ConsumeParams` with `prefetch?` and `requeueOnNack?` (default `true`) ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
-- `QueuePublishOptions` / `ExchangePublishOptions` — exported types for publish options; both extend `AMQPProperties` with a `confirm?` flag; `ExchangePublishOptions` adds `routingKey?`
+- `QueueSubscribeParams` — type combining `ConsumeParams` with `prefetch?` and `requeueOnNack?` (default `true`) ([#189](https://github.com/cloudamqp/amqp-client.js/pull/189))
+- `QueuePublishOptions` / `ExchangePublishOptions` — publish option types extending `AMQPProperties` with a `confirm?` flag; `ExchangePublishOptions` adds `routingKey?`
 - `ondisconnect` hook on `AMQPBaseClient` (TCP and WebSocket) — fires when the connection drops
 
 ### Breaking
@@ -65,14 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AMQPQueue` is now a session-only class — no longer returned by channel methods, no longer accepts a channel in its constructor. ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
 - `AMQPQueue` is no longer re-exported from `AMQPClient` or `AMQPWebSocketClient`. Import from the main package entry point instead. ([#186](https://github.com/cloudamqp/amqp-client.js/pull/186))
 - Minimum supported Node version is now 18
-
-### Changed
-
-- `session.queue(name, params?, args?)` is now `session.queue(name, options?)`; pass broker arguments via `options.args`. Same shape change for `session.exchange()` and the `direct/fanout/topic/headers` exchange shortcuts. ([#209](https://github.com/cloudamqp/amqp-client.js/pull/209))
-- `AMQPQueue.bind()` and `AMQPQueue.unbind()` now accept an `AMQPExchange` handle in addition to an exchange name
-- `AMQPQueue.publish()` and `AMQPExchange.publish()` default `deliveryMode` to `2` (persistent) so messages survive a broker restart by default
-- `AMQPSubscription.cancel()` is now best-effort and never throws — closing/closed channels and connections are treated as success ([#208](https://github.com/cloudamqp/amqp-client.js/pull/208))
-- Session ops (queue/exchange declare, bind/unbind, etc.) are serialized through a mutex so concurrent declarations on the shared ops channel can't interleave ([#207](https://github.com/cloudamqp/amqp-client.js/pull/207))
 
 ### Migration guide
 
