@@ -51,6 +51,51 @@ test("session.subscribe delivers messages via callback", () =>
     await sub.cancel()
   }))
 
+test("subscribe: a throwing no-ack callback is logged, not an unhandled rejection", async () => {
+  const error = vi.fn()
+  const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error }
+  await withSession(
+    async (session) => {
+      const q = await session.queue("test-throwing-cb-" + Math.random(), { durable: false, autoDelete: true })
+      const sub = await q.subscribe({ noAck: true }, () => {
+        throw new Error("boom")
+      })
+
+      await q.publish("test", { confirm: false })
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      expect(error).toHaveBeenCalled()
+      await sub.cancel()
+    },
+    { logger },
+  )
+})
+
+test("subscribe: a decode failure is logged, not an unhandled rejection", async () => {
+  const error = vi.fn()
+  const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error }
+  await withSession(
+    async (session) => {
+      const q = await session.queue("test-bad-decode-" + Math.random(), { durable: false, autoDelete: true })
+      let delivered = false
+      const sub = await q.subscribe({ noAck: true }, () => {
+        delivered = true
+      })
+
+      // Publish raw so the body bypasses serialization: claims JSON, isn't.
+      const ch = await testClient(session).channel()
+      await ch.basicPublish("", q.name, "not json {", { contentType: "application/json" })
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      expect(error).toHaveBeenCalled()
+      expect(delivered).toBe(false)
+      await ch.close()
+      await sub.cancel()
+    },
+    { logger, parsers: builtinParsers },
+  )
+})
+
 test("session.subscribe accepts a broker-named queue", () =>
   withSession(async (session) => {
     const q = await session.queue("", { durable: false, autoDelete: true })
