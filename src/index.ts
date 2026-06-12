@@ -37,6 +37,8 @@ export type {
   CoderMap,
   ParserRegistry,
   CoderRegistry,
+  BuiltinParsers,
+  BuiltinCoders,
   InferParserInput,
   InferParserOutput,
   JsonSerializable,

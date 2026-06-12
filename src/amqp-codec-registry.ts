@@ -20,7 +20,8 @@ export type JsonSerializable =
   | JsonSerializable[]
   | { [key: string]: JsonSerializable }
 
-type BuiltinParsers = {
+/** Shape of {@link builtinParsers}: `text/plain` and `application/json`. */
+export type BuiltinParsers = {
   "text/plain": AMQPParser<string, string>
   "application/json": AMQPParser<JsonSerializable, unknown>
 }
@@ -33,7 +34,8 @@ export type CoderMap = { [K: string]: AMQPCoder }
 /** Readonly view of a {@link CoderMap}. */
 export type CoderRegistry<T extends CoderMap> = { readonly [K in keyof T & string]: T[K] }
 
-type BuiltinCoders = { gzip: AMQPCoder; deflate: AMQPCoder }
+/** Shape of {@link builtinCoders}: `gzip` and `deflate`. */
+export type BuiltinCoders = { gzip: AMQPCoder; deflate: AMQPCoder }
 
 /** Handles serialization/deserialization based on content-type. */
 export interface AMQPParser<In = unknown, Out = unknown> {
