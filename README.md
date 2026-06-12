@@ -62,6 +62,42 @@ await x.publish("user signed up", { routingKey: "events.user.created" })
 await session.stop()
 ```
 
+#### Automatic encoding/decoding (codecs)
+
+Opt in to a codec registry and the session serializes and deserializes message bodies for you based on `content-type` and `content-encoding`. Pass `builtinParsers` (JSON, text) and `builtinCoders` (gzip, deflate), and optionally set defaults so you don't repeat them on every publish:
+
+```javascript
+import { AMQPSession, builtinParsers, builtinCoders } from "@cloudamqp/amqp-client"
+
+const session = await AMQPSession.connect("amqp://localhost", {
+  parsers: builtinParsers,
+  coders: builtinCoders,
+  defaultContentType: "application/json", // applied when publish() doesn't set one
+  defaultContentEncoding: "gzip", // body is gzip-compressed on the wire
+})
+
+const q = await session.queue("jobs")
+
+// Object is serialized to JSON and gzip-compressed automatically
+await q.publish({ task: "resize", id: 42 })
+
+// On consume, msg.body is the decoded value — no JSON.parse, no decompression
+const sub = await q.subscribe(async (msg) => {
+  console.log(msg.body.task) // "resize"
+})
+```
+
+`msg.body` is `Uint8Array` when no codecs are configured and the decoded value when they are; the `CodecMode` generic infers this at compile time. Override per publish by passing `contentType` / `contentEncoding` in the options. Register your own codecs by merging with the built-ins:
+
+```javascript
+const session = await AMQPSession.connect("amqp://localhost", {
+  parsers: { ...builtinParsers, "text/csv": csvParser },
+  coders: { ...builtinCoders, lz4: lz4Coder },
+})
+```
+
+Decode failures surface as a plain `Error` (not `AMQPError`); in `subscribe()` they nack the message, honoring `requeueOnNack`.
+
 #### Reconnection options
 
 ```javascript

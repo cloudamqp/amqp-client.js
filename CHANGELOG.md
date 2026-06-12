@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `AMQPCodecRegistry` — opt-in automatic encoding/decoding of message bodies by content-type ([#192](https://github.com/cloudamqp/amqp-client.js/pull/192))
   - Builtin codec constants for JSON, text, and raw bytes; register your own for other content-types
+  - `builtinParsers` (JSON, text) and `builtinCoders` (gzip, deflate) ship ready to spread into the registry; `BuiltinParsers` / `BuiltinCoders` describe their shape
+  - `defaultContentType` / `defaultContentEncoding` session options apply codecs to publishes that don't set them explicitly
   - Wired into `AMQPClient`, `AMQPSession`, `AMQPQueue`, `AMQPExchange`, `AMQPSubscription`, `AMQPRPCClient`, and `AMQPRPCServer`
   - `CodecMode` generic (`"plain" | "codec"`) threads through session, queue, exchange, RPC, and message types so the body type is inferred at compile time
   - `AMQPMessage<CodecMode>` exposes `msg.body` as `Uint8Array` in `"plain"` mode and the decoded value in `"codec"` mode
