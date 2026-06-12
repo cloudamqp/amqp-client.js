@@ -5,7 +5,7 @@ import { AMQPMessage } from "./amqp-message.js"
 import { AMQPView } from "./amqp-view.js"
 import type { Logger } from "./types.js"
 
-export const VERSION = "3.4.1"
+export const VERSION = "4.0.0"
 export const MIN_FRAME_SIZE = 8192
 
 /**
