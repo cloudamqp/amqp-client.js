@@ -9,6 +9,7 @@ import type { AMQPExchange } from "./amqp-exchange.js"
 import type { ResolveBody } from "./amqp-publisher.js"
 import { serializeAndEncode, decodeMessage } from "./amqp-codec-registry.js"
 import type { ParserMap, CoderMap } from "./amqp-codec-registry.js"
+import type { Logger } from "./types.js"
 
 /**
  * Options for {@link AMQPQueue#subscribe}.
@@ -134,7 +135,14 @@ export class AMQPQueue<
 
     const parsers = this.session.parsers
     const coders = this.session.coders
-    const wrappedCallback = wrapCallbackWithAutoDecodeAndAck(callback, { parsers, coders, autoAck, requeueOnNack })
+    const logger = this.session.logger
+    const wrappedCallback = wrapCallbackWithAutoDecodeAndAck(callback, {
+      parsers,
+      coders,
+      autoAck,
+      requeueOnNack,
+      logger,
+    })
     const def: ConsumerDefinition = {
       queueName: this.name,
       consumeParams,
@@ -355,13 +363,20 @@ function wrapCallbackWithAutoDecodeAndAck<P extends ParserMap>(
     coders: CoderMap | undefined
     autoAck: boolean
     requeueOnNack: boolean
+    logger: Logger | null | undefined
   },
 ): InternalCallback | undefined {
   if (!callback) return undefined
   if (!opts.autoAck) {
     return async (msg: AMQPMessage) => {
-      if (opts.parsers || opts.coders) await decodeMessage(msg, opts.parsers ?? {}, opts.coders ?? {})
-      await callback(msg as AMQPMessage<P>)
+      // Nobody awaits this delivery, so an uncaught decode or callback error
+      // becomes an unhandledRejection. No-ack can't nack, so just log.
+      try {
+        if (opts.parsers || opts.coders) await decodeMessage(msg, opts.parsers ?? {}, opts.coders ?? {})
+        await callback(msg as AMQPMessage<P>)
+      } catch (err) {
+        opts.logger?.error("Consumer callback error", err)
+      }
     }
   }
   return async (msg: AMQPMessage) => {
