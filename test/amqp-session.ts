@@ -1523,6 +1523,76 @@ test("returned messages are decoded via session parsers before onreturn", async 
   }
 })
 
+test("beforeConnect runs and is awaited before the initial connect", async () => {
+  let ranBeforeConnect = false
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    beforeConnect: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      ranBeforeConnect = true
+    },
+  })
+  try {
+    // connect() only resolves after the awaited beforeConnect completes.
+    expect(ranBeforeConnect).toBe(true)
+    expect(session.closed).toBe(false)
+  } finally {
+    await session.stop()
+  }
+})
+
+test("beforeConnect runs again before each reconnect", async () => {
+  let connects = 0
+  let befores = 0
+  const reconnected = new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("did not reconnect within 5s")), 5_000)
+    AMQPSession.connect("amqp://127.0.0.1", {
+      reconnectInterval: 50,
+      maxRetries: 5,
+      beforeConnect: () => {
+        befores++
+      },
+      onconnect: () => {
+        connects++
+        if (connects === 2) {
+          clearTimeout(timeout)
+          resolve()
+        }
+      },
+    })
+      .then((s) => (testClient(s) as AMQPClient).socket?.destroy())
+      .catch(reject)
+  })
+  await reconnected
+  // Once before the initial connect, once before the reconnect.
+  expect(befores).toBe(2)
+})
+
+test("a throwing beforeConnect on reconnect is retried, not fatal", async () => {
+  let attempts = 0
+  const reconnected = new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("did not recover within 5s")), 5_000)
+    AMQPSession.connect("amqp://127.0.0.1", {
+      reconnectInterval: 50,
+      maxRetries: 10,
+      beforeConnect: () => {
+        attempts++
+        // Fail the first reconnect attempt (attempt 2 overall); recover after.
+        if (attempts === 2) throw new Error("authorization not ready")
+      },
+      onconnect: () => {
+        if (attempts >= 3) {
+          clearTimeout(timeout)
+          resolve()
+        }
+      },
+    })
+      .then((s) => (testClient(s) as AMQPClient).socket?.destroy())
+      .catch(reject)
+  })
+  await reconnected
+  expect(attempts).toBeGreaterThanOrEqual(3)
+})
+
 test("onblocked / onunblocked can be wired through options", async () => {
   // Triggering connection.blocked requires hitting a broker resource alarm,
   // which isn't safe to do in a shared test broker. Instead, verify the

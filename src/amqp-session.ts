@@ -92,6 +92,18 @@ export interface AMQPSessionOptions<
    */
   channelMax?: number
   /**
+   * Runs before every connection attempt — the initial connect and every
+   * reconnect — and is awaited before the socket opens. Use it for setup
+   * that must complete before the broker is reachable, e.g. firewall
+   * authorization (sparoid / port knocking) or refreshing a credential.
+   *
+   * Unlike {@link onconnect}, this is awaited: if it throws on a reconnect
+   * the attempt is treated as a failed connect and the backoff loop retries
+   * (so a transient authorization failure doesn't tear down the session).
+   * On the initial connect a throw rejects {@link AMQPSession.connect}.
+   */
+  beforeConnect?: () => void | Promise<void>
+  /**
    * Fires after a successful (re)connection — both the initial connect and
    * every reconnect after consumer recovery completes. Registering here
    * rather than after `connect()` resolves means a single handler covers
@@ -149,6 +161,7 @@ export class AMQPSession<
   KP extends keyof P & string = never,
   KC extends keyof C & string = never,
 > {
+  private readonly beforeConnect?: () => void | Promise<void>
   private readonly onconnect?: (session: AMQPSession<P, C, KP, KC>) => void
   private readonly ondisconnect?: (error?: Error) => void
   private readonly onfailed?: (error?: Error) => void
@@ -203,6 +216,7 @@ export class AMQPSession<
     if (options?.coders) this.coders = options.coders
     if (options?.defaultContentType) this.defaultContentType = options.defaultContentType
     if (options?.defaultContentEncoding) this.defaultContentEncoding = options.defaultContentEncoding
+    if (options?.beforeConnect) this.beforeConnect = options.beforeConnect
     if (options?.onconnect) this.onconnect = options.onconnect
     if (options?.ondisconnect) this.ondisconnect = options.ondisconnect
     if (options?.onfailed) this.onfailed = options.onfailed
@@ -285,6 +299,7 @@ export class AMQPSession<
       }
       client = new AMQPClient(u.toString(), options?.tlsOptions, options?.logger)
     }
+    await options?.beforeConnect?.()
     await client.connect()
     const session = new AMQPSession(client, options)
     client.logger?.info(`${session.logTag()}: connected`)
@@ -606,8 +621,11 @@ export class AMQPSession<
       await this.waitBeforeRetry(delay)
       if (this.stopped) continue // stop() was called during the wait
 
-      // Attempt to connect — retry on failure
+      // Attempt to connect — retry on failure. beforeConnect runs first (and
+      // is awaited) so firewall authorization / credential refresh completes
+      // before the socket opens; a throw here is treated like a failed connect.
       try {
+        await this.beforeConnect?.()
         await this.client.connect()
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err))
