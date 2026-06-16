@@ -20,9 +20,26 @@ export type QueueSubscribeParams = ConsumeParams & {
   prefetch?: number
   /**
    * Whether to requeue messages that are nacked due to a callback error.
-   * Defaults to `true`.
+   * Defaults to `true`. Ignored when `manualAck` is set.
    */
   requeueOnNack?: boolean
+  /**
+   * Take over acknowledgement. The library keeps the broker tracking delivery
+   * tags (wire-level `noAck: false`, so unacked messages are redelivered after
+   * a disconnect) but does not ack or nack for you — call `msg.ack()` /
+   * `msg.nack()` yourself, on whatever schedule you like (after a timer, a
+   * downstream write, a batch). Pair with `prefetch` to bound how many
+   * deliveries can be in flight unacked.
+   *
+   * Note: a delivery tag is only valid on the channel it arrived on. If the
+   * connection drops before you ack, the tag is dead — the broker requeues and
+   * redelivers the message, so `msg.ack()` from a stale timer will reject.
+   * Treat an ack failure as "it'll be redelivered", not message loss.
+   *
+   * Mutually distinct from `noAck: true` (fire-and-forget, no redelivery) and
+   * from the default auto-ack-on-callback-return.
+   */
+  manualAck?: boolean
 }
 
 /** Options for {@link AMQPQueue#publish}. */
@@ -104,7 +121,10 @@ export class AMQPQueue<
     return this
   }
 
-  /** Subscribe with a callback. Messages are acked after the callback returns, nacked on error. */
+  /**
+   * Subscribe with a callback. Messages are acked after the callback returns,
+   * nacked on error. Pass `{ manualAck: true }` to ack yourself instead.
+   */
   subscribe(callback: (msg: AMQPMessage<P>) => void | Promise<void>): Promise<AMQPSubscription>
   /** Subscribe with a callback and custom params. */
   subscribe(
@@ -127,11 +147,13 @@ export class AMQPQueue<
     callback?: (msg: AMQPMessage<P>) => void | Promise<void>,
   ): Promise<AMQPSubscription | AMQPGeneratorSubscription<P>> {
     if (typeof params === "function") [callback, params] = [params, undefined]
-    const { prefetch, requeueOnNack = true, ...consumeParams } = params ?? {}
-    // Force noAck: false when auto-acking so the server tracks delivery tags.
-    // basicConsume defaults noAck to true, so we must be explicit.
-    const autoAck = !consumeParams.noAck
-    if (autoAck) consumeParams.noAck = false
+    const { prefetch, requeueOnNack = true, manualAck = false, ...consumeParams } = params ?? {}
+    // manualAck and auto-ack both need the server to track delivery tags, so
+    // force wire-level noAck: false (basicConsume defaults it to true). They
+    // differ only in who acks: the library on callback return (auto) vs. the
+    // caller, whenever they choose (manual).
+    const autoAck = !consumeParams.noAck && !manualAck
+    if (autoAck || manualAck) consumeParams.noAck = false
 
     const parsers = this.session.parsers
     const coders = this.session.coders
@@ -147,6 +169,7 @@ export class AMQPQueue<
       queueName: this.name,
       consumeParams,
       requeueOnNack,
+      manualAck,
       ...(wrappedCallback !== undefined && { callback: wrappedCallback }),
       ...(prefetch !== undefined && { prefetch }),
       ...(parsers && { parsers }),

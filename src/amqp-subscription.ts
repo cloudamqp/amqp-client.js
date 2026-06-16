@@ -15,6 +15,7 @@ export interface ConsumerDefinition {
   parsers?: ParserMap
   coders?: CoderMap
   requeueOnNack?: boolean
+  manualAck?: boolean
 }
 
 /**
@@ -126,7 +127,7 @@ export class AMQPGeneratorSubscription<P extends ParserMap = {}>
   }
 
   async *[Symbol.asyncIterator](): AsyncGenerator<AMQPMessage<P>, void, undefined> {
-    const autoAck = !this.def.consumeParams.noAck
+    const autoAck = !this.def.consumeParams.noAck && !this.def.manualAck
     const requeueOnNack = this.def.requeueOnNack ?? true
     let prev: AMQPMessage | undefined
     while (!this.stopped) {
