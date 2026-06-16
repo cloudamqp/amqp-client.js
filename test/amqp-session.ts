@@ -299,6 +299,90 @@ test("onconnect fires after successful reconnection", async () => {
   expect(count).toBe(2)
 })
 
+test("beforeConnect fires before the initial connect", async () => {
+  const order: string[] = []
+  const beforeConnect = vi.fn(() => {
+    order.push("before")
+  })
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    beforeConnect,
+    onconnect: () => order.push("connected"),
+  })
+  try {
+    expect(beforeConnect).toHaveBeenCalledTimes(1)
+    expect(order).toEqual(["before", "connected"])
+  } finally {
+    await session.stop()
+  }
+})
+
+test("beforeConnect fires again before every reconnect", async () => {
+  let calls = 0
+  const reconnected = new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("reconnect did not fire within 5s")), 5_000)
+    const session = AMQPSession.connect("amqp://127.0.0.1", {
+      reconnectInterval: 50,
+      maxRetries: 5,
+      beforeConnect: () => {
+        calls++
+      },
+      onconnect: () => {
+        // Second onconnect == reconnect completed; beforeConnect must have
+        // run ahead of it both times.
+        if (calls >= 2) {
+          clearTimeout(timeout)
+          resolve()
+        }
+      },
+    })
+    session.then((s) => (testClient(s) as AMQPClient).socket?.destroy()).catch(reject)
+  })
+  await reconnected
+  expect(calls).toBeGreaterThanOrEqual(2)
+})
+
+test("beforeConnect is awaited before connecting", async () => {
+  let resolved = false
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    beforeConnect: async () => {
+      await new Promise((r) => setTimeout(r, 50))
+      resolved = true
+    },
+  })
+  try {
+    // connect() only resolves after the async beforeConnect settled.
+    expect(resolved).toBe(true)
+  } finally {
+    await session.stop()
+  }
+})
+
+test("a throwing beforeConnect on reconnect backs off and retries instead of aborting", async () => {
+  let attempts = 0
+  const recovered = new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error("did not recover within 5s")), 5_000)
+    const session = AMQPSession.connect("amqp://127.0.0.1", {
+      reconnectInterval: 50,
+      maxRetries: 10,
+      beforeConnect: () => {
+        attempts++
+        // Fail the first reconnect's hook (attempt 2): the loop should
+        // back off and try again, not give up.
+        if (attempts === 2) throw new Error("knock failed")
+      },
+      onconnect: () => {
+        if (attempts >= 3) {
+          clearTimeout(timeout)
+          resolve()
+        }
+      },
+    })
+    session.then((s) => (testClient(s) as AMQPClient).socket?.destroy()).catch(reject)
+  })
+  await recovered
+  expect(attempts).toBeGreaterThanOrEqual(3)
+})
+
 test("ondisconnect fires when the connection drops", async () => {
   const ondisconnect = vi.fn()
   const session = await AMQPSession.connect("amqp://127.0.0.1", {
