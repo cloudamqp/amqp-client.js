@@ -117,6 +117,18 @@ export interface AMQPSessionOptions<
   /** Fires when max reconnect retries are exhausted. */
   onfailed?: (error?: Error) => void
   /**
+   * Fires when auto-recovery of a tracked queue fails after a reconnect —
+   * the queue redeclare or a consumer re-attach threw (e.g. the queue is
+   * gone and was declared `passive: true`, or a declare hit a
+   * `PRECONDITION_FAILED`).
+   *
+   * Without this handler such failures are only logged at warn level, so
+   * there was no way for the application to react. Use it to alert,
+   * rebuild topology, or tear down. `queueName` is the affected queue;
+   * recovery continues for the remaining queues regardless.
+   */
+  onrecoveryerror?: (queueName: string, error: Error) => void
+  /**
    * Fires when the broker blocks the connection from publishing — usually
    * triggered by a resource alarm (memory or disk) on the server. Subsequent
    * publishes reject with `Connection blocked by server` until the broker
@@ -152,6 +164,7 @@ export class AMQPSession<
   private readonly onconnect?: (session: AMQPSession<P, C, KP, KC>) => void
   private readonly ondisconnect?: (error?: Error) => void
   private readonly onfailed?: (error?: Error) => void
+  private readonly onrecoveryerror?: (queueName: string, error: Error) => void
   private readonly onreturn?: (msg: AMQPMessage<P>) => void
 
   private readonly client: AMQPBaseClient
@@ -206,6 +219,7 @@ export class AMQPSession<
     if (options?.onconnect) this.onconnect = options.onconnect
     if (options?.ondisconnect) this.ondisconnect = options.ondisconnect
     if (options?.onfailed) this.onfailed = options.onfailed
+    if (options?.onrecoveryerror) this.onrecoveryerror = options.onrecoveryerror
     if (options?.onreturn) this.onreturn = options.onreturn
     if (options?.onblocked) this.client.onblocked = options.onblocked
     if (options?.onunblocked) this.client.onunblocked = options.onunblocked
@@ -446,7 +460,12 @@ export class AMQPSession<
       if (name === "") return new AMQPQueue<P, C, KP, KC>(this, res.name)
       const existing = this.queues.get(res.name)
       if (existing) return existing
-      const q = new AMQPQueue<P, C, KP, KC>(this, res.name)
+      // Keep the declaration options so the queue can be redeclared on
+      // recovery after a reconnect (see AMQPQueue#recover).
+      const q = new AMQPQueue<P, C, KP, KC>(this, res.name, {
+        params: declarationParams,
+        ...(queueArguments && { arguments: queueArguments }),
+      })
       this.queues.set(res.name, q)
       return q
     })
@@ -645,7 +664,13 @@ export class AMQPSession<
   private async recoverQueues(): Promise<void> {
     if (this.client.closed) return
     for (const queue of this.queues.values()) {
-      await queue.recover()
+      try {
+        await queue.recover()
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        this.client.logger?.warn(`${this.logTag()}: failed to recover queue ${queue.name}:`, error.message)
+        this.onrecoveryerror?.(queue.name, error)
+      }
     }
     for (const rpc of this.rpcClients) {
       try {

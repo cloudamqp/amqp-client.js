@@ -299,6 +299,71 @@ test("onconnect fires after successful reconnection", async () => {
   expect(count).toBe(2)
 })
 
+test("recover redeclares an auto-deleted queue so its consumer survives reconnect", async () => {
+  const name = "test-recover-redeclare-" + Math.random()
+  const received: string[] = []
+  let connects = 0
+  let resolveReconnect!: () => void
+  const reconnected = new Promise<void>((r) => (resolveReconnect = r))
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    reconnectInterval: 50,
+    maxRetries: 5,
+    onconnect: () => {
+      if (++connects === 2) resolveReconnect()
+    },
+  })
+  try {
+    const q = await session.queue(name, { durable: false, autoDelete: true })
+    await q.subscribe({ noAck: true }, (msg) => {
+      received.push(msg.bodyString() ?? "")
+    })
+    // Drop the socket. The broker removes the autoDelete queue once the
+    // consumer's channel closes, so recovery must redeclare it before the
+    // consumer can re-attach.
+    ;(testClient(session) as AMQPClient).socket?.destroy()
+    await reconnected
+    await q.publish("after-reconnect", { confirm: false })
+    await new Promise((r) => setTimeout(r, 200))
+    expect(received).toContain("after-reconnect")
+  } finally {
+    await session.stop()
+  }
+})
+
+test("onrecoveryerror fires when a tracked passive queue is gone after reconnect", async () => {
+  const name = "test-recovery-error-" + Math.random()
+  let resolveErr!: (e: [string, string]) => void
+  const gotError = new Promise<[string, string]>((resolve, reject) => {
+    resolveErr = resolve
+    setTimeout(() => reject(new Error("onrecoveryerror did not fire within 5s")), 5_000)
+  })
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    reconnectInterval: 50,
+    maxRetries: 5,
+    onrecoveryerror: (queueName, err) => resolveErr([queueName, err.message]),
+  })
+  try {
+    // Create the queue out-of-band so the passive declare succeeds now and
+    // the queue is tracked for recovery with { passive: true }.
+    const ch = await testClient(session).channel()
+    await ch.queueDeclare(name, { durable: false, autoDelete: false })
+    await ch.close()
+    const q = await session.queue(name, { passive: true })
+    await q.subscribe({ noAck: true }, () => {})
+    // Delete the queue, then drop the socket. On reconnect the passive
+    // redeclare hits NOT_FOUND, recovery throws, and onrecoveryerror fires.
+    const ch2 = await testClient(session).channel()
+    await ch2.queueDelete(name)
+    await ch2.close()
+    ;(testClient(session) as AMQPClient).socket?.destroy()
+    const [queueName, msg] = await gotError
+    expect(queueName).toBe(name)
+    expect(msg).toMatch(/not.?found|404/i)
+  } finally {
+    await session.stop()
+  }
+})
+
 test("ondisconnect fires when the connection drops", async () => {
   const ondisconnect = vi.fn()
   const session = await AMQPSession.connect("amqp://127.0.0.1", {

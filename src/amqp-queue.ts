@@ -1,5 +1,5 @@
 import type { AMQPMessage } from "./amqp-message.js"
-import type { ConsumeParams, MessageCount } from "./amqp-channel.js"
+import type { ConsumeParams, MessageCount, QueueParams } from "./amqp-channel.js"
 import type { AMQPProperties } from "./amqp-properties.js"
 import { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription.js"
@@ -57,11 +57,22 @@ export class AMQPQueue<
   readonly name: string
   private readonly session: AMQPSession<P, C, KP, KC>
   private readonly subscriptions = new Set<AMQPSubscription>()
+  // Declaration options the session declared this queue with, replayed on
+  // recovery so a queue lost while disconnected is restored before consumers
+  // re-attach. Undefined for server-named queues (not tracked for recovery).
+  private readonly declareParams: QueueParams | undefined
+  private readonly declareArguments: Record<string, unknown> | undefined
 
   /** @internal */
-  constructor(session: AMQPSession<P, C, KP, KC>, name: string) {
+  constructor(
+    session: AMQPSession<P, C, KP, KC>,
+    name: string,
+    declare?: { params?: QueueParams | undefined; arguments?: Record<string, unknown> | undefined },
+  ) {
     this.session = session
     this.name = name
+    this.declareParams = declare?.params
+    this.declareArguments = declare?.arguments
   }
 
   /**
@@ -316,19 +327,29 @@ export class AMQPQueue<
   }
 
   /**
-   * Re-establish all subscriptions after a reconnection.
+   * Re-establish the queue and all its subscriptions after a reconnection.
+   *
+   * Redeclares the queue first — with the same options passed to
+   * {@link AMQPSession#queue} — so a queue lost while disconnected (deleted,
+   * or gone after a failover to a node without it) is recreated before
+   * consumers re-attach. Declare the queue with `passive: false` to have
+   * recovery recreate a missing queue; with `passive: true` recovery instead
+   * fails fast when the queue is absent.
+   *
+   * Throws on the first failure (redeclare or a consumer re-attach). The
+   * session's reconnect loop catches it and routes it to
+   * {@link AMQPSessionOptions.onrecoveryerror}, so callers get an actionable
+   * signal instead of a swallowed warn log.
    * @internal Called by the session's reconnect loop.
    */
   async recover(): Promise<void> {
+    if (this.declareParams || this.declareArguments) {
+      await this.session.withOpsChannel((ch) => ch.queueDeclare(this.name, this.declareParams, this.declareArguments))
+    }
     for (const sub of this.subscriptions) {
-      try {
-        const consumer = await this.openConsumer(sub.def)
-        sub.setConsumer(consumer)
-        this.session.logger?.debug(`Recovered consumer for queue: ${this.name}`)
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err))
-        this.session.logger?.warn(`Failed to recover consumer for queue ${this.name}:`, error.message)
-      }
+      const consumer = await this.openConsumer(sub.def)
+      sub.setConsumer(consumer)
+      this.session.logger?.debug(`Recovered consumer for queue: ${this.name}`)
     }
   }
 
