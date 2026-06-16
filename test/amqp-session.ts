@@ -1663,6 +1663,34 @@ test("manualAck: an unacked message is redelivered after a reconnect", async () 
   )
 })
 
+test("onrecoverfailed fires when a tracked queue's consumer can't be recovered", async () => {
+  const name = "test-recoverfail-" + Math.random()
+  const recoverFailed = vi.fn()
+  const failed = new Promise<void>((resolve, reject) => {
+    setTimeout(() => reject(new Error("onrecoverfailed did not fire within 10s")), 10_000)
+    recoverFailed.mockImplementation((queueName: string) => {
+      if (queueName === name) resolve()
+    })
+  })
+  await withSession(
+    async (session) => {
+      const q = await session.queue(name, { durable: true, autoDelete: false })
+      await q.subscribe({ noAck: true }, () => {})
+
+      // Delete the queue out from under the session. Recovery re-consumes only
+      // (no redeclare), so basicConsume hits NOT_FOUND and reports the failure.
+      const raw = await testClient(session).channel()
+      await raw.queueDelete(name)
+      await raw.close()
+      ;(testClient(session) as AMQPClient).socket?.destroy()
+
+      await failed
+      expect(recoverFailed).toHaveBeenCalledWith(name, expect.any(Error))
+    },
+    { reconnectInterval: 50, maxRetries: 5, onrecoverfailed: recoverFailed },
+  )
+})
+
 test("onblocked / onunblocked can be wired through options", async () => {
   // Triggering connection.blocked requires hitting a broker resource alarm,
   // which isn't safe to do in a shared test broker. Instead, verify the

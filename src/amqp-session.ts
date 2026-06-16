@@ -129,6 +129,14 @@ export interface AMQPSessionOptions<
   /** Fires when max reconnect retries are exhausted. */
   onfailed?: (error?: Error) => void
   /**
+   * Fires when re-establishing a tracked queue's consumer after a reconnect
+   * fails — typically NOT_FOUND because the queue no longer exists (recovery
+   * re-consumes only, it does not redeclare). The session logs a warning
+   * regardless; register this to react — redeclare and rebind the queue from
+   * an {@link onconnect} handler, alert, or tear down.
+   */
+  onrecoverfailed?: (queueName: string, error: Error) => void
+  /**
    * Fires when the broker blocks the connection from publishing — usually
    * triggered by a resource alarm (memory or disk) on the server. Subsequent
    * publishes reject with `Connection blocked by server` until the broker
@@ -165,6 +173,7 @@ export class AMQPSession<
   private readonly onconnect?: (session: AMQPSession<P, C, KP, KC>) => void
   private readonly ondisconnect?: (error?: Error) => void
   private readonly onfailed?: (error?: Error) => void
+  private readonly onrecoverfailed?: (queueName: string, error: Error) => void
   private readonly onreturn?: (msg: AMQPMessage<P>) => void
 
   private readonly client: AMQPBaseClient
@@ -220,6 +229,7 @@ export class AMQPSession<
     if (options?.onconnect) this.onconnect = options.onconnect
     if (options?.ondisconnect) this.ondisconnect = options.ondisconnect
     if (options?.onfailed) this.onfailed = options.onfailed
+    if (options?.onrecoverfailed) this.onrecoverfailed = options.onrecoverfailed
     if (options?.onreturn) this.onreturn = options.onreturn
     if (options?.onblocked) this.client.onblocked = options.onblocked
     if (options?.onunblocked) this.client.onunblocked = options.onunblocked
@@ -427,6 +437,16 @@ export class AMQPSession<
    */
   removeQueue(name: string): void {
     this.queues.delete(name)
+  }
+
+  /**
+   * Report a queue-recovery failure: log it and forward to the
+   * {@link AMQPSessionOptions.onrecoverfailed} handler if one is registered.
+   * @internal Called by {@link AMQPQueue#recover}.
+   */
+  recoverFailed(queueName: string, error: Error): void {
+    this.client.logger?.warn(`${this.logTag()}: failed to recover queue ${queueName}:`, error.message)
+    this.onrecoverfailed?.(queueName, error)
   }
 
   /**

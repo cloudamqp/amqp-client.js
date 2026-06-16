@@ -340,6 +340,13 @@ export class AMQPQueue<
 
   /**
    * Re-establish all subscriptions after a reconnection.
+   *
+   * Like the Ruby client, recovery re-consumes only — it does not redeclare
+   * the queue or recreate bindings. Durable topology persists broker-side
+   * across a restart, so re-consume is enough; if a queue was actually lost,
+   * `basicConsume` fails with NOT_FOUND and the failure is reported via
+   * {@link AMQPSessionOptions.onrecoverfailed} so the application can redeclare
+   * and rebind from an {@link AMQPSessionOptions.onconnect} handler.
    * @internal Called by the session's reconnect loop.
    */
   async recover(): Promise<void> {
@@ -349,8 +356,7 @@ export class AMQPQueue<
         sub.setConsumer(consumer)
         this.session.logger?.debug(`Recovered consumer for queue: ${this.name}`)
       } catch (err) {
-        const error = err instanceof Error ? err : new Error(String(err))
-        this.session.logger?.warn(`Failed to recover consumer for queue ${this.name}:`, error.message)
+        this.session.recoverFailed(this.name, err instanceof Error ? err : new Error(String(err)))
       }
     }
   }
