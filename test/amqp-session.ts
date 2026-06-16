@@ -191,6 +191,80 @@ test("session.subscribe supports prefetch option", () =>
     await sub.cancel()
   }))
 
+test("manualAck: a callback that returns without acking leaves the message unacked", () =>
+  withSession(async (session) => {
+    const name = "test-manual-ack-" + Math.random()
+    const q = await session.queue(name, { durable: false, autoDelete: false })
+    try {
+      await q.publish("hold-me", { confirm: false })
+      let deliveries = 0
+      const sub = await q.subscribe({ manualAck: true }, () => {
+        deliveries++
+        // Intentionally do NOT ack — the library must not ack for us.
+      })
+      await new Promise((r) => setTimeout(r, 150))
+      expect(deliveries).toBe(1)
+      // Closing the channel requeues the still-unacked message.
+      await sub.cancel()
+      const requeued = await q.get({ noAck: true })
+      expect(requeued?.bodyString()).toBe("hold-me")
+      expect(requeued?.redelivered).toBe(true)
+    } finally {
+      await q.delete()
+    }
+  }))
+
+test("manualAck: the app can ack on its own schedule after the callback returns", () =>
+  withSession(async (session) => {
+    const name = "test-manual-ack-deferred-" + Math.random()
+    const q = await session.queue(name, { durable: false, autoDelete: false })
+    try {
+      await q.publish("ack-later", { confirm: false })
+      const sub = await q.subscribe({ manualAck: true }, (msg) => {
+        // Defer the ack past the callback return — the auto-ack model acks as
+        // soon as this resolves and can't express "decide later"; manualAck can.
+        setTimeout(() => {
+          void msg.ack()
+        }, 50)
+      })
+      await new Promise((r) => setTimeout(r, 200))
+      await sub.cancel()
+      // The deferred ack settled the message, so nothing is requeued.
+      const leftover = await q.get({ noAck: true })
+      expect(leftover).toBeNull()
+    } finally {
+      await q.delete()
+    }
+  }))
+
+test("manualAck: the app can nack-requeue on its own schedule", () =>
+  withSession(async (session) => {
+    const name = "test-manual-nack-" + Math.random()
+    const q = await session.queue(name, { durable: false, autoDelete: false })
+    try {
+      await q.publish("retry-me", { confirm: false })
+      let deliveries = 0
+      const sub = await q.subscribe({ manualAck: true }, (msg) => {
+        deliveries++
+        if (deliveries === 1) {
+          // Defer a requeue; the broker redelivers to this same consumer.
+          setTimeout(() => {
+            void msg.nack(true)
+          }, 50)
+        } else {
+          void msg.ack()
+        }
+      })
+      await new Promise((r) => setTimeout(r, 300))
+      expect(deliveries).toBeGreaterThanOrEqual(2)
+      await sub.cancel()
+      const leftover = await q.get({ noAck: true })
+      expect(leftover).toBeNull()
+    } finally {
+      await q.delete()
+    }
+  }))
+
 test("session.subscribe yields messages via async generator", () =>
   withSession(async (session) => {
     const q = await session.queue("test-generator-" + Math.random(), { durable: false, autoDelete: true })

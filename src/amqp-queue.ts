@@ -20,9 +20,25 @@ export type QueueSubscribeParams = ConsumeParams & {
   prefetch?: number
   /**
    * Whether to requeue messages that are nacked due to a callback error.
-   * Defaults to `true`.
+   * Defaults to `true`. Ignored when `manualAck` is set.
    */
   requeueOnNack?: boolean
+  /**
+   * Take full control of acknowledgement. The broker still tracks delivery
+   * tags (wire-level `noAck` stays `false`, so unacked messages are redelivered
+   * when the channel closes), but the library never acks or nacks for you —
+   * call `msg.ack()` / `msg.nack()` / `msg.reject()` yourself, on whatever
+   * schedule you need.
+   *
+   * Use this when the ack decision outlives the callback: deferred retries
+   * (ack/republish after a delay), batching, or handing the message to another
+   * subsystem. The default auto-ack mode acks as soon as the callback's promise
+   * resolves, which can't express "decide later".
+   *
+   * Mutually exclusive with wire-level `noAck: true` (which disables ack
+   * tracking entirely). Defaults to `false`.
+   */
+  manualAck?: boolean
 }
 
 /** Options for {@link AMQPQueue#publish}. */
@@ -127,11 +143,21 @@ export class AMQPQueue<
     callback?: (msg: AMQPMessage<P>) => void | Promise<void>,
   ): Promise<AMQPSubscription | AMQPGeneratorSubscription<P>> {
     if (typeof params === "function") [callback, params] = [params, undefined]
-    const { prefetch, requeueOnNack = true, ...consumeParams } = params ?? {}
-    // Force noAck: false when auto-acking so the server tracks delivery tags.
-    // basicConsume defaults noAck to true, so we must be explicit.
-    const autoAck = !consumeParams.noAck
-    if (autoAck) consumeParams.noAck = false
+    const { prefetch, requeueOnNack = true, manualAck = false, ...consumeParams } = params ?? {}
+    // Three ack modes:
+    //   manualAck    → server tracks tags (noAck:false), library never acks;
+    //                  the app owns ack/nack/reject timing.
+    //   auto-ack     → ack after the callback resolves, nack on error.
+    //   noAck:true   → no server-side tracking at all (fire-and-forget).
+    // basicConsume defaults noAck to true, so be explicit when we need tracking.
+    let autoAck: boolean
+    if (manualAck) {
+      consumeParams.noAck = false
+      autoAck = false
+    } else {
+      autoAck = !consumeParams.noAck
+      if (autoAck) consumeParams.noAck = false
+    }
 
     const parsers = this.session.parsers
     const coders = this.session.coders
@@ -147,6 +173,7 @@ export class AMQPQueue<
       queueName: this.name,
       consumeParams,
       requeueOnNack,
+      manualAck,
       ...(wrappedCallback !== undefined && { callback: wrappedCallback }),
       ...(prefetch !== undefined && { prefetch }),
       ...(parsers && { parsers }),
@@ -369,8 +396,11 @@ function wrapCallbackWithAutoDecodeAndAck<P extends ParserMap>(
   if (!callback) return undefined
   if (!opts.autoAck) {
     return async (msg: AMQPMessage) => {
-      // Nobody awaits this delivery, so an uncaught decode or callback error
-      // becomes an unhandledRejection. No-ack can't nack, so just log.
+      // Covers both noAck:true and manualAck: the library doesn't ack/nack
+      // here. Nobody awaits this delivery, so an uncaught decode or callback
+      // error would become an unhandledRejection — log it. In manualAck the
+      // app owns ack/nack/reject (including requeue); in noAck there are no
+      // delivery tags to act on.
       try {
         if (opts.parsers || opts.coders) await decodeMessage(msg, opts.parsers ?? {}, opts.coders ?? {})
         await callback(msg as AMQPMessage<P>)

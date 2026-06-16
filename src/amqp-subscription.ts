@@ -15,6 +15,8 @@ export interface ConsumerDefinition {
   parsers?: ParserMap
   coders?: CoderMap
   requeueOnNack?: boolean
+  /** App owns ack/nack; the library never acks. See {@link QueueSubscribeParams.manualAck}. */
+  manualAck?: boolean
 }
 
 /**
@@ -126,7 +128,9 @@ export class AMQPGeneratorSubscription<P extends ParserMap = {}>
   }
 
   async *[Symbol.asyncIterator](): AsyncGenerator<AMQPMessage<P>, void, undefined> {
-    const autoAck = !this.def.consumeParams.noAck
+    // manualAck keeps wire-level tracking (noAck:false) but leaves acking to
+    // the caller, so the iterator must not auto-ack the previous message.
+    const autoAck = !this.def.consumeParams.noAck && !this.def.manualAck
     const requeueOnNack = this.def.requeueOnNack ?? true
     let prev: AMQPMessage | undefined
     while (!this.stopped) {
