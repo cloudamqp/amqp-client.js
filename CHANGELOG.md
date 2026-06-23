@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `AMQPSession`
+  - `onrecoverfailed(queueName, error)` - hook fired when a consumer fails to re-consume after a reconnect (e.g. the tracked queue is gone). Recovery re-consumes only; it does not redeclare queues or recreate bindings, so the application owns topology recovery — redeclare and rebind from an `onconnect` handler, alert, or tear down. The failure is still logged whether or not a handler is registered ([#243](https://github.com/cloudamqp/amqp-client.js/pull/243))
+  - `beforeConnect` - async hook awaited before every connection attempt (initial and each reconnect) and before the socket opens, for setup that must complete before the broker is reachable (firewall authorization, credential refresh). Unlike `onconnect`, it gates the connection; a throw on reconnect is treated as a failed connect so the backoff loop retries rather than tearing down the session ([#242](https://github.com/cloudamqp/amqp-client.js/pull/242))
+- `AMQPQueue.subscribe()`, `manualAck: true` mode - keeps the wire `noAck` flag `false` (so unacked messages are redelivered after a disconnect) but skips the library's auto-ack/nack; the caller invokes `msg.ack()` / `msg.nack()` on their own schedule. Works in both callback and generator forms; pair with `prefetch` to bound in-flight unacked deliveries ([#244](https://github.com/cloudamqp/amqp-client.js/pull/244))
+
 ## [4.0.0] - 2026-06-12
 
 ### Added
