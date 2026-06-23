@@ -1593,6 +1593,76 @@ test("a throwing beforeConnect on reconnect is retried, not fatal", async () => 
   expect(attempts).toBeGreaterThanOrEqual(3)
 })
 
+test("manualAck: callback return does not ack — the caller acks on its own schedule", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-manualack-" + Math.random(), { durable: false, autoDelete: true })
+    const received: string[] = []
+    const held: AMQPMessage[] = []
+    // prefetch: 1 means the broker won't deliver the second message until the
+    // first is acked — only true when wire-level noAck is false, which proves
+    // manualAck keeps the server tracking delivery tags.
+    const sub = await q.subscribe({ manualAck: true, prefetch: 1 }, (msg) => {
+      received.push(msg.bodyString() || "")
+      held.push(msg)
+    })
+
+    await q.publish("m1", { confirm: false })
+    await q.publish("m2", { confirm: false })
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    // m2 is withheld: the callback returned for m1 but the library didn't ack.
+    expect(received).toEqual(["m1"])
+
+    await held[0]!.ack()
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    expect(received).toEqual(["m1", "m2"])
+
+    await held[1]!.ack()
+    await sub.cancel()
+  }))
+
+test("manualAck: an unacked message is redelivered after a reconnect", async () => {
+  let connects = 0
+  let resolveReconnected!: () => void
+  const reconnected = new Promise<void>((resolve, reject) => {
+    resolveReconnected = resolve
+    setTimeout(() => reject(new Error("did not reconnect within 10s")), 10_000)
+  })
+  await withSession(
+    async (session) => {
+      const q = await session.queue("test-manualack-redeliver-" + Math.random(), {
+        durable: true,
+        autoDelete: false,
+      })
+      const received: string[] = []
+      const sub = await q.subscribe({ manualAck: true, prefetch: 1 }, (msg) => {
+        received.push(msg.bodyString() || "")
+        // never ack — the broker must requeue and redeliver on reconnect
+      })
+
+      await q.publish("redeliver-me", { confirm: false })
+      await new Promise((resolve) => setTimeout(resolve, 150))
+      expect(received).toEqual(["redeliver-me"])
+      ;(testClient(session) as AMQPClient).socket?.destroy()
+
+      await reconnected
+      await new Promise((resolve) => setTimeout(resolve, 200))
+      // Delivered once before the drop, redelivered after recovery.
+      expect(received.length).toBeGreaterThanOrEqual(2)
+      expect(received.every((b) => b === "redeliver-me")).toBe(true)
+
+      await sub.cancel()
+      await q.delete()
+    },
+    {
+      reconnectInterval: 50,
+      maxRetries: 5,
+      onconnect: () => {
+        if (++connects === 2) resolveReconnected()
+      },
+    },
+  )
+})
+
 test("onblocked / onunblocked can be wired through options", async () => {
   // Triggering connection.blocked requires hitting a broker resource alarm,
   // which isn't safe to do in a shared test broker. Instead, verify the
