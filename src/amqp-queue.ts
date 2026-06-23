@@ -356,7 +356,8 @@ export class AMQPQueue<
         sub.setConsumer(consumer)
         this.session.logger?.debug(`Recovered consumer for queue: ${this.name}`)
       } catch (err) {
-        this.session.recoverFailed(this.name, err instanceof Error ? err : new Error(String(err)))
+        const error = err instanceof Error ? err : new Error(String(err))
+        this.session.recoverFailed(this.name, error)
       }
     }
   }
