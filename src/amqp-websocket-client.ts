@@ -191,7 +191,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
       this.framePos += copyBytes
       bufPos += copyBytes
       if (this.framePos === this.frameSize) {
-        const view = new AMQPView(this.frameBuffer.buffer, 0, this.frameSize)
+        const view = new AMQPView(this.frameBuffer.buffer, this.frameBuffer.byteOffset, this.frameSize)
         this.parseFrames(view)
         this.frameSize = this.framePos = 0
       }
