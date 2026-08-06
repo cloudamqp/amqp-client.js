@@ -768,6 +768,8 @@ test("raises when channelMax is reached", async () => {
   // make sure other channels still work
   const ch1 = await conn.channel(1)
   await expect(ch1.basicQos(10)).resolves.toBeUndefined()
+
+  await expect(conn.close()).resolves.toBeUndefined()
 }, 20_000)
 
 test("should fail to connect to an AMQP port", async () => {
