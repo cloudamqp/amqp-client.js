@@ -139,7 +139,10 @@ export class AMQPClient extends AMQPBaseClient {
     while (bufPos < bufLen) {
       // read frame size of next frame
       if (this.frameSize === 0) {
-        // first 7 bytes of a frame was split over two reads, this reads the second part
+        // the first 7 bytes of a frame were split over reads; this reads the rest.
+        // The header can span more than two reads, so the size may only be taken
+        // once all 7 bytes are in frameBuffer -- and from offset 3, where the size
+        // field sits in frameBuffer regardless of bufPos.
         if (this.framePos !== 0) {
           const copied = buf.copy(this.frameBuffer, this.framePos, bufPos, bufPos + 7 - this.framePos)
           if (copied === 0)
@@ -147,9 +150,10 @@ export class AMQPClient extends AMQPBaseClient {
               `Copied 0 bytes framePos=${this.framePos} bufPos=${bufPos} bytesWritten=${bufLen}`,
               this,
             )
-          this.frameSize = this.frameBuffer.readInt32BE(bufPos + 3) + 8
           this.framePos += copied
           bufPos += copied
+          if (this.framePos < 7) continue // header still incomplete, wait for more
+          this.frameSize = this.frameBuffer.readInt32BE(3) + 8
           continue
         }
         // frame header is split over reads, copy to frameBuffer
