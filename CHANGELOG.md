@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `beforeConnect` - async hook awaited before every connection attempt (initial and each reconnect) and before the socket opens, for setup that must complete before the broker is reachable (firewall authorization, credential refresh). Unlike `onconnect`, it gates the connection; a throw on reconnect is treated as a failed connect so the backoff loop retries rather than tearing down the session ([#242](https://github.com/cloudamqp/amqp-client.js/pull/242))
 - `AMQPQueue.subscribe()`, `manualAck: true` mode - keeps the wire `noAck` flag `false` (so unacked messages are redelivered after a disconnect) but skips the library's auto-ack/nack; the caller invokes `msg.ack()` / `msg.nack()` on their own schedule. Works in both callback and generator forms; pair with `prefetch` to bound in-flight unacked deliveries ([#244](https://github.com/cloudamqp/amqp-client.js/pull/244))
 
+### Fixed
+
+- Frame parsing crashed with `Frame end out of range` on Node >= 24.18 / 26.3 whenever a frame spanned multiple socket reads. Node raised `Buffer.poolSize` from 8 KiB to 64 KiB ([nodejs/node#63597](https://github.com/nodejs/node/pull/63597)), so the default 8192-byte `frameMax` now yields a pooled `Buffer` with a non-zero `byteOffset`; the frame-reassembly parse view was built with a hardcoded offset of `0`, reading unrelated pool memory. Now passes `frameBuffer.byteOffset` in both the TCP and WebSocket clients. Thanks [@ahuviy](https://github.com/ahuviy) for the fix ([#256](https://github.com/cloudamqp/amqp-client.js/pull/256), fixes [#255](https://github.com/cloudamqp/amqp-client.js/issues/255))
+
 ## [4.0.0] - 2026-06-12
 
 ### Added
