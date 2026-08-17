@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Frame parsing crashed with `Frame end out of range` on Node >= 24.18 / 26.3 whenever a frame spanned multiple socket reads. Node raised `Buffer.poolSize` from 8 KiB to 64 KiB ([nodejs/node#63597](https://github.com/nodejs/node/pull/63597)), so the default 8192-byte `frameMax` now yields a pooled `Buffer` with a non-zero `byteOffset`; the frame-reassembly parse view was built with a hardcoded offset of `0`, reading unrelated pool memory. Now passes `frameBuffer.byteOffset` in both the TCP and WebSocket clients. Thanks [@ahuviy](https://github.com/ahuviy) for the fix ([#256](https://github.com/cloudamqp/amqp-client.js/pull/256), fixes [#255](https://github.com/cloudamqp/amqp-client.js/issues/255))
+- Frame parsing failed with `Copied 0 bytes, please report this bug` when a frame header was split across three or more socket reads. The assembler assumed headers spanned at most two reads, so `buf.copy` copied fewer bytes than expected and the frame size was read from an incomplete header; the assembler then filled to `frameMax` without advancing. Now the frame size is only read once all 7 header bytes have arrived, and the copy offset is corrected from `3` to `bufPos + 3`. Thanks [@apon97](https://github.com/apon97) for the fix ([#261](https://github.com/cloudamqp/amqp-client.js/pull/261), fixes [#206](https://github.com/cloudamqp/amqp-client.js/issues/206))
 
 ## [4.0.0] - 2026-06-12
 
