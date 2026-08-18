@@ -333,7 +333,7 @@ export class AMQPQueue<
    */
   async delete(params?: { ifUnused?: boolean; ifEmpty?: boolean }): Promise<MessageCount> {
     const result = await this.session.withOpsChannel((ch) => ch.queueDelete(this.name, params))
-    this.cancelAll()
+    await this.cancelAll()
     this.session.removeQueue(this.name)
     return result
   }
@@ -364,13 +364,18 @@ export class AMQPQueue<
 
   /**
    * Cancel all subscriptions without closing the connection.
+   *
+   * Awaits the cancels (consumer cancel + channel close) so callers can
+   * finish tearing down before closing the connection — otherwise the
+   * in-flight basic.cancel RPCs race the connection close and reject as
+   * unhandled "Connection closed by client" rejections. `subscription.cancel`
+   * swallows wire-level errors, so this never rejects.
    * @internal Called by the session on stop().
    */
-  cancelAll(): void {
-    for (const sub of this.subscriptions) {
-      sub.cancel().catch(() => {})
-    }
+  async cancelAll(): Promise<void> {
+    const subs = [...this.subscriptions]
     this.subscriptions.clear()
+    await Promise.all(subs.map((sub) => sub.cancel()))
   }
 
   private async openConsumer(def: ConsumerDefinition): Promise<AMQPConsumer | AMQPGeneratorConsumer> {

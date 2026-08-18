@@ -603,9 +603,10 @@ export class AMQPSession<
   async stop(reason?: string): Promise<void> {
     this.stopped = true
     this.cancelWait()
-    for (const queue of this.queues.values()) {
-      queue.cancelAll()
-    }
+    // Await the cancels before closing the connection below — otherwise the
+    // in-flight basic.cancel RPCs race the connection close and surface as
+    // unhandled "Connection closed by client" rejections.
+    await Promise.all([...this.queues.values()].map((queue) => queue.cancelAll()))
     this.queues.clear()
     for (const rpc of this.rpcClients) {
       rpc.close().catch(() => {})
