@@ -932,7 +932,12 @@ export class AMQPChannel {
     queueMicrotask(() => {
       const consumer = this.consumers.get(message.consumerTag)
       if (consumer) {
-        consumer.onMessage(message)
+        // The callback may be async; catch rejections so they don't surface as
+        // unhandled promise rejections (e.g. when the channel closes mid-callback
+        // and pending operations awaited inside it reject).
+        const ret = consumer.onMessage(message)
+        if (ret instanceof Promise)
+          ret.catch((err) => this.logger?.warn("Consumer", message.consumerTag, "callback failed:", err))
       } else {
         this.logger?.warn("Consumer", message.consumerTag, "not available on channel", this.id)
       }
