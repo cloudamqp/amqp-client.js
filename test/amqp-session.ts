@@ -1389,7 +1389,10 @@ test("consumeOne with no timeout waits forever (cancelled via timer)", () =>
       autoDelete: true,
     })
     // Race the indefinite wait against a sentinel that publishes after a delay.
-    setTimeout(() => void q.publish("delivered"), 50)
+    // Swallow the publish rejection: withSession stops the session as soon as
+    // the test body returns, which can close the connection before the confirm
+    // for this fire-and-forget publish arrives.
+    setTimeout(() => void q.publish("delivered").catch(() => {}), 50)
     const msg = await q.consumeOne()
     expect(msg.bodyString()).toBe("delivered")
   }))
