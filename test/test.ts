@@ -865,6 +865,9 @@ test("should fail to connect to HTTP", async () => {
 test("should handle heartbeat timeout correctly", async () => {
   const amqp = getNewClient({ heartbeat: 1 })
   const conn = await amqp.connect()
+  const ch = await conn.channel()
+
+  conn.ondisconnect = vi.fn()
 
   // Mock the socket timeout to simulate missed heartbeats
   const socket = amqp["socket"]
@@ -892,6 +895,11 @@ test("should handle heartbeat timeout correctly", async () => {
   // Verify error message and that connection is closed
   expect(error.message).toEqual("Heartbeat timeout")
   expect(conn.closed).toBe(true)
+
+  // Verify the channel closes on heartbeat timeout
+  expect(ch.closed).toBe(true)
+  expect(conn.ondisconnect).toHaveBeenCalledTimes(1)
+  expect(conn.ondisconnect).toHaveBeenCalledWith(expect.objectContaining({ message: "Heartbeat timeout" }))
 })
 
 test("can bind queues in parallel", async () => {
