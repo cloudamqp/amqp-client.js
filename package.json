@@ -1,7 +1,7 @@
 {
   "name": "@cloudamqp/amqp-client",
   "version": "4.1.0",
-  "description": "AMQP 0-9-1 client, both for browsers (WebSocket) and node (TCP Socket)",
+  "description": "AMQP 0-9-1 client for RabbitMQ, LavinMQ and other AMQP brokers, both for browsers (WebSocket) and node (TCP Socket)",
   "type": "module",
   "main": "lib/cjs/index.js",
   "types": "types/index.d.ts",
@@ -58,8 +58,20 @@
   "repository": "github:cloudamqp/amqp-client.js",
   "keywords": [
     "amqp",
+    "amqp-0-9-1",
+    "amqp-client",
+    "amqplib",
     "rabbitmq",
-    "amqplib"
+    "lavinmq",
+    "cloudamqp",
+    "message-queue",
+    "messaging",
+    "queue",
+    "pubsub",
+    "broker",
+    "websocket",
+    "browser",
+    "typescript"
   ],
   "author": "CloudAMQP <contact@cloudamqp.com>",
   "license": "Apache-2.0",
