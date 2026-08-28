@@ -420,10 +420,20 @@ export class AMQPChannel {
     // the promise on the queue will be fullfilled by the read loop when an ack/nack
     // comes from the server
     if (this.confirmId) {
+      const deliveryTag = this.confirmId++
       const wait4Confirm = new Promise<number>((resolve, reject) =>
-        this.unconfirmedPublishes.push([this.confirmId++, resolve, reject]),
+        this.unconfirmedPublishes.push([deliveryTag, resolve, reject]),
       )
-      return sendFrames.then(() => wait4Confirm).finally(() => this.connection.bufferPool.push(buffer))
+      const onSendFailed = (err: Error) => {
+        // The frames never left, so no confirm is coming for this delivery tag.
+        // Drop it and mark the promise handled, or a later channel close
+        // rejects it with nobody listening.
+        const idx = this.unconfirmedPublishes.findIndex(([tag]) => tag === deliveryTag)
+        if (idx !== -1) this.unconfirmedPublishes.splice(idx, 1)
+        wait4Confirm.catch(() => undefined)
+        throw err
+      }
+      return sendFrames.then(() => wait4Confirm, onSendFailed).finally(() => this.connection.bufferPool.push(buffer))
     } else {
       return sendFrames.then(() => 0).finally(() => this.connection.bufferPool.push(buffer))
     }

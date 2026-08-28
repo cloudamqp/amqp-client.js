@@ -412,6 +412,28 @@ test("can handle returned messages", async () => {
   expect(msg.routingKey).toEqual("not-a-queue")
 })
 
+test("does not leak a rejection when a confirmed publish cannot be sent", async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const q = await ch.queueDeclare("")
+  await ch.confirmSelect()
+
+  const unhandled: unknown[] = []
+  const onUnhandled = (reason: unknown) => unhandled.push(reason)
+  process.on("unhandledRejection", onUnhandled)
+  try {
+    // The frames cannot leave, so no confirm will ever arrive for this publish.
+    amqp.socket?.destroy()
+    await expect(ch.basicPublish("", q.name, "body")).rejects.toThrow()
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  } finally {
+    process.off("unhandledRejection", onUnhandled)
+  }
+
+  expect(unhandled).toEqual([])
+})
+
 test("can handle nacks on confirm channel", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()

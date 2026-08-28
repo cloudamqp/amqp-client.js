@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- A confirmed publish whose frames could not be sent left its confirm promise on the channel's unconfirmed queue with nothing awaiting it, because the promise is only chained onto the result after the send resolves. The next channel close rejected that orphan and the rejection escaped as an unhandled promise rejection, which terminates the process on current Node versions. A failed send now drops the pending delivery tag and marks the promise handled.
+
 ## [4.1.1] - 2026-08-28
 
 ### Fixed
