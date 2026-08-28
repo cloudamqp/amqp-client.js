@@ -5,11 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.1.1] - 2026-08-28
 
 ### Fixed
 
 - Heartbeat timeout closed the socket without going through the normal close path, so open channels were never marked closed and `ondisconnect` never fired. Now the socket is destroyed with the timeout error instead, routing through the standard error/close handling. Thanks [@kevin192291](https://github.com/kevin192291) for the fix ([#268](https://github.com/cloudamqp/amqp-client.js/pull/268), fixes [#267](https://github.com/cloudamqp/amqp-client.js/issues/267))
+- `AMQPSession.stop()` and `AMQPQueue.delete()` fired consumer cancels without awaiting them, then closed the connection — the in-flight `basic.cancel` RPCs raced the close and their rejections escaped as unhandled promise rejections. `AMQPQueue.cancelAll()` now returns a promise and is awaited before the connection closes ([#265](https://github.com/cloudamqp/amqp-client.js/pull/265))
+
+### Changed
+
+- Updated dependencies via `npm audit fix` ([#266](https://github.com/cloudamqp/amqp-client.js/pull/266))
+- Expanded npm keywords and description, and named compatible AMQP 0-9-1 brokers and providers in the README, for discoverability ([#269](https://github.com/cloudamqp/amqp-client.js/pull/269))
 
 ## [4.1.0] - 2026-08-19
 
