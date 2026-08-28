@@ -2,6 +2,8 @@
 
 AMQP 0-9-1 TypeScript client both for Node.js and browsers (using WebSocket). This library is intended to replace all other Node.js AMQP libraries.
 
+It works with any AMQP 0-9-1 broker — RabbitMQ, LavinMQ, Amazon MQ for RabbitMQ, Apache Qpid and CloudAMQP's hosted RabbitMQ and LavinMQ instances all speak the same protocol, so the same code runs against all of them.
+
 [API documentation](https://cloudamqp.github.io/amqp-client.js/).
 
 This library is Promise-based and hence works very well with async/await. It's secure by default, for instance, publishes aren't fulfilled until either the data has been sent on the wire (so that back propagation is respected), or if the channel has Publish Confirms enabled, it isn't fulfilled until the server has acknowledged that the message has been enqueued.
