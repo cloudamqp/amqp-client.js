@@ -695,6 +695,7 @@ export class AMQPSession<
    * @internal
    */
   sleep(ms: number): Promise<void> {
+    if (this.stopped) return Promise.resolve()
     return new Promise<void>((resolve) => {
       const wake = (): void => {
         clearTimeout(timer)

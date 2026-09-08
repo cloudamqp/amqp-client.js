@@ -1764,7 +1764,7 @@ test("subscribe retries while another connection holds the exclusive consumer", 
     await withSession(async (session) => {
       const q = await session.queue(name, { durable: false, autoDelete: false })
       // Release the queue while the subscribe is still retrying.
-      setTimeout(() => void holder.close(), 300)
+      setTimeout(() => holder.close().catch(() => {}), 300)
 
       const sub = await q.subscribe({ exclusive: true, retries: 10, retryDelay: 100 }, () => {})
       expect(sub.consumerTag).toBeTruthy()
