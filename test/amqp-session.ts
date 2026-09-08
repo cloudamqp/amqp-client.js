@@ -1723,6 +1723,16 @@ async function holdExclusiveConsumer(name: string): Promise<AMQPClient> {
   return other
 }
 
+/** The `(attempt N/M)` suffix of each consume-retry debug log. */
+function retryLogs(debug: ReturnType<typeof vi.fn>): string[] {
+  return debug.mock.calls
+    .map(([line]) =>
+      typeof line === "string" ? /has an exclusive consumer, retrying .*\(attempt (\S+)\)/.exec(line) : null,
+    )
+    .filter((match) => match !== null)
+    .map((match) => match[1] as string)
+}
+
 test("subscribe fails immediately when the queue has an exclusive consumer", async () => {
   const name = "test-exclusive-" + Math.random()
   const holder = await holdExclusiveConsumer(name)
@@ -1757,61 +1767,77 @@ test("subscribe retries while another connection holds the exclusive consumer", 
 
 test("subscribe rejects when the consume retries are exhausted", async () => {
   const name = "test-exclusive-exhausted-" + Math.random()
+  const debug = vi.fn()
   const holder = await holdExclusiveConsumer(name)
   try {
-    await withSession(async (session) => {
-      const q = await session.queue(name, { durable: false, autoDelete: false })
-      await expect(q.subscribe({ exclusive: true, retries: 2, retryDelay: 50 }, () => {})).rejects.toThrow(
-        /ACCESS_REFUSED/,
-      )
-      await q.delete()
-    })
+    await withSession(
+      async (session) => {
+        const q = await session.queue(name, { durable: false, autoDelete: false })
+        await expect(q.subscribe({ exclusive: true, retries: 2, retryDelay: 50 }, () => {})).rejects.toThrow(
+          /ACCESS_REFUSED/,
+        )
+        expect(retryLogs(debug)).toEqual(["1/2", "2/2"])
+        await q.delete()
+      },
+      { logger: { debug, info: vi.fn(), warn: vi.fn(), error: vi.fn() } },
+    )
   } finally {
     if (!holder.closed) await holder.close()
   }
 })
 
+test("subscribe rejects invalid retry params", () =>
+  withSession(async (session) => {
+    const q = await session.queue("test-retry-params-" + Math.random(), { durable: false, autoDelete: true })
+    await expect(q.subscribe({ retries: Infinity }, () => {})).rejects.toThrow(TypeError)
+    await expect(q.subscribe({ retries: NaN }, () => {})).rejects.toThrow(TypeError)
+    await expect(q.subscribe({ retries: -1 }, () => {})).rejects.toThrow(TypeError)
+    await expect(q.subscribe({ retries: 1, retryDelay: -5 }, () => {})).rejects.toThrow(TypeError)
+  }))
+
 test("consumer recovery retries while another connection holds the exclusive consumer", async () => {
   const name = "test-exclusive-recover-" + Math.random()
   const recoverFailed = vi.fn()
   const debug = vi.fn()
-  const received = new Promise<string>((resolve) => {
-    void withSession(
-      async (session) => {
-        const q = await session.queue(name, { durable: false, autoDelete: false })
-        const body = new Promise<string>((gotMessage) => {
-          void q
-            .subscribe({ exclusive: true, retries: 20, retryDelay: 100 }, (msg) => gotMessage(msg.bodyString() ?? ""))
-            .then(async () => {
-              // Drop the connection, then grab the freed exclusive consumer from
-              // another connection so recovery hits ACCESS_REFUSED and must retry.
-              ;(testClient(session) as AMQPClient).socket?.destroy()
-              const holder = await holdExclusiveConsumer(name)
-              setTimeout(() => void holder.close(), 600)
-            })
-        })
-        resolve(await body)
-        await new Promise<void>((done) => setTimeout(done, 50))
-      },
-      {
-        reconnectInterval: 200,
-        onrecoverfailed: recoverFailed,
-        logger: { debug, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-      },
-    )
+  const session = await AMQPSession.connect("amqp://127.0.0.1", {
+    reconnectInterval: 200,
+    onrecoverfailed: recoverFailed,
+    logger: { debug, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   })
-
-  // Keep publishing until the recovered consumer picks one up.
   const publisher = await AMQPSession.connect("amqp://127.0.0.1")
-  const pq = await publisher.queue(name, { durable: false, autoDelete: false })
-  const ticker = setInterval(() => void pq.publish("recovered", { confirm: false }).catch(() => {}), 100)
+  let holder: AMQPClient | undefined
+  let ticker: ReturnType<typeof setInterval> | undefined
   try {
-    await expect(received).resolves.toBe("recovered")
+    const q = await session.queue(name, { durable: false, autoDelete: false })
+    const bodies: string[] = []
+    let gotMessage: (() => void) | undefined
+    const received = new Promise<void>((resolve) => (gotMessage = resolve))
+    await q.subscribe({ exclusive: true, retries: 20, retryDelay: 100 }, (msg) => {
+      bodies.push(msg.bodyString() ?? "")
+      gotMessage?.()
+    })
+
+    // Drop the connection, then grab the freed exclusive consumer from another
+    // connection so recovery hits ACCESS_REFUSED and has to retry.
+    ;(testClient(session) as AMQPClient).socket?.destroy()
+    holder = await holdExclusiveConsumer(name)
+    const release = holder
+    setTimeout(() => void release.close(), 600)
+
+    // Keep publishing until the recovered consumer picks one up.
+    const pq = await publisher.queue(name, { durable: false, autoDelete: false })
+    ticker = setInterval(() => void pq.publish("recovered", { confirm: false }).catch(() => {}), 100)
+
+    await received
+    expect(bodies[0]).toBe("recovered")
     expect(recoverFailed).not.toHaveBeenCalled()
-    expect(debug).toHaveBeenCalledWith(expect.stringContaining("has an exclusive consumer, retrying"))
-  } finally {
+    expect(retryLogs(debug).length).toBeGreaterThan(0)
     clearInterval(ticker)
     await pq.delete()
+  } finally {
+    clearInterval(ticker)
+    if (holder && !holder.closed) await holder.close()
     await publisher.stop()
+    await session.stop()
   }
 }, 20000)

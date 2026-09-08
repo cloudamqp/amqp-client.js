@@ -215,6 +215,7 @@ export class AMQPSession<
   private reconnectResolve: (() => void) | undefined
   private reconnecting = false
   private stopped = false
+  private readonly stopWaiters = new Set<() => void>()
 
   // Channels managed by the session. Both are created lazily and reset to null
   // when the connection drops so they are re-opened transparently on next use.
@@ -608,6 +609,8 @@ export class AMQPSession<
   async stop(reason?: string): Promise<void> {
     this.stopped = true
     this.cancelWait()
+    this.stopWaiters.forEach((wake) => wake())
+    this.stopWaiters.clear()
     // Await the cancels before closing the connection below — otherwise the
     // in-flight basic.cancel RPCs race the connection close and surface as
     // unhandled "Connection closed by client" rejections.
@@ -684,6 +687,23 @@ export class AMQPSession<
     this.reconnectTimer = undefined
     this.reconnectResolve?.()
     this.reconnectResolve = undefined
+  }
+
+  /**
+   * Sleep for `ms`, waking early when {@link stop} is called so a pending
+   * retry doesn't hold the process open past shutdown.
+   * @internal
+   */
+  sleep(ms: number): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const wake = (): void => {
+        clearTimeout(timer)
+        this.stopWaiters.delete(wake)
+        resolve()
+      }
+      const timer = setTimeout(wake, ms)
+      this.stopWaiters.add(wake)
+    })
   }
 
   private async recoverQueues(): Promise<void> {

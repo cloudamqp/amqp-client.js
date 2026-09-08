@@ -160,6 +160,7 @@ export class AMQPQueue<
   ): Promise<AMQPSubscription | AMQPGeneratorSubscription<P>> {
     if (typeof params === "function") [callback, params] = [params, undefined]
     const { prefetch, requeueOnNack = true, manualAck = false, retries, retryDelay, ...consumeParams } = params ?? {}
+    validateRetryParams(retries, retryDelay)
     // manualAck and auto-ack both need the server to track delivery tags, so
     // force wire-level noAck: false (basicConsume defaults it to true). They
     // differ only in who acks: the library on callback return (auto) vs. the
@@ -413,7 +414,7 @@ export class AMQPQueue<
           `Queue ${this.name} has an exclusive consumer, retrying in ${retryDelay}ms ` +
             `(attempt ${attempt + 1}/${retries})`,
         )
-        await new Promise((resolve) => setTimeout(resolve, retryDelay))
+        await this.session.sleep(retryDelay)
         if (this.session.stopping || this.session.closed) throw err
       }
     }
@@ -434,6 +435,16 @@ const ACCESS_REFUSED = 403
 
 function isAccessRefused(err: unknown): boolean {
   return err instanceof AMQPError && err.code === ACCESS_REFUSED
+}
+
+function validateRetryParams(retries: number | undefined, retryDelay: number | undefined): void {
+  // Infinity and NaN would both defeat the `attempt >= retries` bound.
+  if (retries !== undefined && (!Number.isSafeInteger(retries) || retries < 0)) {
+    throw new TypeError(`subscribe: retries must be a non-negative integer, got ${retries}`)
+  }
+  if (retryDelay !== undefined && (!Number.isFinite(retryDelay) || retryDelay < 0)) {
+    throw new TypeError(`subscribe: retryDelay must be a non-negative number of ms, got ${retryDelay}`)
+  }
 }
 
 type InternalCallback = (msg: AMQPMessage) => void | Promise<void>
