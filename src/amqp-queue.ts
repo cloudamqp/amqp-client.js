@@ -4,6 +4,7 @@ import type { AMQPProperties } from "./amqp-properties.js"
 import { AMQPConsumer, AMQPGeneratorConsumer } from "./amqp-consumer.js"
 import { AMQPSubscription, AMQPGeneratorSubscription } from "./amqp-subscription.js"
 import type { ConsumerDefinition } from "./amqp-subscription.js"
+import { AMQPError } from "./amqp-error.js"
 import type { AMQPSession } from "./amqp-session.js"
 import type { AMQPExchange } from "./amqp-exchange.js"
 import type { ResolveBody } from "./amqp-publisher.js"
@@ -40,6 +41,17 @@ export type QueueSubscribeParams = ConsumeParams & {
    * from the default auto-ack-on-callback-return.
    */
   manualAck?: boolean
+  /**
+   * How many times to retry the consume when the broker refuses it with
+   * `ACCESS_REFUSED` (403) because the queue already has an exclusive
+   * consumer — typically a previous process that is still shutting down
+   * during a rolling deploy. Defaults to `0` (fail on the first attempt).
+   *
+   * Also applies when the subscription is re-established after a reconnect.
+   */
+  retries?: number
+  /** Delay between consume retries in ms. Defaults to `1000`. */
+  retryDelay?: number
 }
 
 /** Options for {@link AMQPQueue#publish}. */
@@ -147,7 +159,7 @@ export class AMQPQueue<
     callback?: (msg: AMQPMessage<P>) => void | Promise<void>,
   ): Promise<AMQPSubscription | AMQPGeneratorSubscription<P>> {
     if (typeof params === "function") [callback, params] = [params, undefined]
-    const { prefetch, requeueOnNack = true, manualAck = false, ...consumeParams } = params ?? {}
+    const { prefetch, requeueOnNack = true, manualAck = false, retries, retryDelay, ...consumeParams } = params ?? {}
     // manualAck and auto-ack both need the server to track delivery tags, so
     // force wire-level noAck: false (basicConsume defaults it to true). They
     // differ only in who acks: the library on callback return (auto) vs. the
@@ -174,6 +186,8 @@ export class AMQPQueue<
       ...(prefetch !== undefined && { prefetch }),
       ...(parsers && { parsers }),
       ...(coders && { coders }),
+      ...(retries !== undefined && { retries }),
+      ...(retryDelay !== undefined && { retryDelay }),
     }
     const consumer = await this.openConsumer(def)
     const sub = wrappedCallback ? new AMQPSubscription(consumer, def) : new AMQPGeneratorSubscription<P>(consumer, def)
@@ -347,6 +361,10 @@ export class AMQPQueue<
    * `basicConsume` fails with NOT_FOUND and the failure is reported via
    * {@link AMQPSessionOptions.onrecoverfailed} so the application can redeclare
    * and rebind from an {@link AMQPSessionOptions.onconnect} handler.
+   *
+   * A subscription created with `retries` retries here too — a reconnect that
+   * lands while another process still holds the exclusive consumer would
+   * otherwise kill the subscription until the next disconnect.
    * @internal Called by the session's reconnect loop.
    */
   async recover(): Promise<void> {
@@ -378,7 +396,30 @@ export class AMQPQueue<
     await Promise.all(subs.map((sub) => sub.cancel()))
   }
 
+  /**
+   * Open a consumer, retrying while another connection holds the queue's
+   * exclusive consumer. Nothing is registered for recovery until the first
+   * consume succeeds, so a refused initial attempt can only be retried here.
+   */
   private async openConsumer(def: ConsumerDefinition): Promise<AMQPConsumer | AMQPGeneratorConsumer> {
+    const retries = def.retries ?? 0
+    const retryDelay = def.retryDelay ?? 1000
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await this.consume(def)
+      } catch (err) {
+        if (attempt >= retries || !isAccessRefused(err)) throw err
+        this.session.logger?.debug(
+          `Queue ${this.name} has an exclusive consumer, retrying in ${retryDelay}ms ` +
+            `(attempt ${attempt + 1}/${retries})`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, retryDelay))
+        if (this.session.stopping || this.session.closed) throw err
+      }
+    }
+  }
+
+  private async consume(def: ConsumerDefinition): Promise<AMQPConsumer | AMQPGeneratorConsumer> {
     const ch = await this.session.openChannel()
     if (def.prefetch !== undefined) {
       await ch.basicQos(def.prefetch)
@@ -387,6 +428,12 @@ export class AMQPQueue<
       ? ch.basicConsume(def.queueName, def.consumeParams, def.callback)
       : ch.basicConsume(def.queueName, def.consumeParams)
   }
+}
+
+const ACCESS_REFUSED = 403
+
+function isAccessRefused(err: unknown): boolean {
+  return err instanceof AMQPError && err.code === ACCESS_REFUSED
 }
 
 type InternalCallback = (msg: AMQPMessage) => void | Promise<void>

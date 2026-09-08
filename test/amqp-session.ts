@@ -1712,3 +1712,106 @@ test("onblocked / onunblocked can be wired through options", async () => {
     await session.stop()
   }
 })
+
+/** Hold an exclusive consumer on `name` from a separate connection. */
+async function holdExclusiveConsumer(name: string): Promise<AMQPClient> {
+  const other = new AMQPClient("amqp://127.0.0.1")
+  await other.connect()
+  const ch = await other.channel()
+  await ch.queueDeclare(name, { durable: false, autoDelete: false })
+  await ch.basicConsume(name, { noAck: true, exclusive: true }, () => {})
+  return other
+}
+
+test("subscribe fails immediately when the queue has an exclusive consumer", async () => {
+  const name = "test-exclusive-" + Math.random()
+  const holder = await holdExclusiveConsumer(name)
+  try {
+    await withSession(async (session) => {
+      const q = await session.queue(name, { durable: false, autoDelete: false })
+      await expect(q.subscribe({ exclusive: true }, () => {})).rejects.toThrow(/ACCESS_REFUSED/)
+    })
+  } finally {
+    await holder.close()
+  }
+})
+
+test("subscribe retries while another connection holds the exclusive consumer", async () => {
+  const name = "test-exclusive-retry-" + Math.random()
+  const holder = await holdExclusiveConsumer(name)
+  try {
+    await withSession(async (session) => {
+      const q = await session.queue(name, { durable: false, autoDelete: false })
+      // Release the queue while the subscribe is still retrying.
+      setTimeout(() => void holder.close(), 300)
+
+      const sub = await q.subscribe({ exclusive: true, retries: 10, retryDelay: 100 }, () => {})
+      expect(sub.consumerTag).toBeTruthy()
+      await sub.cancel()
+      await q.delete()
+    })
+  } finally {
+    if (!holder.closed) await holder.close()
+  }
+})
+
+test("subscribe rejects when the consume retries are exhausted", async () => {
+  const name = "test-exclusive-exhausted-" + Math.random()
+  const holder = await holdExclusiveConsumer(name)
+  try {
+    await withSession(async (session) => {
+      const q = await session.queue(name, { durable: false, autoDelete: false })
+      await expect(q.subscribe({ exclusive: true, retries: 2, retryDelay: 50 }, () => {})).rejects.toThrow(
+        /ACCESS_REFUSED/,
+      )
+      await q.delete()
+    })
+  } finally {
+    if (!holder.closed) await holder.close()
+  }
+})
+
+test("consumer recovery retries while another connection holds the exclusive consumer", async () => {
+  const name = "test-exclusive-recover-" + Math.random()
+  const recoverFailed = vi.fn()
+  const debug = vi.fn()
+  const received = new Promise<string>((resolve) => {
+    void withSession(
+      async (session) => {
+        const q = await session.queue(name, { durable: false, autoDelete: false })
+        const body = new Promise<string>((gotMessage) => {
+          void q
+            .subscribe({ exclusive: true, retries: 20, retryDelay: 100 }, (msg) => gotMessage(msg.bodyString() ?? ""))
+            .then(async () => {
+              // Drop the connection, then grab the freed exclusive consumer from
+              // another connection so recovery hits ACCESS_REFUSED and must retry.
+              ;(testClient(session) as AMQPClient).socket?.destroy()
+              const holder = await holdExclusiveConsumer(name)
+              setTimeout(() => void holder.close(), 600)
+            })
+        })
+        resolve(await body)
+        await new Promise<void>((done) => setTimeout(done, 50))
+      },
+      {
+        reconnectInterval: 200,
+        onrecoverfailed: recoverFailed,
+        logger: { debug, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      },
+    )
+  })
+
+  // Keep publishing until the recovered consumer picks one up.
+  const publisher = await AMQPSession.connect("amqp://127.0.0.1")
+  const pq = await publisher.queue(name, { durable: false, autoDelete: false })
+  const ticker = setInterval(() => void pq.publish("recovered", { confirm: false }).catch(() => {}), 100)
+  try {
+    await expect(received).resolves.toBe("recovered")
+    expect(recoverFailed).not.toHaveBeenCalled()
+    expect(debug).toHaveBeenCalledWith(expect.stringContaining("has an exclusive consumer, retrying"))
+  } finally {
+    clearInterval(ticker)
+    await pq.delete()
+    await publisher.stop()
+  }
+}, 20000)

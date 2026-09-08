@@ -183,6 +183,11 @@ export class AMQPSession<
     return this.client.closed
   }
 
+  /** @internal `true` after {@link stop}, so in-flight retry loops can give up. */
+  get stopping(): boolean {
+    return this.stopped
+  }
+
   /** @internal */
   get logger(): Logger | null | undefined {
     return this.client.logger
