@@ -43,7 +43,7 @@ jobs:
           EOF
           sudo systemctl restart lavinmq
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm install
@@ -63,7 +63,7 @@ jobs:
         uses: cloudamqp/lavinmq-action@v1
       - uses: actions/checkout@v7
       - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
       - run: npm install
