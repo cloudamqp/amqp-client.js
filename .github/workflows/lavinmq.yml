@@ -23,7 +23,7 @@ jobs:
         uses: Homebrew/actions/setup-homebrew@e99025eb970cfa124b8284a35463d87426917478 # 2026.09.28.1
       - name: Install github.com/FiloSottile/mkcert
         run: brew install mkcert
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Create local CA and certificate
         run: |
           sudo CAROOT=/etc/lavinmq $(brew --prefix)/bin/mkcert -install
@@ -61,7 +61,7 @@ jobs:
     steps:
       - name: Install LavinMQ
         uses: cloudamqp/lavinmq-action@v1
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v6
         with:

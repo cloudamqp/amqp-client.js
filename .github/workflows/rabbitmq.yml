@@ -21,7 +21,7 @@ jobs:
         uses: Homebrew/actions/setup-homebrew@e99025eb970cfa124b8284a35463d87426917478 # 2026.09.28.1
       - name: Install github.com/FiloSottile/mkcert
         run: brew install mkcert
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Create local CA and certificate
         run: |
           mkdir -p .etc_rabbitmq
@@ -56,7 +56,7 @@ jobs:
       NODE_VERSION: 22.x
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Create RabbitMQ config
         run: |
           mkdir -p .etc_rabbitmq
