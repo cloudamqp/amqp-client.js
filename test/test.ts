@@ -271,6 +271,19 @@ test("will throw an error", async () => {
   await expect(ch.queueDeclare("amq.foobar")).rejects.toThrow(/ACCESS_REFUSED/)
 })
 
+test("channel errors carry the AMQP reply code, on the promise and on connection.onerror", async () => {
+  const amqp = getNewClient()
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  const propagated = new Promise<AMQPError>((resolve) => (conn.onerror = resolve))
+  const rejection = ch.queueDeclare("amq.foobar").then(
+    () => undefined,
+    (err: AMQPError) => err,
+  )
+  expect((await rejection)?.code).toEqual(403)
+  expect((await propagated).code).toEqual(403)
+})
+
 test("will throw an error after consumer timeout", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()

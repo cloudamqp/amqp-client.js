@@ -128,6 +128,18 @@ const sub = await q.subscribe({ prefetch: 10 }, async (msg) => {
 // await sub.cancel()  // stops consuming and removes from auto-recovery
 ```
 
+#### Exclusive consumer handover
+
+A queue with an exclusive consumer refuses a second one with `ACCESS_REFUSED` (403). During a rolling deploy the new process usually starts before the old one has let go, so pass `retries` to wait it out. Retries apply to the initial subscribe and to consumer recovery after a reconnect:
+
+```javascript
+const sub = await q.subscribe({ exclusive: true, retries: 5, retryDelay: 1000 }, async (msg) => {
+  // ...
+})
+```
+
+`retries` defaults to `0` (fail on the first attempt) and `retryDelay` to 1000 ms. Once the retries are used up, the subscribe rejects with the original `AMQPError` (`err.code === 403`).
+
 #### RPC (Remote Procedure Call)
 
 The session provides built-in RPC support using the direct reply-to feature:
