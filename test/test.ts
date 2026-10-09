@@ -373,6 +373,22 @@ test("closed socket closes client", async () => {
   expect(amqp.closed).toBe(true)
 })
 
+test("close resolves when the socket closes before connection close-ok", async () => {
+  const amqp = getNewClient()
+  await amqp.connect()
+  const socket = amqp["socket"]
+  assert(socket, "Socket must be created")
+
+  socket.pause()
+  const closing = amqp.close()
+  await vi.waitFor(() => expect(amqp["closePromise"]).toBeDefined())
+
+  const closed = new Promise<void>((resolve) => socket.once("close", resolve))
+  socket.destroy()
+  await closed
+  await expect(closing).resolves.toBeUndefined()
+})
+
 test("wait for publish confirms", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
