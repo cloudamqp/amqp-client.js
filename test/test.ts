@@ -389,6 +389,26 @@ test("close resolves when the socket closes before connection close-ok", async (
   await expect(closing).resolves.toBeUndefined()
 })
 
+test("close resolves when the socket closes before the close frame is sent", async () => {
+  const amqp = getNewClient()
+  await amqp.connect()
+  const socket = amqp["socket"]
+  assert(socket, "Socket must be created")
+
+  vi.spyOn(amqp, "send").mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        process.nextTick(() => {
+          socket.emit("close", false)
+          resolve()
+        })
+      }),
+  )
+
+  await expect(amqp.close()).resolves.toBeUndefined()
+  socket.destroy()
+})
+
 test("wait for publish confirms", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
