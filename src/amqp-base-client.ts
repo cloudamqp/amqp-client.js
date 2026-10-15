@@ -146,9 +146,11 @@ export abstract class AMQPBaseClient {
     frame.writeUint16(0) // failing-method-id
     frame.finalize()
     return new Promise((resolve, reject) => {
-      this.send(frame.toUint8Array())
-        .then(() => (this.closePromise = [resolve, reject]))
-        .catch(reject)
+      this.closePromise = [resolve, reject]
+      this.send(frame.toUint8Array()).catch((err) => {
+        delete this.closePromise
+        reject(err)
+      })
     })
   }
 
