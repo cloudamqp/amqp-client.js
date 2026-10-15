@@ -29,8 +29,8 @@ export class AMQPChannel {
   getMessage?: AMQPMessage
   /** @internal In-progress returned message being assembled. */
   returned?: AMQPMessage
-  /** Callback for channel-level errors. */
-  onerror: (reason: string) => void
+  /** Callback for channel-level errors. `code` is the AMQP reply code when the broker closed the channel. */
+  onerror: (reason: string, code?: number) => void
   /**
    * @param connection - The connection this channel belongs to
    * @param id - ID of the channel
@@ -38,10 +38,10 @@ export class AMQPChannel {
   constructor(connection: AMQPBaseClient, id: number) {
     this.connection = connection
     this.id = id
-    this.onerror = (reason: string) => {
+    this.onerror = (reason: string, code?: number) => {
       this.logger?.error(`channel ${this.id} closed: ${reason}`)
       // Propagate channel errors to the connection's onerror handler
-      this.connection.onerror(new AMQPError(`Channel ${this.id} closed: ${reason}`, this.connection))
+      this.connection.onerror(new AMQPError(`Channel ${this.id} closed: ${reason}`, this.connection, code))
     }
   }
 
@@ -846,7 +846,7 @@ export class AMQPChannel {
       // Reject and clear all unconfirmed publishes
       this.unconfirmedPublishes.forEach(([, , reject]) => reject(err))
       this.unconfirmedPublishes.length = 0
-      if (closedByServer) this.onerror(err.message)
+      if (closedByServer) this.onerror(err.message, err instanceof AMQPError ? err.code : undefined)
     }
   }
 

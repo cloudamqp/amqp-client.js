@@ -339,7 +339,7 @@ export abstract class AMQPBaseClient {
                   this.logger?.debug("connection closed by server", code, text, classId, methodId)
 
                   const msg = `connection closed: ${text} (${code})`
-                  const err = new AMQPError(msg, this)
+                  const err = new AMQPError(msg, this, code)
                   this.channels.forEach((ch) => ch.setClosed(err))
                   this.channels = [new AMQPChannel(this, 0)]
 
@@ -424,7 +424,7 @@ export abstract class AMQPBaseClient {
                   this.logger?.debug("channel", channelId, "closed", code, text, classId, methodId)
 
                   const msg = `channel ${channelId} closed: ${text} (${code})`
-                  const err = new AMQPError(msg, this)
+                  const err = new AMQPError(msg, this, code)
                   channel.setClosed(err)
                   delete this.channels[channelId]
                   const closeOk = new AMQPFrame.Writer({
