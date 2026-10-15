@@ -423,6 +423,9 @@ export class AMQPChannel {
       const wait4Confirm = new Promise<number>((resolve, reject) =>
         this.unconfirmedPublishes.push([this.confirmId++, resolve, reject]),
       )
+      // setClosed can reject wait4Confirm while sendFrames is still pending, before the chain below
+      // attaches to it; handle it here so that isn't an unhandled rejection. The caller still gets it.
+      wait4Confirm.catch(() => {})
       return sendFrames.then(() => wait4Confirm).finally(() => this.connection.bufferPool.push(buffer))
     } else {
       return sendFrames.then(() => 0).finally(() => this.connection.bufferPool.push(buffer))

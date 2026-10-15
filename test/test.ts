@@ -422,6 +422,28 @@ test("can handle nacks on confirm channel", async () => {
   await expect(ch.basicPublish("", q.name, "body")).rejects.toThrow("Message rejected")
 })
 
+test("a confirm channel closed while a publish is being written rejects the publish, not unhandled", async () => {
+  const unhandled: unknown[] = []
+  const onUnhandled = (reason: unknown) => unhandled.push(reason)
+  process.on("unhandledRejection", onUnhandled)
+  try {
+    const amqp = getNewClient()
+    const conn = await amqp.connect()
+    const ch = await conn.channel()
+    const q = await ch.queueDeclare("", { exclusive: true })
+    await ch.confirmSelect()
+    // Larger than the socket's send buffer, so the write is still pending when the channel closes
+    const publish = ch.basicPublish("", q.name, new Uint8Array(8 * 1024 * 1024))
+    ch.setClosed(new Error("closed mid-write"))
+    await expect(publish).rejects.toThrow("closed mid-write")
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(unhandled).toEqual([])
+    await conn.close()
+  } finally {
+    process.off("unhandledRejection", onUnhandled)
+  }
+})
+
 test("throws on unknown exchange type", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()
