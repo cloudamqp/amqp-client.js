@@ -16,6 +16,8 @@ export interface ConsumerDefinition {
   coders?: CoderMap
   requeueOnNack?: boolean
   manualAck?: boolean
+  retries?: number
+  retryDelay?: number
 }
 
 /**
