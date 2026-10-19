@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- `close()` never resolved when the transport closed before `close-ok` arrived. The socket and WebSocket `close` handlers now resolve a pending `closePromise`. Thanks [@ngbrown](https://github.com/ngbrown) for the fix ([#286](https://github.com/cloudamqp/amqp-client.js/pull/286))
+- `close()` could miss the `close-ok` when it arrived before `send()` resolved. `closePromise` is now assigned before the close frame is sent, and cleared if the send throws. Thanks [@ngbrown](https://github.com/ngbrown) for the fix ([#286](https://github.com/cloudamqp/amqp-client.js/pull/286))
+- A confirm rejected by `setClosed()` while its publish was still being written escaped as an unhandled promise rejection. The confirm promise is now pre-caught; the caller still receives the rejection. Thanks [@lsfera](https://github.com/lsfera) for the fix ([#285](https://github.com/cloudamqp/amqp-client.js/pull/285))
+
 ## [4.1.1] - 2026-08-28
 
 ### Fixed
