@@ -91,6 +91,12 @@ export class AMQPClient extends AMQPBaseClient {
         }
         this.socket = undefined
         socketError = undefined
+        const promise = this.closePromise
+        if (promise) {
+          const [resolve] = promise
+          delete this.closePromise
+          resolve()
+        }
       })
     })
     Object.defineProperty(this, "socket", {
