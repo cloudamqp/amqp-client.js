@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.2] - 2026-10-19
+
 ### Fixed
 
 - `close()` never resolved when the transport closed before `close-ok` arrived. The socket and WebSocket `close` handlers now resolve a pending `closePromise`. Thanks [@ngbrown](https://github.com/ngbrown) for the fix ([#286](https://github.com/cloudamqp/amqp-client.js/pull/286))
