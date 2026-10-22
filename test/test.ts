@@ -3,6 +3,7 @@ import { AMQPClient } from "../src/amqp-socket-client.js"
 import { AMQPWebSocketClient } from "../src/amqp-websocket-client.js"
 import { AMQPMessage } from "../src/amqp-message.js"
 import type { AMQPError } from "../src/amqp-error.js"
+import { AMQPView } from "../src/amqp-view.js"
 
 function getNewClient(init?: { frameMax?: number; heartbeat?: number; channelMax?: number }): AMQPClient {
   const url = new URL("amqp://127.0.0.1")
@@ -1093,4 +1094,47 @@ test("consumer.cancel() on closed channel resolves without error", async () => {
   await expect(consumer.cancel()).resolves.toBeDefined()
 
   await amqp.close()
+})
+
+function roundtripField(value: number): { type: string; value: unknown; bytesWritten: number; bytesRead: number } {
+  const view = new AMQPView(new ArrayBuffer(64))
+  const bytesWritten = view.setField(0, value)
+  const [decoded, bytesRead] = view.getField(0)
+  return { type: String.fromCharCode(view.getUint8(0)), value: decoded, bytesWritten, bytesRead }
+}
+
+test("integers that fit in an int32 are encoded as 'I'", () => {
+  for (const v of [0, 1, -1, 2 ** 31 - 1, -(2 ** 31)]) {
+    const { type, value } = roundtripField(v)
+    expect(type).toEqual("I")
+    expect(value).toEqual(v)
+  }
+})
+
+test("integers between 2^31 and 2^32 are encoded as int64, not a negative int32", () => {
+  for (const v of [2 ** 31, 4194304000, 2 ** 32 - 1, -(2 ** 31) - 1]) {
+    const { type, value } = roundtripField(v)
+    expect(type).toEqual("l")
+    expect(value).toEqual(v)
+  }
+})
+
+test("integers too large for an int64 are encoded as a double instead of wrapping", () => {
+  const { type, value } = roundtripField(1e300)
+  expect(type).toEqual("d")
+  expect(value).toEqual(1e300)
+})
+
+test("floats only use float32 when that is lossless", () => {
+  expect(roundtripField(1.5)).toMatchObject({ type: "f", value: 1.5 })
+  expect(roundtripField(0.1)).toMatchObject({ type: "d", value: 0.1 })
+})
+
+test("field tables roundtrip large integer arguments", () => {
+  const table = { "x-message-ttl": 4194304000, "x-max-length": 10 }
+  const view = new AMQPView(new ArrayBuffer(128))
+  const bytesWritten = view.setTable(0, table)
+  const [decoded, bytesRead] = view.getTable(0)
+  expect(decoded).toEqual(table)
+  expect(bytesRead).toEqual(bytesWritten)
 })
