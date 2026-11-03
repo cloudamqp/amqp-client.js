@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Integer table fields (e.g. headers) between 2^31 and 2^32 in magnitude were encoded as a signed 32-bit `I` and wrapped around, e.g. `3_000_000_000` was received as `-1294967296`. They are now encoded as a 64-bit `l`, and integers outside the signed 64-bit range throw a `RangeError` instead of wrapping
+
 ## [4.1.2] - 2026-10-19
 
 ### Fixed
