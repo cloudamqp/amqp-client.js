@@ -294,7 +294,7 @@ export abstract class AMQPBaseClient {
                   i += 2
                   this.channelMax = negotiateMax(this.channelMax, channelMax)
                   this.frameMax = negotiateMax(this.frameMax, frameMax)
-                  // heartbeat: 0 from either side disables it, so plain Math.min is correct here
+                  // 0 from either side disables heartbeat, so plain Math.min is correct here
                   this.heartbeat = this.heartbeat === 0 ? 0 : Math.min(this.heartbeat, heartbeat)
 
                   const tuneOk = new AMQPFrame.Writer({
