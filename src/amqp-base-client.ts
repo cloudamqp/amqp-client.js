@@ -8,6 +8,13 @@ import type { Logger } from "./types.js"
 export const VERSION = "4.1.2"
 export const MIN_FRAME_SIZE = 8192
 
+/** @internal Negotiate a connection.tune field where 0 means "no limit" on either side. */
+export function negotiateMax(client: number, broker: number): number {
+  if (client === 0) return broker
+  if (broker === 0) return client
+  return Math.min(client, broker)
+}
+
 /**
  * Base class for AMQPClients.
  * Implements everything except how to connect, send data and close the socket
@@ -285,8 +292,9 @@ export abstract class AMQPBaseClient {
                   i += 4
                   const heartbeat = view.getUint16(i)
                   i += 2
-                  this.channelMax = this.channelMax === 0 ? channelMax : Math.min(this.channelMax, channelMax)
-                  this.frameMax = this.frameMax === 0 ? frameMax : Math.min(this.frameMax, frameMax)
+                  this.channelMax = negotiateMax(this.channelMax, channelMax)
+                  this.frameMax = negotiateMax(this.frameMax, frameMax)
+                  // 0 from either side disables heartbeat, so plain Math.min is correct here
                   this.heartbeat = this.heartbeat === 0 ? 0 : Math.min(this.heartbeat, heartbeat)
 
                   const tuneOk = new AMQPFrame.Writer({
