@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `channelMax`/`frameMax` negotiation treated `0` (no limit) as the lowest value. If the broker sent `frame_max=0`, the negotiated `frameMax` became `0`, which broke publishing. A client `channelMax` limit was also dropped when the broker sent `0`. Now `0` from one side means "use the other side's value" ([#295](https://github.com/cloudamqp/amqp-client.js/pull/295))
+
 ## [4.1.2] - 2026-10-19
 
 ### Fixed
