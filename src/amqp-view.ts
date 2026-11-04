@@ -362,6 +362,7 @@ export class AMQPView extends DataView<Uint8Array["buffer"]> {
         i += 1
         break
       case "bigint":
+        if (BigInt.asIntN(64, field) !== field) throw new RangeError(`Integer out of range for a table field: ${field}`)
         this.setUint8(i, "l".charCodeAt(0))
         i += 1
         this.setBigInt64(i, field, littleEndian)

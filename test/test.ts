@@ -1138,3 +1138,23 @@ test("field tables roundtrip large integer arguments", () => {
   expect(decoded).toEqual(table)
   expect(bytesRead).toEqual(bytesWritten)
 })
+
+test("bigints at the int64 boundaries are encoded as 'l' without wrapping", () => {
+  for (const v of [0n, 2n ** 63n - 1n, -(2n ** 63n)]) {
+    const view = new AMQPView(new ArrayBuffer(64))
+    expect(view.setField(0, v)).toEqual(9)
+    expect(String.fromCharCode(view.getUint8(0))).toEqual("l")
+    expect(view.getBigInt64(1, false)).toEqual(v)
+  }
+})
+
+test("bigints outside the int64 range throw instead of wrapping", () => {
+  for (const v of [2n ** 63n, -(2n ** 63n) - 1n, 2n ** 64n]) {
+    expect(() => new AMQPView(new ArrayBuffer(64)).setField(0, v)).toThrow(RangeError)
+  }
+})
+
+test("field tables with an out of range bigint throw", () => {
+  const view = new AMQPView(new ArrayBuffer(128))
+  expect(() => view.setTable(0, { "x-big": 2n ** 63n })).toThrow(RangeError)
+})
