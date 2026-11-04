@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `channelMax`/`frameMax` negotiation treated `0` (no limit) as the lowest value. If the broker sent `frame_max=0`, the negotiated `frameMax` became `0`, which broke publishing. A client `channelMax` limit was also dropped when the broker sent `0`. Now `0` from one side means "use the other side's value" ([#295](https://github.com/cloudamqp/amqp-client.js/pull/295))
-- Integers between 2^31 and 2^32 in field tables overflowed to negative int32 values. They are now encoded as signed 64-bit integers, and floats that do not fit in float32 are encoded as float64. Thanks [@assapir](https://github.com/assapir) for the report ([#292](https://github.com/cloudamqp/amqp-client.js/pull/292), fixes [#289](https://github.com/cloudamqp/amqp-client.js/issues/289))
+- Integers between 2^31 and 2^32 in field tables overflowed to negative int32 values. They are now encoded as signed 64-bit integers, and floats that do not fit in float32 are encoded as float64. A `BigInt` outside the int64 range now throws a `RangeError` instead of wrapping. Thanks [@assapir](https://github.com/assapir) for the report ([#292](https://github.com/cloudamqp/amqp-client.js/pull/292), fixes [#289](https://github.com/cloudamqp/amqp-client.js/issues/289))
 
 ## [4.1.2] - 2026-10-19
 
