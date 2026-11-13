@@ -356,7 +356,7 @@ test("logger: logs reconnect gave up when maxRetries exhausted", async () => {
     const connectSpy = vi.spyOn(client, "connect").mockRejectedValue(new Error("forced failure"))
     ;(client as AMQPClient).socket?.destroy()
     await new Promise((resolve) => setTimeout(resolve, 500))
-    expect(error).toHaveBeenCalledWith("AMQPSession: reconnect gave up")
+    expect(error).toHaveBeenCalledWith(expect.stringMatching(/^AMQPSession\[\S+:\d+ -> \S+:5672\]: reconnect gave up$/))
     connectSpy.mockRestore()
   } finally {
     await session.stop()
@@ -1426,6 +1426,17 @@ test("consumeOne rejects when the connection drops before delivery", () =>
     },
     { reconnectInterval: 50, maxRetries: 1 },
   ))
+
+test("logger: tags lines with the socket address pair when name is unset", async () => {
+  const info = vi.fn()
+  const logger = { debug: vi.fn(), info, warn: vi.fn(), error: vi.fn() }
+  const session = await AMQPSession.connect("amqp://127.0.0.1", { logger })
+  try {
+    expect(info).toHaveBeenCalledWith(expect.stringMatching(/^AMQPSession\[\S+:\d+ -> \S+:5672\]: connected$/))
+  } finally {
+    await session.stop()
+  }
+})
 
 test("name option sets connection name (overrides URL query)", async () => {
   const session = await AMQPSession.connect("amqp://127.0.0.1?name=from-url", { name: "from-option" })
