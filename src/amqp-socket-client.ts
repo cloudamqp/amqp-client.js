@@ -22,6 +22,7 @@ export class AMQPClient extends AMQPBaseClient {
   readonly port: number
   /** TLS options passed to `tls.connect`. */
   readonly tlsOptions: AMQPTlsOptions | undefined
+  private addressLabel?: string
   private readonly insecure: boolean
   private framePos: number
   private frameSize: number
@@ -65,6 +66,7 @@ export class AMQPClient extends AMQPBaseClient {
     let socketError: AMQPError | undefined
     const socket = this.connectSocket()
     socket.on("connect", () => {
+      this.addressLabel = `${socket.localAddress}:${socket.localPort} -> ${socket.remoteAddress}:${socket.remotePort}`
       socket.on("error", (err) => {
         socketError = new AMQPError(err.message, this)
         this.onerror(socketError)
@@ -121,6 +123,16 @@ export class AMQPClient extends AMQPBaseClient {
       }
       this.connectPromise = [onConnect, reject]
     })
+  }
+
+  /** @internal The script name, like amqp-client.rb and amqp-client.cr do. */
+  protected override defaultConnectionName(): string | undefined {
+    return process.argv[1]?.split(/[\\/]/).pop() || undefined
+  }
+
+  /** @internal Falls back to the address pair the broker uses to name the connection. */
+  override logLabel(): string {
+    return this.name || this.addressLabel || super.logLabel()
   }
 
   private connectSocket(): net.Socket {

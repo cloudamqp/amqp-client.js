@@ -53,6 +53,7 @@ export abstract class AMQPBaseClient {
   readonly textEncoder: InstanceType<typeof TextEncoder> = new TextEncoder()
   /** @internal Buffer pool for publishes. Lets multiple microtasks publish concurrently while saving on allocations. */
   readonly bufferPool: AMQPView[] = []
+  private randomId?: string
 
   /**
    * Callback when connection is lost
@@ -194,6 +195,18 @@ export abstract class AMQPBaseClient {
 
   protected abstract closeSocket(): void
 
+  /** @internal `connection_name` to send when `name` is unset. */
+  protected defaultConnectionName(): string | undefined {
+    return undefined
+  }
+
+  /** @internal Label for log lines: `name`, else a random 8-char hex id. */
+  logLabel(): string {
+    if (this.name) return this.name
+    this.randomId ??= Math.random().toString(16).slice(2, 10).padEnd(8, "0")
+    return this.randomId
+  }
+
   private rejectClosed() {
     return Promise.reject(new AMQPError("Connection closed", this))
   }
@@ -261,7 +274,7 @@ export abstract class AMQPBaseClient {
                   })
 
                   const clientProps = {
-                    connection_name: this.name || undefined,
+                    connection_name: this.name || this.defaultConnectionName(),
                     product: "amqp-client.js",
                     information: "https://github.com/cloudamqp/amqp-client.js",
                     version: VERSION,
