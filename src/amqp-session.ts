@@ -253,7 +253,7 @@ export class AMQPSession<
   }
 
   private logTag(): string {
-    return this.client.name ? `AMQPSession[${this.client.name}]` : "AMQPSession"
+    return `AMQPSession[${this.client.logLabel()}]`
   }
 
   /**
