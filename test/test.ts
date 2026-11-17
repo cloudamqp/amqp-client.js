@@ -1119,6 +1119,22 @@ test("integers between 2^31 and 2^32 are encoded as int64, not a negative int32"
   }
 })
 
+test("integers between 2^53 and 2^63 are encoded as int64, not a float", () => {
+  for (const v of [2 ** 53, 2 ** 53 + 2, 2 ** 60, 2 ** 63 - 1024, -(2 ** 53), -(2 ** 63)]) {
+    const { type, value } = roundtripField(v)
+    expect(type).toEqual("l")
+    expect(value).toEqual(v)
+  }
+})
+
+test("integers outside the int64 range are encoded as a float instead of wrapping", () => {
+  for (const v of [2 ** 63, 2 ** 64, -(2 ** 63) - 2048]) {
+    const { type, value } = roundtripField(v)
+    expect(type).not.toEqual("l")
+    expect(value).toEqual(v)
+  }
+})
+
 test("integers too large for an int64 are encoded as a double instead of wrapping", () => {
   const { type, value } = roundtripField(1e300)
   expect(type).toEqual("d")
