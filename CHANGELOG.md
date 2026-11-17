@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Without a `name`, `AMQPClient` sends the script name (the basename of `process.argv[1]`) as `connection_name`, like amqp-client.rb and amqp-client.cr. `client.name` stays `undefined`. `AMQPWebSocketClient` still sends no name ([#296](https://github.com/cloudamqp/amqp-client.js/issues/296))
-- Without a `name`, `AMQPSession` log lines use the socket address pair as the tag, for example `AMQPSession[10.0.0.5:47182 -> 10.0.0.9:5672]`. That's the name RabbitMQ and LavinMQ give the connection. `AMQPWebSocketClient` uses a random 8-char hex id ([#296](https://github.com/cloudamqp/amqp-client.js/issues/296))
+- Without a `name`, `AMQPSession` log lines use the socket address pair as the tag, for example `AMQPSession[10.0.0.5:47182 -> 10.0.0.9:5672]`. That's the connection name RabbitMQ and LavinMQ use, shown next to any `connection_name`. `AMQPWebSocketClient` uses a random 8-char hex id ([#296](https://github.com/cloudamqp/amqp-client.js/issues/296))
 
 ### Fixed
 
