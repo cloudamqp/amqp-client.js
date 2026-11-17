@@ -66,6 +66,7 @@ export class AMQPClient extends AMQPBaseClient {
     const socket = this.connectSocket()
     socket.on("connect", () => {
       socket.on("error", (err) => {
+        if (this.socket && this.socket !== socket) return // replaced by a reconnect
         socketError = new AMQPError(err.message, this)
         this.onerror(socketError)
       })

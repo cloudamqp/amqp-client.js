@@ -37,6 +37,7 @@ export abstract class AMQPBaseClient {
   protected connectPromise?: [(conn: AMQPBaseClient) => void, (err: Error) => void]
   protected closePromise?: [(value?: void) => void, (err: Error) => void]
   protected onUpdateSecretOk?: (value?: void) => void
+  private onUpdateSecretFailed: ((err: Error) => void) | undefined
   /** Whether the connection is closed. */
   closed = true
   /** Set when the server has blocked publishing (connection.blocked reason). */
@@ -183,7 +184,10 @@ export abstract class AMQPBaseClient {
     frame.finalize()
     return new Promise((resolve, reject) => {
       this.send(frame.toUint8Array())
-        .then(() => (this.onUpdateSecretOk = resolve))
+        .then(() => {
+          this.onUpdateSecretOk = resolve
+          this.onUpdateSecretFailed = reject
+        })
         .catch(reject)
     })
   }
@@ -248,8 +252,9 @@ export abstract class AMQPBaseClient {
     if (!closing) this.onerror(err)
     this.channels.forEach((ch) => ch?.setClosed(err))
     this.channels = [new AMQPChannel(this, 0)]
-    this.onUpdateSecretOk?.()
+    this.onUpdateSecretFailed?.(err)
     delete this.onUpdateSecretOk
+    this.onUpdateSecretFailed = undefined
     if (closing) closePromise?.[0]()
     else this.ondisconnect?.(err)
   }
@@ -463,6 +468,7 @@ export abstract class AMQPBaseClient {
                   this.logger?.info("AMQP connection update secret ok")
                   this.onUpdateSecretOk?.()
                   delete this.onUpdateSecretOk
+                  this.onUpdateSecretFailed = undefined
                   break
                 }
                 default:
