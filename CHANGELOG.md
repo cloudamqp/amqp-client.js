@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `channelMax`/`frameMax` negotiation treated `0` (no limit) as the lowest value. If the broker sent `frame_max=0`, the negotiated `frameMax` became `0`, which broke publishing. A client `channelMax` limit was also dropped when the broker sent `0`. Now `0` from one side means "use the other side's value" ([#295](https://github.com/cloudamqp/amqp-client.js/pull/295))
+- The client only echoed broker heartbeats and never sent its own. RabbitMQ skips heartbeats while it sends other frames, so a `noAck` consumer with steady deliveries wrote nothing and RabbitMQ closed the connection with "missed heartbeats from client". Now the client sends a heartbeat every `heartbeat / 2` seconds when it has written nothing else ([#297](https://github.com/cloudamqp/amqp-client.js/issues/297))
+- The connection closed after 1 heartbeat interval without reads. AMQP 0-9-1 section 4.2.7 says 2 intervals. The check now runs in the heartbeat timer, so it also applies to `AMQPWebSocketClient` ([#297](https://github.com/cloudamqp/amqp-client.js/issues/297))
 
 ## [4.1.2] - 2026-10-19
 

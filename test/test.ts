@@ -920,41 +920,70 @@ test("should fail to connect to HTTP", async () => {
   await expect(amqp.connect()).rejects.toThrow()
 })
 
-test("should handle heartbeat timeout correctly", async () => {
+test("sends heartbeats when the broker sends nothing", async () => {
+  const amqp = getNewClient({ heartbeat: 1 })
+  const conn = await amqp.connect()
+  conn.onerror = vi.fn()
+  const socket = amqp["socket"]
+  assert(socket, "Socket must be created")
+  const send = vi.spyOn(amqp, "send")
+
+  // No reads means no broker heartbeats to echo
+  socket.pause()
+  await new Promise((resolve) => setTimeout(resolve, 1200))
+
+  const heartbeats = send.mock.calls.filter(([bytes]) => bytes[0] === 8)
+  expect(heartbeats.length).toBeGreaterThanOrEqual(1)
+  socket.resume()
+  await conn.close()
+})
+
+test("close() resolves when the broker stops responding", async () => {
   const amqp = getNewClient({ heartbeat: 1 })
   const conn = await amqp.connect()
   const ch = await conn.channel()
-
-  conn.ondisconnect = vi.fn()
-
-  // Mock the socket timeout to simulate missed heartbeats
+  conn.onerror = vi.fn()
   const socket = amqp["socket"]
   assert(socket, "Socket must be created")
 
-  // Set up error callback to capture timeout error
-  const errorPromise = new Promise<AMQPError>((resolve) => {
-    conn.onerror = (err: AMQPError) => {
-      resolve(err)
-    }
-  })
+  socket.pause()
+  await expect(conn.close()).resolves.toBeUndefined()
+  expect(ch.closed).toBe(true)
+})
 
-  // Set up close promise to detect when socket is closed
-  const closePromise = new Promise((resolve) => {
-    socket.on("close", resolve)
-  })
+test("sends heartbeats on reads when the timer is throttled", async () => {
+  const amqp = getNewClient({ heartbeat: 1 })
+  const conn = await amqp.connect()
+  // Stop the timer but keep heartbeats on, like a timer in a hidden browser tab
+  clearInterval(amqp["heartbeatTimer"])
+  const send = vi.spyOn(amqp, "send")
 
-  // Trigger timeout event to simulate heartbeat timeout
-  socket.emit("timeout")
+  // The broker sends a heartbeat each second, and each read can trigger a send
+  await new Promise((resolve) => setTimeout(resolve, 2500))
 
-  // Wait for error callback and socket close
+  const heartbeats = send.mock.calls.filter(([bytes]) => bytes[0] === 8)
+  expect(heartbeats.length).toBeGreaterThanOrEqual(1)
+  await conn.close()
+})
+
+test("closes the connection after 2 heartbeat intervals without reads", async () => {
+  const amqp = getNewClient({ heartbeat: 1 })
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  conn.ondisconnect = vi.fn()
+  const socket = amqp["socket"]
+  assert(socket, "Socket must be created")
+  const errorPromise = new Promise<AMQPError>((resolve) => (conn.onerror = resolve))
+  const closePromise = new Promise((resolve) => socket.on("close", resolve))
+
+  const pausedAt = Date.now()
+  socket.pause()
   const error = await errorPromise
   await closePromise
 
-  // Verify error message and that connection is closed
+  expect(Date.now() - pausedAt).toBeGreaterThanOrEqual(1500)
   expect(error.message).toEqual("Heartbeat timeout")
   expect(conn.closed).toBe(true)
-
-  // Verify the channel closes on heartbeat timeout
   expect(ch.closed).toBe(true)
   expect(conn.ondisconnect).toHaveBeenCalledTimes(1)
   expect(conn.ondisconnect).toHaveBeenCalledWith(expect.objectContaining({ message: "Heartbeat timeout" }))
