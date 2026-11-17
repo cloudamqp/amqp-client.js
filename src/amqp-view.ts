@@ -369,7 +369,7 @@ export class AMQPView extends DataView<Uint8Array["buffer"]> {
         i += 8
         break
       case "number":
-        if (Number.isSafeInteger(field)) {
+        if (Number.isInteger(field) && -(2 ** 63) <= field && field < 2 ** 63) {
           if (-(2 ** 31) <= field && field < 2 ** 31) {
             this.setUint8(i, "I".charCodeAt(0))
             i += 1
@@ -382,7 +382,7 @@ export class AMQPView extends DataView<Uint8Array["buffer"]> {
             i += 8
           }
         } else {
-          // float, and integers too large for a signed 64 bit int to hold exactly
+          // float, and integers outside the signed 64 bit range
           if (Math.fround(field) === field) {
             this.setUint8(i, "f".charCodeAt(0))
             i += 1
