@@ -183,12 +183,14 @@ export abstract class AMQPBaseClient {
     frame.writeShortString(reason)
     frame.finalize()
     return new Promise((resolve, reject) => {
-      this.send(frame.toUint8Array())
-        .then(() => {
-          this.onUpdateSecretOk = resolve
-          this.onUpdateSecretFailed = reject
-        })
-        .catch(reject)
+      // Set before send(), a heartbeat timeout can fire while the write is pending
+      this.onUpdateSecretOk = resolve
+      this.onUpdateSecretFailed = reject
+      this.send(frame.toUint8Array()).catch((err) => {
+        delete this.onUpdateSecretOk
+        this.onUpdateSecretFailed = undefined
+        reject(err)
+      })
     })
   }
 

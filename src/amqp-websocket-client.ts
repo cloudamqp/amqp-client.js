@@ -83,7 +83,9 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     const socket = new WebSocket(this.url)
     this.socket = socket
     socket.binaryType = "arraybuffer"
-    socket.onmessage = this.handleMessage.bind(this)
+    socket.onmessage = (ev: MessageEvent) => {
+      if (this.socket === socket) this.handleMessage(ev) // skip a socket replaced by a reconnect
+    }
     return new Promise((resolve, reject) => {
       this.connectPromise = [resolve, reject]
       socket.addEventListener("close", reject)
