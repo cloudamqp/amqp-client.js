@@ -1,5 +1,17 @@
 import type { AMQPProperties, Field } from "./amqp-properties.js"
 
+function isInt32(n: number): boolean {
+  return Number.isInteger(n) && -(2 ** 31) <= n && n < 2 ** 31
+}
+
+function isInt64(n: number): boolean {
+  return Number.isInteger(n) && -(2 ** 63) <= n && n < 2 ** 63
+}
+
+function isFloat32(n: number): boolean {
+  return Math.fround(n) === n
+}
+
 /**
  * An extended DataView, with AMQP protocol specific methods.
  * Set methods returns bytes written.
@@ -369,31 +381,27 @@ export class AMQPView extends DataView<Uint8Array["buffer"]> {
         i += 8
         break
       case "number":
-        if (Number.isInteger(field) && -(2 ** 63) <= field && field < 2 ** 63) {
-          if (-(2 ** 31) <= field && field < 2 ** 31) {
-            this.setUint8(i, "I".charCodeAt(0))
-            i += 1
-            this.setInt32(i, field, littleEndian)
-            i += 4
-          } else {
-            this.setUint8(i, "l".charCodeAt(0))
-            i += 1
-            this.setInt64(i, field, littleEndian)
-            i += 8
-          }
+        // Use the smallest type that holds the value exactly
+        if (isInt32(field)) {
+          this.setUint8(i, "I".charCodeAt(0))
+          i += 1
+          this.setInt32(i, field, littleEndian)
+          i += 4
+        } else if (isInt64(field)) {
+          this.setUint8(i, "l".charCodeAt(0))
+          i += 1
+          this.setInt64(i, field, littleEndian)
+          i += 8
+        } else if (isFloat32(field)) {
+          this.setUint8(i, "f".charCodeAt(0))
+          i += 1
+          this.setFloat32(i, field, littleEndian)
+          i += 4
         } else {
-          // float, and integers outside the signed 64 bit range
-          if (Math.fround(field) === field) {
-            this.setUint8(i, "f".charCodeAt(0))
-            i += 1
-            this.setFloat32(i, field, littleEndian)
-            i += 4
-          } else {
-            this.setUint8(i, "d".charCodeAt(0))
-            i += 1
-            this.setFloat64(i, field, littleEndian)
-            i += 8
-          }
+          this.setUint8(i, "d".charCodeAt(0))
+          i += 1
+          this.setFloat64(i, field, littleEndian)
+          i += 8
         }
         break
       case "undefined":
