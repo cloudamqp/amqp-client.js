@@ -78,17 +78,21 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
     this.framePos = 0
     this.frameSize = 0
     this.channels = [new AMQPChannel(this, 0)]
+    this.heartbeatTimedOut = false
 
     const socket = new WebSocket(this.url)
     this.socket = socket
     socket.binaryType = "arraybuffer"
-    socket.onmessage = this.handleMessage.bind(this)
+    socket.onmessage = (ev: MessageEvent) => {
+      if (this.socket === socket) this.handleMessage(ev) // skip a socket replaced by a reconnect
+    }
     return new Promise((resolve, reject) => {
       this.connectPromise = [resolve, reject]
       socket.addEventListener("close", reject)
       socket.addEventListener("error", reject)
       socket.addEventListener("open", () => {
         socket.addEventListener("error", (ev: Event) => {
+          if (this.socket && this.socket !== socket) return // replaced by a reconnect
           if (!this.closed) {
             const err = new AMQPError(ev.toString(), this)
             this.closed = true
@@ -100,6 +104,9 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
           }
         })
         socket.addEventListener("close", (ev: CloseEvent) => {
+          if (this.socket && this.socket !== socket) return // replaced by a reconnect
+          if (this.heartbeatTimedOut) return // heartbeatTimeout already cleaned up
+          this.stopHeartbeat()
           const clientClosed = this.closed
           this.closed = true
           if (!(ev.wasClean && clientClosed)) {
@@ -134,6 +141,7 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
   override send(bytes: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.socket) {
+        this.lastSent = Date.now()
         try {
           this.socket.send(bytes)
           resolve()
@@ -149,11 +157,13 @@ export class AMQPWebSocketClient extends AMQPBaseClient {
 
   protected override closeSocket() {
     this.closed = true
+    this.stopHeartbeat()
     if (this.socket) this.socket.close()
     this.socket = undefined
   }
 
   private handleMessage(event: MessageEvent) {
+    this.onReceived()
     const buf: ArrayBuffer = event.data
     const bufView = new DataView(buf)
     // A socket read can contain 0 or more frames, so find frame boundries

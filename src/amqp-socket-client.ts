@@ -66,6 +66,7 @@ export class AMQPClient extends AMQPBaseClient {
     const socket = this.connectSocket()
     socket.on("connect", () => {
       socket.on("error", (err) => {
+        if (this.socket && this.socket !== socket) return // replaced by a reconnect
         socketError = new AMQPError(err.message, this)
         this.onerror(socketError)
       })
@@ -75,6 +76,8 @@ export class AMQPClient extends AMQPBaseClient {
         }
       })
       socket.on("close", (hadError: boolean) => {
+        if (this.socket && this.socket !== socket) return // replaced by a reconnect
+        this.stopHeartbeat()
         const clientClosed = this.closed
         this.closed = true
         const closeError = hadError ? socketError : clientClosed ? undefined : new AMQPError("Socket closed", this)
@@ -113,10 +116,8 @@ export class AMQPClient extends AMQPBaseClient {
       socket.on("timeout", () => reject(new AMQPError("timeout", this)))
       socket.on("error", (err) => reject(new AMQPError(err.message, this)))
       const onConnect = (conn: AMQPBaseClient) => {
-        socket.setTimeout(this.heartbeat * 1000) // reset timeout if heartbeats are disabled
-        socket.on("timeout", () => {
-          socket.destroy(new AMQPError("Heartbeat timeout", this))
-        })
+        // Writes also reset the socket timeout, so missed heartbeats are detected in heartbeatTick
+        socket.setTimeout(0)
         resolve(conn)
       }
       this.connectPromise = [onConnect, reject]
@@ -133,11 +134,14 @@ export class AMQPClient extends AMQPBaseClient {
     }
     const sendStart = () => this.send(new Uint8Array([65, 77, 81, 80, 0, 0, 9, 1]))
     const conn = this.tls ? tls.connect(options, sendStart) : net.connect(options, sendStart)
-    conn.on("data", this.onRead.bind(this))
+    conn.on("data", (buf: Buffer) => {
+      if (this.socket === conn) this.onRead(buf) // skip a socket replaced by a reconnect
+    })
     return conn
   }
 
   private onRead(buf: Buffer): boolean {
+    this.onReceived()
     const bufLen = buf.length
     // A socket read can contain 0 or more frames, so find frame boundries
     let bufPos = 0
@@ -212,6 +216,7 @@ export class AMQPClient extends AMQPBaseClient {
   override send(bytes: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.socket) return reject(new AMQPError("Socket not connected", this))
+      this.lastSent = Date.now()
       try {
         this.socket.write(bytes, undefined, (err) => (err ? reject(err) : resolve()))
       } catch (err) {
@@ -223,6 +228,7 @@ export class AMQPClient extends AMQPBaseClient {
 
   protected override closeSocket(): void {
     this.closed = true
+    this.stopHeartbeat()
     if (this.socket) {
       this.socket.end()
       this.socket.destroy()

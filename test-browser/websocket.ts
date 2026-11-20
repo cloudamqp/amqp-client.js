@@ -241,6 +241,45 @@ test("closed socket closes client", async () => {
   expect(amqp.closed).toBe(true)
 })
 
+test("sends heartbeats when the broker sends nothing", async () => {
+  const amqp = getNewClient({ heartbeat: 1 })
+  const conn = await amqp.connect()
+  conn.onerror = vi.fn()
+  const socket = amqp["socket"]
+  assert(socket, "Socket must be created")
+  const send = vi.spyOn(amqp, "send")
+
+  // Drop all reads, so there are no broker heartbeats to reply to
+  socket.onmessage = null
+  await new Promise((resolve) => setTimeout(resolve, 1200))
+
+  const heartbeats = send.mock.calls.filter(([bytes]) => bytes[0] === 8)
+  expect(heartbeats.length).toBeGreaterThanOrEqual(1)
+  socket.close()
+})
+
+test("closes the connection after 2 heartbeat intervals without reads", async () => {
+  const amqp = getNewClient({ heartbeat: 1 })
+  const conn = await amqp.connect()
+  const ch = await conn.channel()
+  conn.onerror = vi.fn()
+  conn.ondisconnect = vi.fn()
+  const socket = amqp["socket"]
+  assert(socket, "Socket must be created")
+  const closed = new Promise((resolve) => socket.addEventListener("close", resolve))
+
+  socket.onmessage = null
+  await closed
+
+  // Channels also forward their close error to onerror, so check the messages, not the count
+  const messages = vi.mocked(conn.onerror).mock.calls.map(([err]) => err.message)
+  expect(messages[0]).toEqual("Heartbeat timeout")
+  expect(messages).not.toContainEqual(expect.stringMatching(/not cleanly closed/))
+  expect(conn.ondisconnect).toHaveBeenCalledTimes(1)
+  expect(conn.closed).toBe(true)
+  expect(ch.closed).toBe(true)
+})
+
 test("connection loss closes channels and consumers", async () => {
   const amqp = getNewClient()
   const conn = await amqp.connect()

@@ -8,6 +8,8 @@ import type { Logger } from "./types.js"
 export const VERSION = "4.1.2"
 export const MIN_FRAME_SIZE = 8192
 
+const HEARTBEAT_FRAME = new Uint8Array([AMQPFrame.Type.HEARTBEAT, 0, 0, 0, 0, 0, 0, AMQPFrame.End.CODE])
+
 /** @internal Negotiate a connection.tune field where 0 means "no limit" on either side. */
 export function negotiateMax(client: number, broker: number): number {
   if (client === 0) return broker
@@ -35,6 +37,7 @@ export abstract class AMQPBaseClient {
   protected connectPromise?: [(conn: AMQPBaseClient) => void, (err: Error) => void]
   protected closePromise?: [(value?: void) => void, (err: Error) => void]
   protected onUpdateSecretOk?: (value?: void) => void
+  private onUpdateSecretFailed: ((err: Error) => void) | undefined
   /** Whether the connection is closed. */
   closed = true
   /** Set when the server has blocked publishing (connection.blocked reason). */
@@ -53,6 +56,12 @@ export abstract class AMQPBaseClient {
   readonly textEncoder: InstanceType<typeof TextEncoder> = new TextEncoder()
   /** @internal Buffer pool for publishes. Lets multiple microtasks publish concurrently while saving on allocations. */
   readonly bufferPool: AMQPView[] = []
+  /** @internal Time of the last send(), in ms. */
+  protected lastSent = 0
+  /** @internal Set when a heartbeat timeout already did the cleanup for the closed socket. */
+  protected heartbeatTimedOut = false
+  private lastReceived = 0
+  private heartbeatTimer: ReturnType<typeof setInterval> | undefined
 
   /**
    * Callback when connection is lost
@@ -174,9 +183,14 @@ export abstract class AMQPBaseClient {
     frame.writeShortString(reason)
     frame.finalize()
     return new Promise((resolve, reject) => {
-      this.send(frame.toUint8Array())
-        .then(() => (this.onUpdateSecretOk = resolve))
-        .catch(reject)
+      // Set before send(), a heartbeat timeout can fire while the write is pending
+      this.onUpdateSecretOk = resolve
+      this.onUpdateSecretFailed = reject
+      this.send(frame.toUint8Array()).catch((err) => {
+        delete this.onUpdateSecretOk
+        this.onUpdateSecretFailed = undefined
+        reject(err)
+      })
     })
   }
 
@@ -193,6 +207,59 @@ export abstract class AMQPBaseClient {
   abstract send(bytes: Uint8Array): Promise<void>
 
   protected abstract closeSocket(): void
+
+  /** Send a heartbeat when idle and close the connection if the broker is silent. */
+  private startHeartbeat(): void {
+    this.stopHeartbeat()
+    if (!this.heartbeat) return
+    this.lastSent = this.lastReceived = Date.now()
+    this.heartbeatTimer = setInterval(() => this.heartbeatTick(), (this.heartbeat * 1000) / 2)
+  }
+
+  /** @internal */
+  protected stopHeartbeat(): void {
+    clearInterval(this.heartbeatTimer)
+    this.heartbeatTimer = undefined
+  }
+
+  /** @internal Called on every socket read. */
+  protected onReceived(): void {
+    if (this.heartbeatTimer === undefined) return
+    this.lastReceived = Date.now()
+    // Reads also drive sending, browsers throttle timers in hidden tabs to about once a minute
+    if (!this.closed && this.lastReceived - this.lastSent >= this.heartbeat * 500) this.sendHeartbeat()
+  }
+
+  private sendHeartbeat(): void {
+    this.send(HEARTBEAT_FRAME).catch((err) => this.logger?.warn("Error while sending heartbeat", err))
+  }
+
+  private heartbeatTick(): void {
+    // Keep checking reads while close() waits for close-ok, so a silent broker can't hang it
+    if (this.closed && !this.closePromise) return this.stopHeartbeat()
+    const now = Date.now()
+    // AMQP 0-9-1 section 4.2.7: close after 2 intervals without reads
+    if (now - this.lastReceived >= this.heartbeat * 2000) return this.heartbeatTimeout()
+    if (!this.closed && now - this.lastSent >= this.heartbeat * 500) this.sendHeartbeat()
+  }
+
+  private heartbeatTimeout(): void {
+    const err = new AMQPError("Heartbeat timeout", this)
+    const closePromise = this.closePromise
+    delete this.closePromise
+    const closing = this.closed
+    this.stopHeartbeat()
+    this.heartbeatTimedOut = true
+    this.closeSocket()
+    if (!closing) this.onerror(err)
+    this.channels.forEach((ch) => ch?.setClosed(err))
+    this.channels = [new AMQPChannel(this, 0)]
+    this.onUpdateSecretFailed?.(err)
+    delete this.onUpdateSecretOk
+    this.onUpdateSecretFailed = undefined
+    if (closing) closePromise?.[0]()
+    else this.ondisconnect?.(err)
+  }
 
   private rejectClosed() {
     return Promise.reject(new AMQPError("Connection closed", this))
@@ -329,6 +396,7 @@ export abstract class AMQPBaseClient {
                 case AMQPFrame.ConnectionMethod.OPEN_OK: {
                   i += 1 // reserved1
                   this.closed = false
+                  this.startHeartbeat()
                   const promise = this.connectPromise
                   if (promise) {
                     const [resolve] = promise
@@ -347,6 +415,7 @@ export abstract class AMQPBaseClient {
                   const methodId = view.getUint16(i)
                   i += 2
                   this.logger?.debug("connection closed by server", code, text, classId, methodId)
+                  this.stopHeartbeat() // no frames may follow close-ok
 
                   const msg = `connection closed: ${text} (${code})`
                   const err = new AMQPError(msg, this)
@@ -401,6 +470,7 @@ export abstract class AMQPBaseClient {
                   this.logger?.info("AMQP connection update secret ok")
                   this.onUpdateSecretOk?.()
                   delete this.onUpdateSecretOk
+                  this.onUpdateSecretFailed = undefined
                   break
                 }
                 default:
@@ -712,11 +782,8 @@ export abstract class AMQPBaseClient {
           }
           break
         }
-        case AMQPFrame.Type.HEARTBEAT: {
-          const heartbeat = new Uint8Array([AMQPFrame.Type.HEARTBEAT, 0, 0, 0, 0, 0, 0, AMQPFrame.End.CODE])
-          this.send(heartbeat).catch((err) => this.logger?.warn("Error while sending heartbeat", err))
+        case AMQPFrame.Type.HEARTBEAT:
           break
-        }
         default:
           this.logger?.error("invalid frame type:", type)
           i += frameSize
