@@ -1094,3 +1094,40 @@ test("consumer.cancel() on closed channel resolves without error", async () => {
 
   await amqp.close()
 })
+
+test("sends the script name as connection_name when name is unset", async () => {
+  const argv = process.argv
+  process.argv = [argv[0] ?? "node", "/srv/app/worker.js"]
+  const amqp = getNewClient()
+  const sent: string[] = []
+  const send = amqp.send.bind(amqp)
+  amqp.send = (bytes) => {
+    sent.push(new TextDecoder().decode(bytes))
+    return send(bytes)
+  }
+  try {
+    await amqp.connect()
+    await amqp.close()
+  } finally {
+    process.argv = argv
+  }
+  const startOk = sent.find((s) => s.includes("connection_name"))
+  expect(startOk).toContain("worker.js")
+  expect(startOk).not.toContain("/srv/app")
+  expect(amqp.name).toBeUndefined()
+})
+
+test("logLabel falls back to the socket address pair when name is unset", async () => {
+  const amqp = getNewClient()
+  await amqp.connect()
+  const { localAddress, localPort, remoteAddress, remotePort } = amqp.socket!
+  expect(amqp.logLabel()).toBe(`${localAddress}:${localPort} -> ${remoteAddress}:${remotePort}`)
+  await amqp.close()
+})
+
+test("logLabel is a stable random id for WebSocket clients without a name", () => {
+  const client = new AMQPWebSocketClient({ url: "ws://127.0.0.1:15670/ws/amqp" })
+  expect(client.logLabel()).toMatch(/^[0-9a-f]{8}$/)
+  expect(client.logLabel()).toBe(client.logLabel())
+  expect(new AMQPWebSocketClient({ url: "ws://127.0.0.1:15670/ws/amqp", name: "app" }).logLabel()).toBe("app")
+})
